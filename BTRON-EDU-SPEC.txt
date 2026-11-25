@@ -1,0 +1,650 @@
+BTRON EDU  /  SERIES 16
+FORMAL MODELS FOR A VECTOR DISPLAY
+WebGL1 reference and C99 OpenGL ES 2.0 port notes
+for the B-System tree at https://github.com/msx-btron/btron
+
+Status of this text
+    Architectural note for an education console.
+    It is not a weapon manual, a fire-control note, or a seeker design.
+    Every model below is undergraduate and public.
+    The appliance line says where the same equation already sits in
+    airframes, radios, clocks, and power supplies used for survey,
+    logistics, and training. It stops there.
+
+
+0.  What this is
+----------------
+A screensaver of sixteen stations. Each station is one sentence,
+one formula, and one picture made of strokes.
+
+The picture is the reference implementation in
+
+    public/Education.html
+
+which is what https://btron.pro/apps/Education.html is meant to serve
+as a single file. The browser draws with WebGL1. The same station
+functions are written so a C99 file can emit the same segments.
+
+The visual language is a 1960s vector CRT: near-black field, warm
+paper, one amber, one cyan, a spare hot accent, no textures, no
+rounded UI chrome. It is in the family of the Discovery readout
+screens restored by The HAL Project. It is not those screens.
+Manifold (the Selectric element used on the film) and Eurostile are
+not redistributed. On the web the display face is Michroma, a
+geometric grotesque under the Open Font License; readouts are IBM
+Plex Mono with DejaVu Sans for symbols DejaVu already carries on the
+host. On the metal, text is not a GL texture. See section 4.
+
+
+1.  Non-goals
+-------------
+    No guidance law, no seeker, no fuze, no track-on-a-person.
+    No full Navier–Stokes grid. Station VIII is a discrete-vortex
+    street with the continuum equation printed beside it.
+    No general-relativistic ray march. Station XI is the thin-lens
+    equation for a point mass.
+    No claim that an STM32F4 runs a GPU. See section 3.
+
+
+2.  Station order
+-----------------
+The numbered core follows the sixteen-branch reel this console was
+cut from (electrodynamics through digital), with the classical
+pendulum restored to position I as in the reel’s own roman labels.
+XV and XVI are the two additions a small airframe actually cannot
+do without: sampling, and a scalar estimate.
+
+    I     Classical mechanics      double pendulum
+    II    Electrodynamics          Hertzian dipole
+    III   Optics                   dispersive prism
+    IV    Thermodynamics           Carnot cycle
+    V     Statistical mechanics    2D Ising, Metropolis
+    VI    Quantum mechanics        two-slit counts
+    VII   Particle motion          cyclotron orbits
+    VIII  Fluid mechanics          Kármán street, vortex blobs
+    IX    Acoustics                Mach cone
+    X     Special relativity       light clock
+    XI    Gravitation              Einstein ring, thin lens
+    XII   Astronomy                transit overlap
+    XIII  Electronics              diode bridge + reservoir
+    XIV   Digital electronics      five-gate full adder
+    XV    Signals                  Nyquist fold
+    XVI   Estimation               scalar Kalman filter
+
+Appendix A lists models that are specified and not yet drawn:
+Friis link, monostatic Doppler, discrete PID, quadratic drag,
+barometric height, complementary attitude, quaternion kinematics,
+RC low-pass, DFT cost, brightness constancy.
+
+
+3.  Two machines, one segment list
+----------------------------------
+The portability boundary is not the shader. It is this:
+
+    typedef struct {
+        float x0, y0, x1, y1;
+        float r, g, b, a;
+        float width_px;
+    } edu_seg;
+
+    typedef struct {
+        float x, y, w, h;
+        float r, g, b, a;
+    } edu_cell;          /* the only filled primitive: Ising, stipple */
+
+    typedef struct {
+        char key[12];
+        char value[24];
+    } edu_readout;
+
+    void edu_station(int id, float t, float dt,
+                     edu_seg *seg, int *nseg, int cap_seg,
+                     edu_cell *cell, int *ncell, int cap_cell,
+                     edu_readout *ro, int *nro);
+
+World coordinates are square: x and y in about [-1, +1], y up.
+The host fits that square into the free rectangle under the title
+and above the readout, uniform scale, so a circle stays a circle.
+Do not let a station know the pixel aspect.
+
+3.1  Host path — OpenGL ES 2.0 / WebGL1
+    One program. Two attributes. One uniform. Triangles. No
+    textures, no derivatives, no extensions.
+
+    Vertex
+        attribute vec2 a_pos;
+        attribute vec4 a_col;      /* rgb premultiplied by a */
+        uniform float u_aspect;    /* width/height of the buffer */
+        varying vec4 v_col;
+        void main() {
+            gl_Position = vec4(a_pos.x / u_aspect, a_pos.y, 0.0, 1.0);
+            v_col = a_col;
+        }
+
+    Fragment
+        precision mediump float;
+        varying vec4 v_col;
+        void main() { gl_FragColor = v_col; }
+
+    Blend
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+    Clear
+        (7/255, 8/255, 12/255, 1)   which is #07080C
+    Lines are not GL_LINES. GLES 2 implementations, and most WebGL
+    drivers, ignore line widths above 1. Each edu_seg is expanded
+    on the CPU to a screen-space quad (two triangles):
+
+        half_world = width_px / css_height
+        direction  = normalize(p1 - p0)
+        perpendicular = (-dy, dx) * half_world
+        extend the segment by half_world along its direction
+        so joints do not gap.
+
+    Cap the expansion. The reference uses at most 70000 vertices
+    (about 11000 quads). A station that wants more is wrong.
+
+3.2  Microcontroller path — no GPU
+    STM32F4 / F7 / H7 class parts do not ship an OpenGL ES context.
+    The same edu_seg list is stroked by Bresenham (or Xiaolin Wu if
+    you can spare the blend) into a framebuffer.
+
+        320 x 240, 2500 segments, 16-bit color : comfortable on F4
+        480 x 272, 4000 segments               : F7 / H7
+        RP2040 scanline DPI or SPI panel       : keep the cap,
+                                                  drop the Ising
+                                                  cell fill first
+
+    Recommended split inside B-System, when a GLES host exists
+    (Mali, VideoCore, a software raster that already speaks ES 2):
+
+        apps/edu/edu_station.c     the models, pure C99, no GL
+        apps/edu/edu_stroke.c      seg -> triangles, or Bresenham
+        apps/edu/edu_show.c        one task, one buffer, vsync
+
+    Text never goes through that buffer. Section 4.
+
+3.3  Colour — five hues, and that is the set
+        paper   #E6E1D6     0.902  0.882  0.839
+        amber   #E2A15A     0.886  0.631  0.353
+        cyan    #8FD0C8     0.561  0.816  0.784
+        hot     #D25B4C     0.824  0.357  0.298
+        field   #07080C
+    Alpha lives in the segment. Grid lines use paper at about 0.18.
+    Additive blend is the glow. Do not add a bloom pass.
+
+3.4  Time
+    dt is clamped to 50 ms so a stalled task does not explode an
+    integrator. Stations that need a smaller step subdivide
+    (the pendulum uses ~1 ms). A paused clock passes dt = 0 and
+    must not advance state. The web dwell is 13 s, then the next
+    station. Keys: Left, Right, Space, I, Esc.
+
+
+4.  Text plane
+--------------
+Titles, the formula, and the three-line readout are not geometry.
+On the web they are DOM, so a missing glyph falls back per character
+and the formula can use ∂, ∇, λ, ⊕.
+
+On BTRON the same strings are a text object in the B-right sense,
+or, where the port has no text plane yet, a 5×7 stroke/bitmap font
+blitted by the CPU. The reference already contains that 5×7 set
+(A–Z, digits, . : + - / =) for labels that sit inside the figure:
+gate pins, AT REST, VIN. Keep the figure free of prose.
+
+Do not upload a font atlas to the GPU on the MCU path.
+
+
+5.  The sixteen models
+----------------------
+Each note gives the equation the picture is responsible for, the
+numerical method, and a vertex budget that stays inside section 3.
+Lengths below are in the station’s own [-1, +1] square unless a
+physical unit is named.
+
+I.  DOUBLE PENDULUM
+    Five pendulums, m1 = m2 = 1, L1 = L2 = 1 m, g = 9.81.
+    θ measured from the downward vertical.
+
+        d = θ1 − θ2
+        den = 2 m1 + m2 − m2 cos(2d)
+
+        θ1'' = [ −g (2m1+m2) sin θ1
+                 − m2 g sin(θ1 − 2 θ2)
+                 − 2 sin(d) m2 (θ2'² L2 + θ1'² L1 cos d) ]
+               / (L1 den)
+
+        θ2'' = [ 2 sin(d) ( (m1+m2)(θ1'² L1 + g cos θ1)
+                            + θ2'² L2 m2 cos d ) ]
+               / (L2 den)
+
+    Integrator: RK4, substep ~1 ms. Energy drift on a 8 s run at
+    1 ms was under a part in 10^5 in the sanity check; keep the
+    substep, do not take a frame-sized Euler step.
+    Initial state: θ1 = θ2 = 2.05 rad, ω = 0, with θ2 offset by
+    k * 0.0014 rad for k = −2…+2.
+    Readout SPREAD is the standard deviation of the lower bob,
+    in metres.
+    Budget: 5 trails × ~90 segments.
+
+II. HERTZIAN DIPOLE
+    The picture is two layers, and the spec must not pretend they
+    are the same calculation.
+
+    Near field, exact static dipole lines in a meridional plane,
+    with the moment p(t) = cos(ω t), ω = 1.85:
+
+        r(θ) = |C p| sin²θ
+        θ from the dipole axis.
+
+    Radiation shells are a kinematic cartoon of the detached loops,
+    not a retarded-field integration:
+
+        r(φ) = R ( 0.18 + 0.82 sin²φ )
+        R = c_picture * (t − n π / ω)
+        c_picture = 0.33 square-units per second.
+
+    The topology is the lesson (a closed loop leaves the charge).
+    A host that can afford it may replace the shells by integrating
+    the dipole field at retarded time; do not do that on the MCU.
+    The full statement printed on the station is Faraday’s law in
+    differential form, which is what forces the loops to close.
+
+        ∇ × E = −∂B/∂t
+
+III. DISPERSIVE PRISM
+    Isosceles prism, apex 60°, apex up. Ray in air, incidence
+    +10° from +x, aimed at 0.55 of the entrance face.
+
+        n(λ) = 1.50 + 0.022 / λ²          λ in micrometres
+
+    B is larger than BK7 (Cauchy B ≈ 0.0042) so the fan is legible
+    on a small panel. Say so if you relabel the glass. With these
+    constants a green ray is near n = 1.57 and the blue-to-red fan
+    is about 8°. Snell is evaluated at both faces; total internal
+    reflection returns no ray and must be drawn as a miss, not a
+    kink. Display θ₁ is the entrance incidence against the face
+    normal, not the 10° aiming angle.
+    Wavelengths 450–650 nm, nine rays. Colour runs cyan → paper → hot.
+    Do not introduce a rainbow outside those three hues.
+
+IV. CARNOT
+    Ideal gas, nR replaced by R = 8.314 J mol⁻¹ K⁻¹ so the work
+    reads in kJ/mol. Th = 500 K, Tc = 300 K, γ = 1.4,
+    V1 = 1, V2 = 2.2 (arbitrary volume units).
+
+        V3 / V2 = V4 / V1 = (Th/Tc)^(1/(γ−1))
+        η = 1 − Tc/Th = 0.400
+        W = R (Th − Tc) ln(V2/V1)
+
+    The diagram is log P against log V, so isotherms and adiabats
+    are straight. The bead steps the four legs. The piston is a
+    schematic; particle speed scales as √T. It is not a molecular
+    dynamics run.
+
+V.  ISING
+    Square lattice, N = 26, J = 1, k = 1, periodic boundaries.
+    Hamiltonian on nearest neighbours
+
+        E = − Σ_<ij> σi σj          σ = ±1
+
+    Flip σi when ΔE = 2 σi Σ_nn σj  satisfies
+    ΔE ≤ 0 or rand < exp(−ΔE / T).
+    Temperature cycles 4.4 → 1.35 → 4.4 over 18 s.
+    The 2D critical point is T ≈ 2.269. Below it |M| grows.
+    This is the one station allowed to emit edu_cell fills.
+    Budget: 676 cells. MCU path may drop to N = 16 and draw
+    a stroke per spin instead of a cell.
+
+VI. TWO SLITS
+    Rejection sampling on
+
+        P(y) ∝ cos²(8.6 y) sinc²(2.15 y)     y ∈ [−1, 1]
+
+    with sinc(u) = sin(u)/u. This is a one-parameter picture of
+    a double slit times a single-slit envelope, not a fit to a
+    particular laboratory. Hits accumulate in 36 bins.
+    R² is 1 − SS_res/SS_tot between the normalised histogram and
+    the normalised P. It starts low and climbs. About 28 hits per
+    second. Seeded RNG (mulberry32), so a replay matches.
+
+VII. CYCLOTRON
+    B out of the page. For q > 0 the sense used here is
+
+        θ(t) = θ0 − (q B / m) t
+        r = p / (|q| B)
+
+    with m = 1, B = 1 in picture units. Positive and negative
+    charges of equal |p| are circles of equal radius and opposite
+    sense. Trails are a fixed arc, not an integrated timestepper,
+    because the circle is the exact solution. Use a timestepper
+    only if B or q becomes nonuniform.
+
+VIII. VORTEX STREET
+    Continuum model, printed and not integrated:
+
+        ∂u/∂t + (u·∇)u = −∇p/ρ + ν ∇²u
+        ∇·u = 0
+
+    Picture model, which is what the segments are:
+
+        inlet U
+        diameter D
+        Strouhal St = f D / U = 0.20
+        convection Uc = 0.78 U
+        lateral spacing b = 0.28 a,   a = Uc / f
+        Γ = ± 0.62 U D, shed alternately
+        u = U x̂ + Σ Γ (−(y−yi), x−xi) / (2π (r² + core))
+
+    Core is a small constant so the 1/r singularity is cut off.
+    Inside the cylinder the velocity is forced to 0.
+    Particles are streaklines, RK2. The lower trace is v/U at a
+    probe downstream. Re = 126 is a label for the regime where a
+    street exists (roughly 50–300), not a number this kinematic
+    model computed. Do not describe the picture as a Navier–Stokes
+    solution.
+
+IX. MACH CONE
+    Pulses are circles of radius c (t − t_emit), c = 0.34 in the
+    square. Source speed is M(t) · c.
+
+        0–5 s     M = 0.82
+        5–8.5 s   M rises to 1.48
+        after     M = 1.48
+        then the 16 s pattern repeats, and the source wraps.
+
+    For M > 1 the cone half-angle from the velocity axis satisfies
+
+        sin μ = 1/M
+
+    and the generators are drawn at heading π ± μ for a source
+    moving toward +x. Ahead of a subsonic source the textbook
+    ratio f'/f = 1/(1−M) is shown; at and above Mach 1 the readout
+    says SHOCK rather than quote a pole.
+
+X.  LIGHT CLOCK
+    Proper height H, picture speed c, v = 0.8 c.
+
+        γ = 1/√(1 − v²/c²) = 1/0.6 ≈ 1.6667
+        τ_round = 2H/c
+        Δt_round = γ τ_round
+
+    The photon at one instant sits between the mirrors. The slant
+    is the history, drawn in the lab frame with a camera that
+    tracks the moving clock, over the last ~1.3 round trips.
+    Tick counters are floor(t / period). This is the same γ that
+    appears in the special-relativistic part of a GNSS clock
+    correction; the gravitational part is a different station and
+    is not drawn. The number people quote for the combined effect
+    is a public textbook fact and is not recomputed here.
+
+XI. THIN LENS
+    Point-mass lens, angular Einstein radius θ_E = 0.28 in the
+    square. Source-plane offset β, images along the same axis:
+
+        θ± = ½ ( β ± √(β² + 4 θ_E²) )
+
+    with the negative root on the far side of the lens.
+    An extended source is a seeded disk of 56 points, each sent
+    through that map. The faint circle of radius θ_E is the
+    critical curve. Total magnification of a point source
+
+        μ = (u² + 2) / (u √(u² + 4))     u = β / θ_E
+
+    The weak-field grazing deflection printed beside it,
+
+        α = 4 G M / (c² b)
+
+    is the small-angle cousin, not the map used to place pixels.
+    β drifts so the ring splits into arcs and comes back.
+
+XII. TRANSIT
+    Star radius Rs, planet Rp = 0.038 when Rs = 0.34, central chord.
+    Overlap of two discs (distance d):
+
+        d ≥ Rs+Rp                 area = 0
+        d ≤ |Rs−Rp|               area = π min²
+        otherwise                 the standard two-cap formula
+
+    Flux = 1 − overlap / (π Rs²).
+    Full dip = (Rp/Rs)². The stipple is decorative; the curve is
+    the formula. 120-sample trace.
+
+XIII. BRIDGE AND RESERVOIR
+    Ideal diodes, not the Shockley equation. The Shockley law can
+    be printed in a later station; this one is the topology.
+
+        vin = 16 sin(2π · 0.55 t)          picture volts, picture Hz
+        vrect = |vin|
+        if vrect > vout:    vout moves toward vrect with τ = 0.05 s
+        else:               vout decays with τ = 0.62 s
+
+    Positive half-cycle conducts the L→top and bottom→right diodes.
+    Negative half-cycle conducts bottom→left and right→top.
+    The ripple estimate on the plate,
+
+        ΔV ≈ I_load / (2 f C)
+
+    is the design rule; the trace is the time-domain picture of a
+    single RC, which is the same rule with a particular load.
+
+XIV. FULL ADDER
+    Five gates. Nets, with bits in {0, 1} and ^, & , | the Boolean
+    operations:
+
+        xor1 = A ^ B
+        S    = xor1 ^ Cin
+        and1 = A & B
+        and2 = xor1 & Cin
+        Cout = and1 | and2
+
+    The input word walks 000…111, 0.7 s per vector.
+    A wire is amber when its driving net is 1, dim otherwise.
+    The five traces under the schematic are those nets, sampled
+    at 12.5 Hz into a 48-step shift.
+
+XV. NYQUIST
+    Tone f = 3 Hz, held. Sample rate
+
+        fs(t) = 4.2 + 9.5 · (0.5 − 0.5 cos(0.55 t))
+
+    so it sweeps through 2f. The fold into [0, fs/2] is
+
+        x = f/fs − floor(f/fs)
+        f_alias = (x ≤ ½ ? x : 1 − x) · fs
+
+    Cyan is the continuous tone. Amber segments join the samples,
+    which is what a naive reconstruction plays. Hot is the folded
+    tone, drawn only while fs < 2f. Readout ALIAS is NONE while
+    the inequality holds.
+
+XVI. SCALAR KALMAN
+    One dimension. Truth is a damped driven motion plus process noise.
+    Picture coefficients (not a tuned navigation filter):
+
+        dx = (−0.35 x + 0.85 sin(0.8 t)) dt + √(q dt) · 0.35 · N(0,1)
+        q = 0.35
+        z = x + √r · N(0,1)          r = 0.22
+
+        P ← P + q dt
+        K = P / (P + r)
+        x̂ ← x̂ + K (z − x̂)
+        P ← (1 − K) P
+
+    Seeded Gaussian (Box–Muller on mulberry32, seed 16).
+    Cyan truth, dim measurement, amber estimate.
+    This is the filter you put on one ranging beacon. It is not an
+    inertial navigator. Quaternion attitude and a complementary
+    filter are appendix items, still scalar-friendly, still not drawn.
+
+
+6.  Randomness
+--------------
+Every stochastic station uses mulberry32 with a fixed seed
+(5 Ising, 6 slits, 11 lens, 12 transit, 16 Kalman, 4 Carnot dots).
+A C99 port should use the same recurrence if traces are to match:
+
+    uint32_t a;
+    a += 0x6D2B79F5u;
+    uint32_t t = (a ^ (a >> 15)) * (1u | a);
+    t = (t + (t ^ (t >> 7)) * (61u | t)) ^ t;
+    return (t ^ (t >> 14)) / 4294967296.0;
+
+Do not call an unseeded libc rand() in a test that claims to match
+the reference.
+
+
+7.  Memory, honestly
+------------------
+        Web reference     one Float32 buffer, 70000 × 6 floats
+                          ≈ 1.6 MB, rebuilt each frame. Fine.
+        GLES host         same, or half of it (cap 20000 verts).
+        STM32F429, 256 KB SRAM
+                          do not keep that buffer.
+                          Stream segments into a Bresenham pass
+                          with a few kilobytes of scratch,
+                          or draw immediately from the station
+                          into the framebuffer.
+        Ising N=26        676 bytes of spins. Trivial.
+        Kalman history    140 × 3 floats. Trivial.
+        Pendulum state    5 × 4 doubles. Trivial.
+
+The thing that does not fit a small MCU is a blit of a 1280×720
+framebuffer with additive quads. Drop resolution before you drop
+the model.
+
+
+8.  File map for the B-System tree
+----------------------------------
+Suggested, not yet committed upstream:
+
+    apps/edu/edu.h              structs in section 3
+    apps/edu/edu_station.c      section 5, no GL headers
+    apps/edu/edu_stroke_gles.c  quad expansion + the shader
+    apps/edu/edu_stroke_cpu.c   Bresenham
+    apps/edu/edu_font_5x7.c     the glyph table from Education.html
+    apps/edu/edu_main.c         task: tick, draw, sleep until vsync
+
+The web file stays the oracle. If a C readout disagrees with the
+browser on the same seed and the same t, the C side is wrong
+until a comment in both places says the model changed.
+
+
+9.  Verification already done on the reference
+-----------------------------------------------
+    Pendulum energy, RK4 at 1 ms, 8 s: drift consistent with roundoff
+    once θ is measured from the downward vertical. An earlier draft
+    had (θ2 − θ1) where the derivation wants (θ1 − θ2); that build
+    diverged. Do not “simplify” the sign.
+    Prism: apex 60°, incidence aim +10°, n = 1.50 + 0.022/λ²
+    transmits and fans by roughly eight degrees. Flint at n ≈ 1.78
+    with this apex totally reflects; do not relabel the glass
+    without re-running Snell.
+    Transit overlap at d = 0 equals π Rp². Dip percent matches
+    (Rp/Rs)².
+    Kalman K stays in (0, 1) because P and r are positive.
+
+
+10. Appendix A — specified, not drawn
+--------------------------------------
+These are the rest of the catalogue the console was asked to plan.
+Same rules: one formula, one picture, no procedure for employing a
+weapon. Draw them later as stations XVII onward, or do not draw
+them. The equations are the ordinary ones.
+
+A1  Friis, free-space power
+        Pr / Pt = Gt Gr (λ / (4π R))²
+    Picture: two points, a sphere expanding, a readout in dB.
+    This is a link budget for a telemetry radio.
+
+A2  Monostatic Doppler
+        f_d = 2 v cosθ / λ
+    Picture: a source, a returning phase front, the beat note.
+    One target speed along a line. Not a tracker.
+
+A3  Discrete PID
+        e = r − y
+        I ← I + e dt          (clamp I)
+        u = Kp e + Ki I + Kd (e − e_prev)/dt
+    Picture: a step, three traces (P, I, D) and their sum.
+    This is a heater or a rate loop. Gains are a design choice
+    and are not given here as “the” gains.
+
+A4  Quadratic drag
+        m v' = m g − ½ ρ Cd A |v| v
+    Picture: two falling points, with and without the second term.
+    A descent, not a firing table.
+
+A5  Barometric height, isothermal, small
+        h ≈ (T R_specific / g) ln(P0 / P)
+    Picture: a column and a pressure tick.
+
+A6  Complementary attitude, one axis
+        θ ← α (θ + ω dt) + (1 − α) atan2(a_x, a_z)
+    Picture: gyro ramp drifting, accel noisy, blend in between.
+    Not a full AHRS.
+
+A7  Quaternion kinematics, stated only
+        q̇ = ½ q ⊗ ω
+    with ω a pure vector quaternion. Integrate with a renormalised
+    Euler step if you ever draw it. The picture is a wire body and
+    three axes. Do not start with Euler angles; they gimbal.
+
+A8  One-pole low-pass, the rectifier’s cousin
+        y ← y + α (x − y)       α = dt / (RC + dt)
+        f_c = 1 / (2π R C)
+    Picture: a square wave and the sag.
+
+A9  DFT, the cost, not a library
+        X_k = Σ_{n=0}^{N−1} x_n exp(−i 2π k n / N)
+    A 16-point direct sum is 256 complex multiplies and is the
+    picture (a short tone, sixteen sticks). State N log₂ N beside
+    N² so the reason for a butterfly is visible. N = 16 is the
+    MCU-honest size.
+
+A10 Brightness constancy
+        I_x u + I_y v + I_t = 0
+    Picture: a translating edge, the two spatial ticks, the time
+    tick. One pixel of optical flow. Not a scene flow field.
+
+
+11. What the web file is
+------------------------
+    public/Education.html
+        single document, no build step, WebGL1 with a 2D fallback
+        if the context is refused.
+    public/BTRON-EDU-SPEC.txt
+        this note.
+
+Dwell, seeds, prism constants, and the shader source in the HTML
+are normative for the port. If you change a constant, change it
+in both places in the same commit.
+
+
+12. References, the short shelf
+-------------------------------
+    Feynman, Leighton, Sands — Lectures, Vol. I (pendulum, clock,
+        prism) and Vol. II (dipole, induction).
+    Carnot, Réflexions, 1824, in any modern thermodynamics text.
+    Onsager, Phys. Rev. 65, 117 (1944) — the 2D Ising point.
+    Feynman, Leighton, Sands, Vol. III, ch. 1 — the double slit
+        with individual arrivals. The density used here is a
+        teaching shape, not his experimental curve.
+    Goldstein — Classical Mechanics, the Lagrangian line on
+        station I.
+    Batchelor — An Introduction to Fluid Dynamics, the street and
+        the Strouhal number.
+    Anderson — Modern Compressible Flow, the Mach angle.
+    Misner, Thorne, Wheeler, or any GR survey — the deflection
+        4GM/(c²b) and the thin lens.
+    Kalman, ASME J. Basic Eng. 82 (1960) — the filter, scalarised.
+    Nyquist, and Shannon, Proc. IRE — the sampling inequality.
+    Friis, Proc. IRE 34 (1946) — the transmission formula.
+    Oppenheim, Schafer — Discrete-Time Signal Processing, the DFT.
+    The HAL Project (Joe Creative), for the discipline of a vector
+        readout: one weight of line, slow dwell, no decoration
+        that is not a measurement. The typeface on those restorations
+        is Manifold; we do not ship it.
+
+End of note.
