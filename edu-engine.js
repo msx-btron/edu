@@ -3588,6 +3588,534 @@ function drawWaveguideModes(V, sim, t, dt, part) {
   return [["MODE", names[p]], ["TOPOLOGY", bc[p]], ["PART", (p + 1) + " / 4"]];
 }
 
+// XXXIII. AUDIO FILTERS — Biquad / RLC Low-Pass, High-Pass, Band-Pass & Notch (Bode + Live Waveform)
+function drawAudioFilters(V, sim, t, dt, part) {
+  const p = (part || 0) % 4;
+  // Sweep cutoff f0 logarithmically between 180 Hz and 6.5 kHz
+  const logF0 = 2.25 + 1.55 * (0.5 + 0.5 * Math.sin(t * 0.55 - 0.8));
+  const f0 = Math.pow(10, logF0);
+  const Q = p === 2 ? 3.2 : (p === 3 ? 4.0 : 1.15 + 0.85 * (0.5 + 0.5 * Math.cos(t * 0.37)));
+
+  // Exact 2nd-order analog s-domain transfer function H(jw) for LPF / HPF / BPF / Notch
+  function evalH(f) {
+    const r = f / f0; // w / w0
+    const reD = 1 - r * r, imD = r / Q;
+    let reN = 1, imN = 0;
+    if (p === 1) { reN = -r * r; imN = 0; }         // High-Pass
+    else if (p === 2) { reN = 0; imN = r / Q; }     // Band-Pass
+    else if (p === 3) { reN = 1 - r * r; imN = 0; } // Notch
+    const den = reD * reD + imD * imD + 1e-12;
+    const re = (reN * reD + imN * imD) / den;
+    const im = (imN * reD - reN * imD) / den;
+    return [Math.hypot(re, im), Math.atan2(im, re), re, im];
+  }
+
+  // Top panel: Bode Magnitude |H(f)| (dB) & Phase on log-frequency grid (20 Hz .. 20 kHz)
+  const bx0 = -0.96, bx1 = 0.96, by0 = 0.08, by1 = 0.72;
+  const bw = bx1 - bx0, bh = by1 - by0;
+  V.line(bx0, by0, bx1, by0, COL.grid, 1.0);
+  V.line(bx0, by1, bx1, by1, COL.grid, 1.0);
+  V.line(bx0, by0, bx0, by1, COL.grid, 1.0);
+  V.line(bx1, by0, bx1, by1, COL.grid, 1.0);
+  // Log-frequency decade lines (100 Hz, 1 kHz, 10 kHz)
+  const fMin = 20, fMax = 20000, logMin = Math.log10(fMin), logSpan = Math.log10(fMax) - logMin;
+  const fx = (f) => bx0 + ((Math.log10(f) - logMin) / logSpan) * bw;
+  const fyDb = (db) => by0 + Math.max(0, Math.min(1, (db + 48) / 60)) * bh; // -48 dB to +12 dB
+  const y0db = fyDb(0);
+  V.line(bx0, y0db, bx1, y0db, [0.55, 0.65, 0.78, 0.35], 1.0);
+  [100, 1000, 10000].forEach((dec, idx) => {
+    const x = fx(dec);
+    V.line(x, by0, x, by1, COL.grid, 0.9);
+    V.text(["100HZ", "1KHZ", "10KHZ"][idx], x - 0.06, by0 - 0.035, 0.026, COL.dim);
+  });
+  V.text("0DB", bx0 - 0.09, y0db + 0.015, 0.024, COL.dim);
+  V.text("-24", bx0 - 0.09, fyDb(-24) + 0.015, 0.024, COL.dim);
+  // Cutoff marker f0
+  const xf0 = fx(f0);
+  V.line(xf0, by0, xf0, by1, [1.0, 0.72, 0.28, 0.55], 1.2);
+  V.text("FC", xf0 + 0.015, by1 - 0.02, 0.026, [1.0, 0.72, 0.28, 0.9]);
+
+  // Draw Bode Magnitude (amber) and Phase (subtle cyan)
+  const N = 120;
+  let pxM = 0, pyM = 0, pxP = 0, pyP = 0;
+  for (let i = 0; i <= N; i++) {
+    const f = Math.pow(10, logMin + (i / N) * logSpan);
+    const [mag, ph] = evalH(f);
+    const db = 20 * Math.log10(Math.max(1e-4, mag));
+    const x = bx0 + (i / N) * bw;
+    const yM = fyDb(db);
+    const yP = by0 + (0.5 + ph / (2 * Math.PI)) * bh;
+    if (i > 0) {
+      V.line(pxP, pyP, x, yP, [0.34, 0.76, 0.96, 0.34], 1.1);
+      V.line(pxM, pyM, x, yM, [1.0, 0.64, 0.24, 0.95], 2.0);
+    }
+    pxM = x; pyM = yM; pxP = x; pyP = yP;
+  }
+  V.text("BODE |H(F)| DB & PHASE", bx0 + 0.02, by1 + 0.045, 0.028, COL.dim);
+
+  // Bottom panel: Real-time Time-Domain Waveform (multi-harmonic test signal: raw cyan vs filtered amber)
+  const wy0 = -0.74, wy1 = -0.14, wcy = 0.5 * (wy0 + wy1), wh = (wy1 - wy0) * 0.42;
+  V.line(bx0, wcy, bx1, wcy, COL.grid, 0.9);
+  V.line(bx0, wy0, bx1, wy0, COL.grid, 0.8);
+  V.line(bx0, wy1, bx1, wy1, COL.grid, 0.8);
+  V.text("TIME DOMAIN: INPUT (CYAN) VS FILTERED (AMBER)", bx0 + 0.02, wy1 + 0.04, 0.026, COL.dim);
+
+  // 5-harmonic composite audio signal (220 Hz, 660 Hz, 1500 Hz, 3400 Hz, 8200 Hz)
+  const freqs = [220, 660, 1500, 3400, 8200];
+  const amps = [0.42, 0.26, 0.20, 0.16, 0.14];
+  const Hvals = freqs.map((f) => evalH(f));
+  const Nw = 140;
+  let rx0 = 0, ry0 = 0, fx0p = 0, fy0p = 0;
+  for (let i = 0; i <= Nw; i++) {
+    const u = i / Nw;
+    const x = bx0 + u * bw;
+    const tau = t * 0.0022 + u * 0.009; // 9 ms window
+    let vIn = 0, vOut = 0;
+    for (let k = 0; k < freqs.length; k++) {
+      const ang = 2 * Math.PI * freqs[k] * tau;
+      vIn += amps[k] * Math.sin(ang);
+      vOut += amps[k] * Hvals[k][0] * Math.sin(ang + Hvals[k][1]);
+    }
+    const yIn = wcy + Math.max(-1.05, Math.min(1.05, vIn)) * wh;
+    const yOut = wcy + Math.max(-1.05, Math.min(1.05, vOut)) * wh;
+    if (i > 0) {
+      V.line(rx0, ry0, x, yIn, [0.34, 0.78, 0.96, 0.42], 1.2);
+      V.line(fx0p, fy0p, x, yOut, [1.0, 0.64, 0.24, 0.96], 1.9);
+    }
+    rx0 = x; ry0 = yIn; fx0p = x; fy0p = yOut;
+  }
+
+  const names = ["LOW-PASS", "HIGH-PASS", "BAND-PASS", "NOTCH"];
+  return [["FILTER", names[p]], ["FC", f0 >= 1000 ? (f0 / 1000).toFixed(2) + " KHZ" : Math.round(f0) + " HZ"], ["Q", Q.toFixed(2)]];
+}
+
+// XXXIV. PCM vs 1-BIT DSD & SIGMA-DELTA NOISE SHAPING (3 parts from 2021-12-23 Аудіо.htm)
+function drawPcmDsd(V, sim, t, dt, part) {
+  const p = (part || 0) % 3;
+  const x0 = -0.96, x1 = 0.96, w = x1 - x0;
+
+  if (p === 0) {
+    // Part 1: PCM (16-bit staircase, 1/44100 s) vs 1-Bit DSD (2.8224 MHz Sigma-Delta bitstream)
+    const ph = t * 1.1;
+    // Top: PCM Staircase
+    const ty = 0.38, ta = 0.26;
+    V.line(x0, ty, x1, ty, COL.grid, 0.9);
+    V.text("PCM  (MULTI-BIT STAIRCASE  1/44100 S)", x0, 0.72, 0.028, COL.paper);
+    const Nsmooth = 120;
+    for (let i = 1; i <= Nsmooth; i++) {
+      const u0 = (i - 1) / Nsmooth, u1 = i / Nsmooth;
+      V.line(x0 + u0 * w, ty + Math.sin(u0 * Math.PI * 2.5 + ph) * ta,
+             x0 + u1 * w, ty + Math.sin(u1 * Math.PI * 2.5 + ph) * ta, [0.92, 0.94, 0.98, 0.48], 1.2);
+    }
+    const nPcm = 24, levels = 12;
+    let prevY = 0;
+    for (let i = 0; i < nPcm; i++) {
+      const xa = x0 + (i / nPcm) * w, xb = x0 + ((i + 1) / nPcm) * w;
+      const s = Math.sin(((i + 0.5) / nPcm) * Math.PI * 2.5 + ph);
+      const q = Math.round(s * (levels * 0.5)) / (levels * 0.5);
+      const y = ty + q * ta;
+      if (i > 0) V.line(xa, prevY, xa, y, [0.36, 0.88, 0.52, 0.92], 1.6);
+      V.line(xa, y, xb, y, [0.36, 0.88, 0.52, 0.92], 1.6);
+      prevY = y;
+    }
+
+    // Bottom: Real-time 1st-order Sigma-Delta 1-bit DSD Bitstream + Analog LPF Reconstruction
+    const by = -0.34, ba = 0.26;
+    V.line(x0, by, x1, by, COL.grid, 0.9);
+    V.text("DSD  (1-BIT SIGMA-DELTA PDM  1/2822400 S)", x0, 0.00, 0.028, COL.paper);
+    const nDsd = 128;
+    let integ = 0, lpf = 0, prevBit = -1, pxL = x0, pyL = by;
+    for (let i = 0; i < nDsd; i++) {
+      const xa = x0 + (i / nDsd) * w, xb = x0 + ((i + 1) / nDsd) * w;
+      const target = 0.82 * Math.sin(((i + 0.5) / nDsd) * Math.PI * 2.5 + ph);
+      const bit = integ >= 0 ? 1 : -1;
+      integ += (target - bit);
+      lpf += 0.14 * (bit - lpf);
+      const yb = by + (bit > 0 ? ba * 0.95 : -ba * 0.95);
+      if (i > 0 && bit !== prevBit) V.line(xa, by + (prevBit > 0 ? ba * 0.95 : -ba * 0.95), xa, yb, [0.34, 0.82, 0.98, 0.72], 1.2);
+      V.line(xa, yb, xb, yb, [0.34, 0.82, 0.98, 0.78], 1.25);
+      const xl = 0.5 * (xa + xb), yl = by + lpf * ba;
+      if (i > 2) V.line(pxL, pyL, xl, yl, [1.0, 0.64, 0.24, 0.95], 1.9);
+      pxL = xl; pyL = yl; prevBit = bit;
+    }
+    return [["PCM", "44.1 KHZ / 16B"], ["DSD64", "2.82 MHZ / 1B"], ["PART", "1 / 3"]];
+  } else if (p === 1) {
+    // Part 2: 2nd-Order Sigma-Delta Modulator Block Diagram (X -> Sigma -> I -> Sigma -> I -> Q -> LPF -> Y)
+    function box(x, y, bw, bh, lbl, col) {
+      V.line(x, y, x + bw, y, col, 1.6); V.line(x + bw, y, x + bw, y + bh, col, 1.6);
+      V.line(x + bw, y + bh, x, y + bh, col, 1.6); V.line(x, y + bh, x, y, col, 1.6);
+      V.text(lbl, x + bw * 0.24, y + bh * 0.66, 0.030, col);
+    }
+    const yB = 0.34, bh = 0.18;
+    V.text("2ND-ORDER SIGMA-DELTA MODULATOR LOOP", x0, 0.70, 0.028, COL.dim);
+    const cMain = [0.78, 0.88, 0.98, 0.9], cFb = [1.0, 0.64, 0.24, 0.88];
+    V.text("X(S)", -0.96, yB + 0.11, 0.030, COL.paper);
+    V.line(-0.82, yB + 0.09, -0.70, yB + 0.09, cMain, 1.6);
+    box(-0.70, yB, 0.14, bh, "E1", cMain);
+    V.line(-0.56, yB + 0.09, -0.46, yB + 0.09, cMain, 1.6);
+    box(-0.46, yB, 0.16, bh, "1/S", [0.34, 0.82, 0.98, 0.95]);
+    V.line(-0.30, yB + 0.09, -0.20, yB + 0.09, cMain, 1.6);
+    box(-0.20, yB, 0.14, bh, "E2", cMain);
+    V.line(-0.06, yB + 0.09, 0.04, yB + 0.09, cMain, 1.6);
+    box(0.04, yB, 0.16, bh, "1/S", [0.34, 0.82, 0.98, 0.95]);
+    V.line(0.20, yB + 0.09, 0.30, yB + 0.09, cMain, 1.6);
+    box(0.30, yB, 0.16, bh, "1B Q", cFb);
+    V.line(0.46, yB + 0.09, 0.58, yB + 0.09, cFb, 1.6);
+    box(0.58, yB, 0.22, bh, "LPF", [0.42, 0.90, 0.56, 0.95]);
+    V.line(0.80, yB + 0.09, 0.90, yB + 0.09, [0.42, 0.90, 0.56, 0.95], 1.6);
+    V.text("Y", 0.92, yB + 0.11, 0.030, [0.42, 0.90, 0.56, 0.95]);
+    // Negative feedback loop back to E1 & E2
+    const yF = 0.16;
+    V.line(0.52, yB + 0.09, 0.52, yF, cFb, 1.5);
+    V.line(0.52, yF, -0.63, yF, cFb, 1.5);
+    V.line(-0.63, yF, -0.63, yB, cFb, 1.5);
+    V.line(-0.13, yF, -0.13, yB, cFb, 1.5);
+    V.text("NEGATIVE FEEDBACK  (-1 BIT)", -0.42, yF - 0.03, 0.024, cFb);
+
+    // Bottom: Live 2nd-order integrator state & reconstructed waveform
+    const by = -0.44, ba = 0.24;
+    V.line(x0, by, x1, by, COL.grid, 0.9);
+    const N = 128;
+    let i1 = 0, i2 = 0, lp1 = 0, lp2 = 0, px = x0, py = by, pxE = x0, pyE = by;
+    for (let k = 0; k < N; k++) {
+      const u = k / N, x = x0 + u * w;
+      const sig = 0.72 * Math.sin(u * Math.PI * 3.0 + t * 1.4);
+      const q = i2 >= 0 ? 1 : -1;
+      i1 += (sig - q);
+      i2 += (i1 * 0.5 - q);
+      lp1 += 0.16 * (q - lp1);
+      lp2 += 0.16 * (lp1 - lp2);
+      const yOut = by + lp2 * ba;
+      const yErr = by + Math.max(-1, Math.min(1, i1 * 0.35)) * ba * 0.7;
+      if (k > 2) {
+        V.line(pxE, pyE, x, yErr, [0.34, 0.76, 0.96, 0.35], 1.0);
+        V.line(px, py, x, yOut, [1.0, 0.64, 0.24, 0.95], 1.9);
+      }
+      px = x; py = yOut; pxE = x; pyE = yErr;
+    }
+    V.text("2ND-ORDER RECONSTRUCTED Y(T) & INTEGRATOR STATE", x0, -0.10, 0.025, COL.dim);
+    return [["ORDER", "2ND (2X 1/S)"], ["NTF(Z)", "(1 - Z^-1)^2"], ["PART", "2 / 3"]];
+  } else {
+    // Part 3: 5th-Order SACD vs 7th-Order Noise Shaping Spectrum (from article's SNR.PNG!)
+    const bx0 = -0.92, bx1 = 0.94, by0 = -0.66, by1 = 0.68;
+    const bw = bx1 - bx0, bh = by1 - by0;
+    V.line(bx0, by0, bx1, by0, COL.grid, 1.0);
+    V.line(bx0, by1, bx1, by1, COL.grid, 1.0);
+    V.line(bx0, by0, bx0, by1, COL.grid, 1.0);
+    V.line(bx1, by0, bx1, by1, COL.grid, 1.0);
+    const fMin = 100, fMax = 1e6, logMin = 2, logSpan = 4; // 100 Hz to 1 MHz
+    const fx = (f) => bx0 + ((Math.log10(f) - logMin) / logSpan) * bw;
+    const fy = (db) => by0 + Math.max(0, Math.min(1, (db + 200) / 200)) * bh; // -200 dB to 0 dB
+    // Audible band shading (100 Hz .. 20 kHz)
+    const x20k = fx(20000);
+    V.fill(bx0, by0, x20k - bx0, bh, [0.22, 0.65, 0.52, 0.08]);
+    V.line(x20k, by0, x20k, by1, [0.42, 0.90, 0.62, 0.55], 1.2);
+    V.text("AUDIO BAND <= 20KHZ", bx0 + 0.04, by1 - 0.04, 0.026, [0.42, 0.90, 0.62, 0.85]);
+    V.text("ULTRASONIC NOISE", x20k + 0.03, by1 - 0.04, 0.026, [1.0, 0.56, 0.24, 0.85]);
+
+    [100, 1000, 10000, 100000, 1000000].forEach((d, idx) => {
+      const x = fx(d);
+      V.line(x, by0, x, by1, COL.grid, 0.8);
+      V.text(["100", "1K", "10K", "100K", "1M"][idx], x - 0.03, by0 - 0.035, 0.024, COL.dim);
+    });
+    [-160, -120, -80, -40].forEach((db) => {
+      const y = fy(db);
+      V.line(bx0, y, bx1, y, COL.grid, 0.7);
+      V.text(String(db), bx0 - 0.11, y + 0.015, 0.022, COL.dim);
+    });
+
+    // Exact NTF curves with optimized resonator notches matching the article's SNR.PNG (5th-order amber, 7th-order blue)
+    function ntfDb(f, order) {
+      const lf = Math.log10(f); // 2 (100Hz) .. 6 (1MHz)
+      if (order === 5) {
+        // 5th-order SACD: -126 dB @ 100Hz -> -90 dB @ 5kHz -> resonator dip @ 9.5kHz -> rises to -2 dB @ 150kHz
+        const base = -126 + 22 * Math.min(2.0, lf - 2) + 86 * Math.pow(Math.max(0, lf - 4.0) / 1.15, 1.35);
+        const dip = -30 * Math.exp(-Math.pow((lf - 3.96) / 0.13, 2)) + 16 * Math.exp(-Math.pow((lf - 4.10) / 0.04, 2));
+        return Math.min(-2, Math.max(-196, base + dip));
+      } else {
+        // 7th-order DSD: -194 dB @ 100Hz -> -167 dB @ 4kHz -> dual resonator dips @ 6kHz & 10.5kHz -> -30 dB @ 100kHz -> -20 dB @ 600kHz
+        const base = -194 + 18 * Math.min(1.8, lf - 2) + 138 * Math.pow(Math.max(0, lf - 3.95) / 1.15, 1.25);
+        const dip = -28 * Math.exp(-Math.pow((lf - 3.77) / 0.09, 2)) + 34 * Math.exp(-Math.pow((lf - 3.92) / 0.045, 2))
+                  - 22 * Math.exp(-Math.pow((lf - 4.02) / 0.10, 2)) - 14 * Math.exp(-Math.pow((lf - 5.28) / 0.18, 2));
+        return Math.min(-18, Math.max(-196, base + dip));
+      }
+    }
+    const N = 140;
+    let p5x = 0, p5y = 0, p7x = 0, p7y = 0;
+    for (let i = 0; i <= N; i++) {
+      const f = Math.pow(10, logMin + (i / N) * logSpan);
+      const x = bx0 + (i / N) * bw;
+      const y5 = fy(ntfDb(f, 5));
+      const y7 = fy(ntfDb(f, 7));
+      if (i > 0) {
+        V.line(p5x, p5y, x, y5, [1.0, 0.56, 0.20, 0.96], 2.0);
+        V.line(p7x, p7y, x, y7, [0.30, 0.72, 1.0, 0.96], 2.0);
+      }
+      p5x = x; p5y = y5; p7x = x; p7y = y7;
+    }
+    V.text("5TH-ORDER SACD (-110DB)", bx0 + 0.05, fy(-72), 0.026, [1.0, 0.56, 0.20, 0.95]);
+    V.text("7TH-ORDER DSD (-155DB)", bx0 + 0.05, fy(-145), 0.026, [0.30, 0.72, 1.0, 0.95]);
+    return [["5TH ORDER", "-115 DB"], ["7TH ORDER", "-155 DB"], ["PART", "3 / 3"]];
+  }
+}
+
+// XXXV. IMPULSE RESPONSE & PRE-RINGING (Analog vs 48/96/192 kHz PCM vs DSD — from ImpulseResponse.png)
+function drawImpulseResponse(V, sim, t, dt, part) {
+  const p = (part || 0) % 2;
+  const x0 = -0.96, x1 = 0.96, w = x1 - x0;
+
+  if (p === 0) {
+    // Part 1: Direct 5-system Impulse Response comparison (-6 dB 3 us click) matching ImpulseResponse.png
+    const yBase = -0.34, amp = 0.92;
+    V.line(x0, yBase, x1, yBase, COL.grid, 1.0);
+    V.text("DIRAC CLICK IMPULSE RESPONSE (-6 DB / 3 US)", x0, 0.72, 0.028, COL.dim);
+
+    const systems = [
+      { cx: -0.78, label: "ANALOG",  bw: 18.0, peak: 1.00, ring: 0.02, col: [0.40, 0.94, 0.54, 0.96] },
+      { cx: -0.39, label: "48 KHZ",  bw: 2.2,  peak: 0.36, ring: 1.00, col: [1.0, 0.56, 0.24, 0.96] },
+      { cx:  0.00, label: "96 KHZ",  bw: 4.4,  peak: 0.58, ring: 0.85, col: [1.0, 0.74, 0.30, 0.96] },
+      { cx:  0.39, label: "192 KHZ", bw: 8.2,  peak: 0.84, ring: 0.68, col: [0.36, 0.78, 0.98, 0.96] },
+      { cx:  0.78, label: "DSD",     bw: 16.5, peak: 1.02, ring: 0.08, col: [0.46, 0.98, 0.62, 0.98] },
+    ];
+    // Animated scan pulse sweeping across all 5 systems
+    const scan = 0.88 + 0.12 * Math.sin(t * 2.2);
+    systems.forEach((sys) => {
+      const span = 0.175, N = 64;
+      let px = 0, py = 0;
+      for (let i = 0; i <= N; i++) {
+        const u = (i / N) * 2 - 1; // -1..1
+        const x = sys.cx + u * span;
+        const arg = u * Math.PI * sys.bw;
+        const sinc = Math.abs(arg) < 1e-4 ? 1 : Math.sin(arg) / arg;
+        const env = Math.exp(-u * u * (sys.ring < 0.2 ? 18.0 : 3.2));
+        const val = sys.peak * sinc * env * scan;
+        const y = yBase + val * amp;
+        if (i > 0) V.line(px, py, x, y, sys.col, 1.85);
+        px = x; py = y;
+      }
+      V.text(sys.label, sys.cx - 0.085, yBase - 0.16, 0.026, sys.col);
+    });
+    return [["TEST", "3 US CLICK"], ["48K RING", "PRE + POST"], ["DSD", "CLEAN SPIKE"]];
+  } else {
+    // Part 2: Linear-Phase Brickwall (Pre-Ringing) vs Minimum-Phase (Causal) vs Pure DSD Analog LPF
+    const rows = [
+      { y:  0.40, lbl: "LINEAR-PHASE BRICKWALL (SYMMETRIC PRE-RINGING)", mode: 0, col: [1.0, 0.56, 0.24, 0.96] },
+      { y: -0.04, lbl: "MINIMUM-PHASE IIR (CAUSAL, POST-RINGING ONLY)",  mode: 1, col: [0.34, 0.78, 0.98, 0.96] },
+      { y: -0.48, lbl: "PURE DSD + GENTLE ANALOG LPF (ZERO RINGING)",    mode: 2, col: [0.42, 0.94, 0.56, 0.96] },
+    ];
+    const t0 = -0.10;
+    V.line(t0, -0.72, t0, 0.68, [0.95, 0.92, 0.72, 0.28], 1.0);
+    V.text("T=0", t0 + 0.015, 0.66, 0.024, COL.dim);
+
+    rows.forEach((r) => {
+      V.line(x0, r.y, x1, r.y, COL.grid, 0.8);
+      V.text(r.lbl, x0, r.y + 0.22, 0.024, r.col);
+      const N = 150;
+      let px = 0, py = 0;
+      for (let i = 0; i <= N; i++) {
+        const x = x0 + (i / N) * w;
+        const dtX = x - t0;
+        let val = 0;
+        if (r.mode === 0) {
+          const arg = dtX * 36;
+          val = (Math.abs(arg) < 1e-4 ? 1 : Math.sin(arg) / arg) * Math.exp(-dtX * dtX * 4.5);
+        } else if (r.mode === 1) {
+          if (dtX >= 0) val = Math.exp(-dtX * 5.2) * (Math.cos(dtX * 26) + 0.35 * Math.sin(dtX * 26));
+        } else {
+          if (dtX >= 0) val = 1.05 * Math.exp(-dtX * 14.0) * (1 - Math.exp(-dtX * 65.0)) * 1.45;
+        }
+        const y = r.y + val * 0.17;
+        if (i > 0) V.line(px, py, x, y, r.col, 1.8);
+        px = x; py = y;
+      }
+    });
+    return [["PRE-RING", "LINEAR FIR"], ["CAUSAL", "MIN-PHASE"], ["PART", "2 / 2"]];
+  }
+}
+
+// XXXVI. AUDIO NOISE ELIMINATION & R-2R LADDER (3 parts: Dither / Oversampling / R-2R Ladder)
+function drawAudioNoiseShaping(V, sim, t, dt, part) {
+  const p = (part || 0) % 3;
+  const x0 = -0.96, x1 = 0.96, w = x1 - x0;
+
+  if (p === 0) {
+    // Part 1: Quantization Distortion (Undithered) vs TPDF Dithering (Decorrelated White Noise Floor)
+    const ph = t * 1.3;
+    const N = 128;
+    // Top: Undithered 3-bit quantized low-level sine (severe harmonic distortion)
+    const yT = 0.36, aT = 0.24;
+    V.line(x0, yT, x1, yT, COL.grid, 0.9);
+    V.text("NO DITHER: QUANTIZATION ERROR CORRELATES INTO HARMONICS", x0, 0.70, 0.026, [1.0, 0.56, 0.24, 0.95]);
+    let px = 0, py = 0;
+    for (let i = 0; i <= N; i++) {
+      const u = i / N, x = x0 + u * w;
+      const s = 0.62 * Math.sin(u * Math.PI * 4 + ph);
+      const q = Math.round(s * 2.5) / 2.5;
+      const y = yT + q * aT;
+      if (i > 0) V.line(px, py, x, y, [1.0, 0.56, 0.24, 0.95], 1.7);
+      px = x; py = y;
+    }
+
+    // Bottom: TPDF Dithered quantization + LPF average recovering smooth sine!
+    const yB = -0.34, aB = 0.24;
+    V.line(x0, yB, x1, yB, COL.grid, 0.9);
+    V.text("TPDF DITHER: DECORRELATED NOISE FLOOR -> SMOOTH RECOVERY", x0, 0.00, 0.026, [0.36, 0.88, 0.62, 0.95]);
+    let avg = 0, pxQ = 0, pyQ = 0, pxA = 0, pyA = 0;
+    for (let i = 0; i <= N; i++) {
+      const u = i / N, x = x0 + u * w;
+      const s = 0.62 * Math.sin(u * Math.PI * 4 + ph);
+      // Deterministic triangular PDF pseudo-noise (sum of two uniform hashes)
+      const h1 = Math.sin(i * 127.1 + Math.floor(t * 24) * 31.7) * 43758.5453;
+      const h2 = Math.sin(i * 269.5 + Math.floor(t * 24) * 19.3) * 28461.1234;
+      const tpdf = ((h1 - Math.floor(h1)) - (h2 - Math.floor(h2))) * 0.40;
+      const q = Math.round((s + tpdf) * 2.5) / 2.5;
+      avg += 0.22 * (q - avg);
+      const yq = yB + q * aB, ya = yB + avg * aB;
+      if (i > 0) {
+        V.line(pxQ, pyQ, x, yq, [0.34, 0.76, 0.96, 0.42], 1.1);
+        V.line(pxA, pyA, x, ya, [0.36, 0.92, 0.62, 0.96], 1.95);
+      }
+      pxQ = x; pyQ = yq; pxA = x; pyA = ya;
+    }
+    return [["DITHER", "TPDF"], ["HARMONICS", "ELIMINATED"], ["PART", "1 / 3"]];
+  } else if (p === 1) {
+    // Part 2: Exact Integer Oversampling (1x -> 2x -> 4x -> 8x) — Time-Domain ZOH + Exact ZOH-Sinc Spectrum & Noise Floor
+    const osrs = [1, 2, 4, 8];
+    const stepIdx = Math.floor((t * 0.42) % 4);
+    const osr = osrs[stepIdx];
+    const fsKHz = 44.1 * osr;
+    const snrGain = 10 * Math.log10(osr); // exact +3.01 dB per doubling of fs
+
+    // Top Panel: Exact Time-Domain ZOH Staircase at OSR * 44.1 kHz vs Smooth Analog Sine
+    const tx0 = -0.94, tx1 = 0.94, tw = tx1 - tx0;
+    const tcy = 0.40, ta = 0.22;
+    V.line(tx0, tcy, tx1, tcy, COL.grid, 0.9);
+    V.text("ZOH DAC OUTPUT AT " + osr + "X (" + fsKHz.toFixed(1) + " KHZ)  VS  ANALOG SIGNAL", tx0, 0.70, 0.025, COL.paper);
+    const ph = t * 1.4;
+    // Reference continuous analog signal (cyan)
+    for (let i = 1; i <= 120; i++) {
+      const u0 = (i - 1) / 120, u1 = i / 120;
+      const y0 = tcy + (0.68 * Math.sin(u0 * Math.PI * 3.0 + ph) + 0.28 * Math.sin(u0 * Math.PI * 7.5 + ph * 1.5)) * ta;
+      const y1 = tcy + (0.68 * Math.sin(u1 * Math.PI * 3.0 + ph) + 0.28 * Math.sin(u1 * Math.PI * 7.5 + ph * 1.5)) * ta;
+      V.line(tx0 + u0 * tw, y0, tx0 + u1 * tw, y1, [0.34, 0.78, 0.98, 0.45], 1.2);
+    }
+    // Exact Zero-Order Hold staircase with 12 * osr samples across the window
+    const nSamp = 12 * osr;
+    let prevY = 0;
+    for (let i = 0; i < nSamp; i++) {
+      const u = i / nSamp;
+      const xa = tx0 + u * tw, xb = tx0 + ((i + 1) / nSamp) * tw;
+      const val = 0.68 * Math.sin(u * Math.PI * 3.0 + ph) + 0.28 * Math.sin(u * Math.PI * 7.5 + ph * 1.5);
+      const y = tcy + val * ta;
+      if (i > 0) V.line(xa, prevY, xa, y, [1.0, 0.64, 0.24, 0.92], 1.45);
+      V.line(xa, y, xb, y, [1.0, 0.64, 0.24, 0.92], 1.55);
+      prevY = y;
+    }
+
+    // Bottom Panel: Exact Frequency-Domain Spectrum (0 .. 200 kHz) with ZOH sinc(f/fs) aperture & -3 dB/oct noise floor
+    const fx0 = -0.94, fx1 = 0.94, fw = fx1 - fx0;
+    const fy0 = -0.68, fh = 0.62, fMax = 200.0; // kHz
+    const xOfF = (f) => fx0 + (f / fMax) * fw;
+    V.line(fx0, fy0, fx1, fy0, COL.grid, 1.0);
+    V.line(fx0, fy0, fx0, fy0 + fh, COL.grid, 1.0);
+    [20, 44.1, 88.2, 132.3, 176.4].forEach((f, idx) => {
+      const x = xOfF(f);
+      V.line(x, fy0, x, fy0 + fh, COL.grid, 0.7);
+      V.text(["20K", "44.1", "88.2", "132", "176K"][idx], x - 0.035, fy0 - 0.036, 0.022, COL.dim);
+    });
+    V.text("SPECTRUM (0-200 KHZ): ZOH SINC(F/FS) IMAGES & QUANTIZATION NOISE FLOOR", fx0, fy0 + fh + 0.055, 0.024, COL.dim);
+
+    // Exact uniform quantization noise floor spread over [0, fs/2] -> density scales as 1/OSR
+    const nyqF = Math.min(fMax, fsKHz * 0.5);
+    const noiseH = (0.28 / Math.sqrt(osr)) * fh; // RMS amplitude scales as 1/sqrt(OSR) (-3.01 dB power per 2x)
+    V.fill(fx0, fy0, xOfF(nyqF) - fx0, noiseH, [0.34, 0.72, 0.96, 0.14]);
+    V.line(fx0, fy0 + noiseH, xOfF(nyqF), fy0 + noiseH, [0.34, 0.78, 0.98, 0.65], 1.2);
+    V.text("NOISE FLOOR -" + snrGain.toFixed(1) + "DB", fx0 + 0.02, fy0 + noiseH + 0.035, 0.021, [0.34, 0.78, 0.98, 0.85]);
+
+    // Shaded transition guard-band between 20 kHz and first image (fs - 20 kHz)
+    const gStart = xOfF(20), gEnd = xOfF(Math.min(fMax, fsKHz - 20));
+    if (gEnd > gStart + 0.01) {
+      V.fill(gStart, fy0, gEnd - gStart, fh * 0.92, [0.24, 0.72, 0.54, 0.08]);
+    }
+
+    // Exact baseband signal X(f) on [0, 20 kHz] and exact ZOH-weighted spectral images |X(f - k*fs) * sinc(f/fs)|
+    const sinc = (u) => Math.abs(u) < 1e-5 ? 1 : Math.sin(Math.PI * u) / (Math.PI * u);
+    const baseEnv = (fAbs) => fAbs <= 20 ? Math.pow(1 - fAbs / 20, 0.75) * (0.78 + 0.22 * Math.cos(fAbs * 0.45)) : 0;
+    const Nf = 160;
+    let pxS = fx0, pyS = fy0;
+    for (let i = 0; i <= Nf; i++) {
+      const f = (i / Nf) * fMax;
+      const x = fx0 + (i / Nf) * fw;
+      // Distance to nearest multiple k * fsKHz
+      const kNear = Math.round(f / fsKHz);
+      const df = Math.abs(f - kNear * fsKHz);
+      const env = baseEnv(df) * Math.abs(sinc(f / fsKHz));
+      const y = fy0 + env * fh * 0.86;
+      const col = kNear === 0 ? [0.36, 0.92, 0.62, 0.96] : [0.98, 0.48, 0.34, 0.88];
+      if (i > 0 && (env > 0.005 || pyS > fy0 + 0.003)) V.line(pxS, pyS, x, y, col, kNear === 0 ? 2.0 : 1.6);
+      pxS = x; pyS = y;
+    }
+
+    // Exact Butterworth analog reconstruction LPF (order relaxes from 12th @ 1x to 2nd @ 8x)
+    const lpfOrd = osr === 1 ? 12 : (osr === 2 ? 5 : (osr === 4 ? 3 : 2));
+    const fcKHz = osr === 1 ? 22.0 : (osr === 2 ? 28.0 : (osr === 4 ? 38.0 : 48.0));
+    let pxL = fx0, pyL = fy0 + fh * 0.92;
+    for (let i = 1; i <= 100; i++) {
+      const f = (i / 100) * fMax;
+      const x = fx0 + (i / 100) * fw;
+      const mag = 1 / Math.sqrt(1 + Math.pow(f / fcKHz, 2 * lpfOrd));
+      const y = fy0 + mag * fh * 0.92;
+      V.line(pxL, pyL, x, y, [1.0, 0.80, 0.34, 0.94], 1.85);
+      pxL = x; pyL = y;
+    }
+
+    return [["OSR", osr + "X"], ["FS", fsKHz.toFixed(1) + " KHZ"], ["SNR GAIN", "+" + snrGain.toFixed(1) + " DB"]];
+  } else {
+    // Part 3: R-2R Resistor Ladder DAC & Resistor Tolerance Nonlinearity (INL/DNL)
+    const val = Math.floor((t * 14) % 64); // 6-bit animated sweep 0..63
+    V.text("R-2R RESISTOR LADDER DAC  (CODE " + String(val).padStart(2, "0") + " / 63)", x0, 0.70, 0.028, COL.paper);
+    // Top: 6-bit R-2R Ladder Schematic
+    const yRail = 0.44, yBot = 0.16;
+    for (let b = 0; b < 6; b++) {
+      const bitOn = (val >> (5 - b)) & 1;
+      const x = -0.82 + b * 0.28;
+      const col = bitOn ? [1.0, 0.66, 0.24, 0.96] : [0.36, 0.50, 0.66, 0.55];
+      if (b < 5) {
+        V.line(x, yRail, x + 0.28, yRail, [0.58, 0.72, 0.86, 0.75], 1.5);
+        V.text("R", x + 0.12, yRail + 0.06, 0.024, COL.dim);
+      }
+      V.line(x, yRail, x, yBot, col, 1.8);
+      V.text("2R", x + 0.02, 0.32, 0.022, col);
+      V.circ(x, yBot, 0.020, col, 1.8, 10);
+      V.text("B" + (5 - b), x - 0.03, yBot - 0.06, 0.024, col);
+    }
+    V.line(0.58, yRail, 0.84, yRail, [0.42, 0.92, 0.58, 0.95], 1.8);
+    V.text("VOUT", 0.85, yRail + 0.02, 0.026, [0.42, 0.92, 0.58, 0.95]);
+
+    // Bottom: Transfer Curve — Ideal Linear (cyan) vs Real R-2R with 1.5% MSB Tolerance Glitch (amber)
+    const gx0 = -0.86, gx1 = 0.86, gy0 = -0.68, gy1 = -0.06;
+    V.line(gx0, gy0, gx1, gy0, COL.grid, 1.0);
+    V.line(gx0, gy0, gx0, gy1, COL.grid, 1.0);
+    V.text("IDEAL (CYAN) VS 1.5% RESISTOR TOLERANCE NONLINEARITY (AMBER)", gx0, gy1 + 0.04, 0.024, COL.dim);
+    const weights = [32.7, 15.6, 8.15, 3.92, 2.04, 0.98]; // realistic resistor mismatch
+    let pxI = gx0, pyI = gy0, pxR = gx0, pyR = gy0;
+    for (let c = 0; c <= 63; c++) {
+      const u = c / 63, x = gx0 + u * (gx1 - gx0);
+      let realV = 0;
+      for (let b = 0; b < 6; b++) if ((c >> (5 - b)) & 1) realV += weights[b];
+      const yI = gy0 + u * (gy1 - gy0);
+      const yR = gy0 + Math.min(1, realV / 63.4) * (gy1 - gy0);
+      if (c > 0) {
+        V.line(pxI, pyI, x, yI, [0.34, 0.78, 0.98, 0.45], 1.2);
+        V.line(pxR, pyR, x, yR, [1.0, 0.58, 0.22, 0.95], 1.8);
+      }
+      if (c === val) V.circ(x, yR, 0.022, [1.0, 0.88, 0.42, 0.98], 2.0, 10);
+      pxI = x; pyI = yI; pxR = x; pyR = yR;
+    }
+    return [["BITS", "6-BIT R-2R"], ["GLITCH", "MSB STEP"], ["PART", "3 / 3"]];
+  }
+}
+
 const STATIONS = [
   { roman: "I", cat: "MECHANICS & CHAOS", disc: "CLASSICAL MECHANICS", title: "Same start, different futures", sub: "Five double pendulums, released a thousandth of a radian apart.", formula: "d/dt (∂L/∂θ̇) = ∂L/∂θ      L = T − V", note: "A small state error does not stay small.", draw: drawPendulum },
   { roman: "II", cat: "ELECTRODYNAMICS & OPTICS", disc: "ELECTRODYNAMICS", title: "Shake a charge and light escapes", sub: "An oscillating dipole sheds closed loops of electric field.", formula: "∇ × E = −∂B/∂t      ∇ × B = (1/c²) ∂E/∂t", note: "The shortest antenna is a driven dipole.", draw: drawDipole },
@@ -3690,6 +4218,58 @@ const STATIONS = [
       { title: "TM₃₂ resonant cavity: 3×2 quantized mode lattice", sub: "Six counter-oscillating field cells locked to the cavity’s eigenfrequency — the classical root of quantum modes.", formula: "ωmn = c π √((m/L)² + (n/H)²)      (m, n) = (3, 2)", note: "Part 4/4 — Microwave ovens, lasers, and particle accelerators all run on cavity modes." },
     ],
     draw: drawWaveguideModes,
+  },
+  {
+    roman: "XXXIII", cat: "ELECTRONICS & SIGNALS", disc: "AUDIO FILTERS", parts: 4,
+    title: "Audio filters sculpt spectrum and phase",
+    sub: "Real-time 2nd-order Low-Pass, High-Pass, Band-Pass, and Notch filters with live Bode dB/phase & waveform (↑/↓ or 1–4).",
+    formula: "H(s) = N(s) / (s² + (ω₀/Q)s + ω₀²)",
+    note: "Every DAC reconstruction stage relies on low-pass filtering to smooth discrete steps.",
+    partMeta: [
+      { title: "Low-pass filter: pass bass, roll off ultrasonic images", sub: "2nd-order LPF sweeping fc across 180 Hz–6.5 kHz. Removes high harmonics and DAC ultrasonic carrier noise.", formula: "HLP(s) = ω₀² / (s² + (ω₀/Q)s + ω₀²)      −12 dB/oct", note: "Part 1/4 — Press ↓ for High-Pass filter." },
+      { title: "High-pass filter: block DC offset and low rumble", sub: "2nd-order HPF strips low-frequency carrier while letting sharp upper harmonics pass cleanly.", formula: "HHP(s) = s² / (s² + (ω₀/Q)s + ω₀²)      +12 dB/oct", note: "Part 2/4 — Press ↓ for Band-Pass filter." },
+      { title: "Band-pass filter: isolate a resonant spectral band", sub: "2nd-order BPF with Q = 3.2 sweeps across the audio spectrum, extracting one harmonic formant at a time.", formula: "HBP(s) = (ω₀/Q)s / (s² + (ω₀/Q)s + ω₀²)", note: "Part 3/4 — Press ↓ for Notch (Band-Stop) filter." },
+      { title: "Notch filter: carve a surgical null at one frequency", sub: "2nd-order Band-Stop filter cancels a single narrow frequency (50/60 Hz hum or resonant spike) to −∞ dB.", formula: "HNotch(s) = (s² + ω₀²) / (s² + (ω₀/Q)s + ω₀²)", note: "Part 4/4 — Exact conjugate zeros on the jω axis create a total null." },
+    ],
+    draw: drawAudioFilters,
+  },
+  {
+    roman: "XXXIV", cat: "ELECTRONICS & SIGNALS", disc: "AUDIO DSP · PCM/DSD", parts: 3,
+    title: "PCM staircases vs 1-bit DSD noise shaping",
+    sub: "PCM vs 1-bit ΣΔ DSD modulation, feedback modulator loop, and 5th/7th-order SACD noise-shaping spectra (↑/↓ or 1–3).",
+    formula: "Y(z) = X(z) + (1 − z⁻¹)ᴺ E(z)      SNR → 140 dB",
+    note: "From 2021-12-23 Аудіо: ΣΔ pushes quantization noise into ultrasonic frequencies.",
+    partMeta: [
+      { title: "PCM multi-bit staircase vs 1-bit DSD pulse density", sub: "Top: 44.1 kHz multi-bit PCM steps. Bottom: 2.8224 MHz 1-bit ΣΔ bitstream smoothly reconstructed by an analog LPF.", formula: "PCM: fs = 44.1 kHz (16b)   |   DSD64: fsk = 2.8224 MHz (1b)", note: "Part 1/3 — Press ↓ for the 2nd-order ΣΔ modulator feedback loop." },
+      { title: "Sigma-Delta modulator: negative feedback shapes error", sub: "Two cascaded integrators (1/s) inside a 1-bit feedback loop suppress low-frequency quantization error.", formula: "NTF(z) = (1 − z⁻¹)²      STF(z) = 1", note: "Part 2/3 — Press ↓ for 5th-order SACD vs 7th-order SNR spectra." },
+      { title: "5th-order SACD vs 7th-order ultrasonic noise shaping", sub: "Log-frequency noise floor (100 Hz–1 MHz): higher modulator order carves audible noise down to −140…−160 dB.", formula: "|NTF(f)| = |2 sin(πf/fsk)|ᴺ      N = 5 (SACD) vs N = 7", note: "Part 3/3 — Total noise power rises ultrasonically so the 20 kHz band stays silent." },
+    ],
+    draw: drawPcmDsd,
+  },
+  {
+    roman: "XXXV", cat: "ELECTRONICS & SIGNALS", disc: "AUDIO IMPULSE", parts: 2,
+    title: "A 3 µs click exposes filter ringing",
+    sub: "Impulse response comparison of Analog, 48/96/192 kHz PCM, and DSD, plus Linear-Phase vs Minimum-Phase filters (↑/↓ or 1–2).",
+    formula: "h(t) = 2 fc sinc(2 fc t)      −6 dB / 3 µs Dirac click",
+    note: "From 2021-12-23 Аудіо: soundstage clarity tracks the system’s Dirac impulse response.",
+    partMeta: [
+      { title: "Analog vs 48 / 96 / 192 kHz PCM vs DSD impulse response", sub: "Reaction to a −6 dB, 3 µs Dirac click: steep PCM brickwall filters ring symmetrically; DSD recovers a sharp spike.", formula: "hPCM(t) = sinc(π fs t)   vs   hDSD(t) ≈ δ(t) * hLPF(t)", note: "Part 1/2 — Press ↓ to compare Linear-Phase, Minimum-Phase, and Pure DSD filters." },
+      { title: "Linear-phase pre-ringing vs minimum-phase vs pure DSD", sub: "Brickwall FIR rings before t=0 (pre-echo); minimum-phase IIR is causal; gentle DSD analog LPF has zero ringing.", formula: "FIR: h(−t) = h(t)   |   Causal: h(t) = 0 for t < 0", note: "Part 2/2 — Pure DSD bypasses steep digital decimation/interpolation filters." },
+    ],
+    draw: drawImpulseResponse,
+  },
+  {
+    roman: "XXXVI", cat: "ELECTRONICS & SIGNALS", disc: "DITHER & R-2R DAC", parts: 3,
+    title: "Dither, oversampling, and R-2R resistor ladders",
+    sub: "TPDF dithering, 4× oversampling filter relaxation, and R-2R ladder resistor-tolerance nonlinearity (↑/↓ or 1–3).",
+    formula: "q(x) = Q(x + dTPDF)      Vout = Vref Σ bᵢ / 2ⁱ",
+    note: "From 2021-12-23 Аудіо: noise elimination & DAC hardware linearity trade-offs.",
+    partMeta: [
+      { title: "TPDF dithering turns harmonic distortion into white noise", sub: "Without dither, quantization error locks to the signal as harsh harmonics; adding triangular noise restores linearity.", formula: "dTPDF = U₁ − U₂      E[Q(x + d)] = x", note: "Part 1/3 — Press ↓ for 1× vs 4× Oversampling filter relaxation." },
+      { title: "Oversampling widens the gap for a gentle analog filter", sub: "At 1× fs, spectral images sit right next to 20 kHz; 4× oversampling pushes images out so a gentle 2nd-order LPF works.", formula: "fimage = k · OSR · fs ± f      OSR = 4×", note: "Part 2/3 — Press ↓ for the R-2R Resistor Ladder DAC." },
+      { title: "R-2R resistor ladder: tolerance causes MSB glitches", sub: "Animated 6-bit R-2R ladder comparing ideal linearity (cyan) against 1.5% resistor mismatch (amber INL/DNL step).", formula: "Vout = Vref Σ bᵢ (Rᵢ / 2ⁱ)      ΔR/R ⇒ INL/DNL", note: "Part 3/3 — Resistor mismatch motivated 1-bit ΣΔ and Dynamic Element Matching." },
+    ],
+    draw: drawAudioNoiseShaping,
   },
 ];
 
