@@ -673,7 +673,7 @@ function updateChrome() {
   elMeta.textContent = `DEMO ${d.id}/${String(DEMOS.length).padStart(2, "0")} · PART ${partIdx + 1}/${d.parts.length} · F(Y) = 261.63 · 2^Y HZ`;
   elFPart.textContent = `PART ${partIdx + 1}/${d.parts.length}  ·  ${d.name}` + (autoParts ? "  [AUTO]" : "  [LOOP]");
   elFBody.textContent = p.f;
-  document.querySelectorAll(".idx-item").forEach((b, i) => b.classList.toggle("on", i === demoIdx));
+  document.querySelectorAll(".idx-item").forEach((b) => b.classList.toggle("on", Number(b.dataset.idx) === demoIdx));
   updateAudioUI();
   needChromeUpdate = false;
 }
@@ -695,24 +695,61 @@ function selectPart(p) {
 }
 
 function buildIndex() {
+  const catOf = (i) => i < 4 ? "HARMONIC & POLYPHONIC" : i < 9 ? "BITMASK & ACID GROOVES" : i < 12 ? "AMBIENT & CANON" : "PIECEWISE & ANALYTICAL";
+  const cats = ["HARMONIC & POLYPHONIC", "BITMASK & ACID GROOVES", "AMBIENT & CANON", "PIECEWISE & ANALYTICAL"];
+  let activeCat = "ALL";
   const h = document.createElement("h2");
-  h.textContent = "HAL 9000 // DIGITIZED MATH-SYNTH CATALOGUE (16 DEMOS)";
-  const grid = document.createElement("div");
-  grid.className = "idx-grid";
-  DEMOS.forEach((d, i) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "idx-item";
-    b.innerHTML = `<div class="num">${d.id} · SRC ${d.src}</div><div class="ttl">${d.name}</div><div class="pts">${d.parts.length} PARTS</div>`;
-    b.addEventListener("click", (e) => {
-      e.stopPropagation();
-      selectDemo(i, 0);
-      elIndex.classList.remove("open");
-      ensureAudio();
+  h.textContent = "HAL 9000 // DIGITIZED MATH-SYNTH CATALOGUE (" + DEMOS.length + " DEMOS)";
+  const filters = document.createElement("div");
+  filters.className = "idx-filters";
+  const body = document.createElement("div");
+
+  function renderList() {
+    body.replaceChildren();
+    const listCats = activeCat === "ALL" ? cats : [activeCat];
+    listCats.forEach((cat) => {
+      const items = DEMOS.map((d, i) => ({ d, i })).filter((x) => catOf(x.i) === cat);
+      if (!items.length) return;
+      const ch = document.createElement("div");
+      ch.className = "idx-cat";
+      ch.textContent = cat + "  (" + items.length + ")";
+      const grid = document.createElement("div");
+      grid.className = "idx-grid";
+      items.forEach(({ d, i }) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "idx-item" + (i === demoIdx ? " on" : "");
+        b.dataset.idx = String(i);
+        b.innerHTML = `<div class="num">${d.id} · SRC ${d.src}</div><div class="ttl">${d.name}</div><div class="pts">${d.parts.length} PARTS</div>`;
+        b.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selectDemo(i, 0);
+          elIndex.classList.remove("open");
+          ensureAudio();
+        });
+        grid.append(b);
+      });
+      body.append(ch, grid);
     });
-    grid.append(b);
+  }
+
+  ["ALL", ...cats].forEach((cat) => {
+    const p = document.createElement("button");
+    p.type = "button";
+    p.className = "pill";
+    p.textContent = cat === "ALL" ? "ALL (" + DEMOS.length + ")" : cat.split(" ")[0];
+    p.addEventListener("click", (e) => {
+      e.stopPropagation();
+      activeCat = cat;
+      filters.querySelectorAll(".pill").forEach((elP) => elP.classList.toggle("on", elP === p));
+      renderList();
+    });
+    if (cat === "ALL") p.classList.add("on");
+    filters.append(p);
   });
-  elIndex.append(h, grid);
+
+  elIndex.append(h, filters, body);
+  renderList();
 }
 
 function getPlotRect(W, H) {

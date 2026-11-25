@@ -1,683 +1,974 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Formal Models &amp; Math Synth · B-System EDU</title>
-<meta name="description" content="B-System EDU interactive portals: Physics.html (18 WebGL1 vector CRT formal physics &amp; black hole simulations) and Music.html (HAL 9000 2D analytical function synthesizer with 16 multi-part demos).">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@300;400;500;600&family=Shippori+Mincho:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-/* B-System EDU Home — Ink / Paper / TRON Teal / TRON Gold system matching ../rt/rt.css */
-:root {
-  --jp-font: "Noto Sans JP", "Inter", system-ui, -apple-system, sans-serif;
-  --mincho-font: "Shippori Mincho", "Noto Sans JP", serif;
-  --mono-font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Formal Models &amp; Math Synth · B-System EDU</title>
+  <meta name="description"
+    content="B-System EDU interactive portals: Physics.html (18 WebGL1 vector CRT formal physics &amp; black hole simulations) and Music.html (HAL 9000 2D analytical function synthesizer with 16 multi-part demos).">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@300;400;500;600&family=Shippori+Mincho:wght@500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    /* B-System EDU Home — Ink / Paper / TRON Teal / TRON Gold system matching ../rt/rt.css */
+    :root {
+      --jp-font: "Noto Sans JP", "Inter", system-ui, -apple-system, sans-serif;
+      --mincho-font: "Shippori Mincho", "Noto Sans JP", serif;
+      --mono-font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --tron-teal: #008080;
-  --tron-teal-soft: rgba(0, 128, 128, 0.08);
-  --tron-teal-border: rgba(0, 128, 128, 0.28);
-  --tron-gold: #c59b27;
-  --tron-gold-soft: rgba(197, 155, 39, 0.10);
-  --tron-gold-border: rgba(197, 155, 39, 0.32);
+      --tron-teal: #008080;
+      --tron-teal-soft: rgba(0, 128, 128, 0.08);
+      --tron-teal-border: rgba(0, 128, 128, 0.28);
+      --tron-gold: #c59b27;
+      --tron-gold-soft: rgba(197, 155, 39, 0.10);
+      --tron-gold-border: rgba(197, 155, 39, 0.32);
 
-  --ink: #14171a;
-  --ink-2: #2b3136;
-  --ink-3: #5b6470;
-  --paper: #f7f7f5;
-  --paper-2: #efeeea;
-  --plate: #ffffff;
-  --rule: #d8d7d1;
+      --ink: #14171a;
+      --ink-2: #2b3136;
+      --ink-3: #5b6470;
+      --paper: #f7f7f5;
+      --paper-2: #efeeea;
+      --plate: #ffffff;
+      --rule: #d8d7d1;
 
-  --shadow-plate: 0 2px 4px rgba(20, 23, 26, 0.05),
-    0 18px 40px -18px rgba(20, 23, 26, 0.22),
-    0 60px 90px -50px rgba(20, 23, 26, 0.28);
-  --shadow-lift: 0 2px 4px rgba(20, 23, 26, 0.06),
-    0 28px 56px -20px rgba(20, 23, 26, 0.28),
-    0 80px 120px -60px rgba(20, 23, 26, 0.34);
-}
+      --shadow-plate: 0 2px 4px rgba(20, 23, 26, 0.05),
+        0 18px 40px -18px rgba(20, 23, 26, 0.22),
+        0 60px 90px -50px rgba(20, 23, 26, 0.28);
+      --shadow-lift: 0 2px 4px rgba(20, 23, 26, 0.06),
+        0 28px 56px -20px rgba(20, 23, 26, 0.28),
+        0 80px 120px -60px rgba(20, 23, 26, 0.34);
+    }
 
-html { box-sizing: border-box; scroll-behavior: smooth; overflow-x: hidden; }
-*, *::before, *::after { box-sizing: inherit; }
-body {
-  margin: 0;
-  overflow-x: hidden;
-  max-width: 100%;
-  font-family: var(--jp-font);
-  font-weight: 400;
-  letter-spacing: 0.012em;
-  line-height: 1.82;
-  color: var(--ink-2);
-  background: var(--paper);
-  -webkit-font-smoothing: antialiased;
-}
-a { color: var(--tron-teal); text-decoration: none; transition: color 0.15s ease; }
-a:hover { color: var(--ink); }
-code { font-family: var(--mono-font); font-size: 0.86em; color: var(--tron-teal); }
+    html {
+      box-sizing: border-box;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
 
-.wrap {
-  width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 clamp(1.25rem, 5vw, 3.5rem);
-}
+    *,
+    *::before,
+    *::after {
+      box-sizing: inherit;
+    }
 
-nav.sticky {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(247, 247, 245, 0.94);
-  border-bottom: 1px solid var(--rule);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-.nav-container {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0.85rem clamp(1.25rem, 5vw, 3.5rem);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-.logo {
-  font-family: var(--mincho-font);
-  font-weight: 700;
-  font-size: 1.35rem;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-  display: flex;
-  align-items: baseline;
-  flex: 0 0 auto;
-}
-.logo span {
-  font-family: var(--mono-font);
-  font-weight: 400;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  color: var(--tron-teal);
-  margin-left: 0.45rem;
-  border: 1px solid var(--tron-teal-border);
-  padding: 0.1rem 0.4rem;
-  border-radius: 2px;
-}
-.nav-links {
-  display: flex;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  gap: 1.15rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.nav-links a {
-  font-size: 0.80rem;
-  font-weight: 500;
-  color: var(--ink-3);
-  letter-spacing: 0.02em;
-}
-.nav-links a:hover,
-.nav-links a[aria-current="page"] { color: var(--tron-teal); }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      max-width: 100%;
+      font-family: var(--jp-font);
+      font-weight: 400;
+      letter-spacing: 0.012em;
+      line-height: 1.82;
+      color: var(--ink-2);
+      background: var(--paper);
+      -webkit-font-smoothing: antialiased;
+    }
 
-header.hero {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(0, 128, 128, 0.09), rgba(0, 128, 128, 0) 65%),
-    var(--paper);
-  border-bottom: 1px solid var(--rule);
-}
-header.hero::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(197, 155, 39, 0), rgba(197, 155, 39, 0.65), rgba(197, 155, 39, 0));
-}
-.hero-content {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 4.2rem clamp(1.25rem, 5vw, 3.5rem) 4.4rem;
-  text-align: center;
-}
-.hero-kicker {
-  font-family: var(--mono-font);
-  font-size: 0.76rem;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--tron-teal);
-  margin: 0 0 1.4rem;
-  font-weight: 600;
-}
-.hero-content h1 {
-  font-family: var(--mincho-font);
-  font-weight: 700;
-  font-size: clamp(2.4rem, 6vw, 4.4rem);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  color: var(--ink);
-  margin: 0 auto;
-  max-width: 16ch;
-}
-.hero-rule {
-  width: 54px;
-  height: 1px;
-  background: var(--ink);
-  margin: 1.6rem auto;
-  opacity: 0.45;
-}
-.hero-lede {
-  max-width: 740px;
-  margin: 0 auto;
-  font-size: clamp(1.04rem, 1.65vw, 1.2rem);
-  font-weight: 300;
-  line-height: 1.85;
-  color: var(--ink-2);
-}
-.hero-lede-en {
-  max-width: 680px;
-  margin: 0.85rem auto 0;
-  font-size: 0.90rem;
-  line-height: 1.75;
-  color: var(--ink-3);
-}
-.hero-marks {
-  margin-top: 2rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.6rem;
-  justify-content: center;
-  font-family: var(--mono-font);
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  color: var(--ink-3);
-}
-.hero-marks span::before {
-  content: "·";
-  margin-right: 0.55rem;
-  color: var(--tron-gold);
-}
+    a {
+      color: var(--tron-teal);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
 
-section.band { padding: clamp(3rem, 5.5vw, 4.8rem) 0; }
-.band-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: 1.2rem;
-  border-top: 1px solid var(--rule);
-  padding-top: 1.4rem;
-  margin-bottom: clamp(1.4rem, 3vw, 2.2rem);
-}
-.band-index {
-  font-family: var(--mono-font);
-  font-size: 0.76rem;
-  letter-spacing: 0.22em;
-  color: var(--tron-teal);
-  white-space: nowrap;
-  font-weight: 600;
-}
-.band-head h2 {
-  font-family: var(--mincho-font);
-  font-weight: 600;
-  font-size: clamp(1.55rem, 3.3vw, 2.3rem);
-  line-height: 1.25;
-  margin: 0;
-  color: var(--ink);
-}
-.band-eyebrow {
-  grid-column: 1 / -1;
-  font-family: var(--mono-font);
-  font-size: 0.70rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin: 0;
-}
-.band-intro {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(1.4rem, 3.5vw, 2.8rem);
-  margin-bottom: clamp(1.6rem, 3.5vw, 2.4rem);
-}
-.band-intro p { margin: 0; font-size: 0.95rem; line-height: 1.88; color: var(--ink-2); }
-.band-intro .en {
-  font-size: 0.88rem;
-  color: var(--ink-3);
-  padding-left: clamp(0rem, 2vw, 1.4rem);
-  border-left: 1px solid var(--rule);
-}
+    a:hover {
+      color: var(--ink);
+    }
 
-/* Portal Cards */
-.portal-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.6rem;
-}
-.portal {
-  display: flex;
-  flex-direction: column;
-  background: var(--plate);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  box-shadow: var(--shadow-plate);
-  overflow: hidden;
-  transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  color: inherit;
-}
-.portal:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lift);
-  border-color: var(--tron-teal-border);
-  color: inherit;
-}
-.portal-screen {
-  position: relative;
-  background: #07080c;
-  height: 210px;
-  overflow: hidden;
-  border-bottom: 1px solid var(--rule);
-}
-.portal-screen::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0 1px, transparent 1px 4px);
-  pointer-events: none;
-}
-.portal-screen svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.portal-tag {
-  position: absolute;
-  top: 12px;
-  left: 14px;
-  font-family: var(--mono-font);
-  font-size: 0.64rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #8fd0c8;
-  background: rgba(7, 8, 12, 0.72);
-  border: 1px solid rgba(143, 208, 200, 0.3);
-  padding: 0.18rem 0.45rem;
-  border-radius: 2px;
-}
-.portal-tag.hal {
-  color: #ff9a8b;
-  border-color: rgba(217, 56, 41, 0.55);
-}
-.portal-body {
-  padding: 1.35rem 1.45rem 1.25rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.portal-kicker {
-  font-family: var(--mono-font);
-  font-size: 0.65rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--tron-teal);
-  font-weight: 600;
-}
-.portal-body h3 {
-  font-family: var(--mincho-font);
-  font-size: 1.45rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0.35rem 0 0.55rem;
-  line-height: 1.22;
-}
-.portal-body p {
-  margin: 0 0 1.1rem;
-  font-size: 0.88rem;
-  line-height: 1.72;
-  color: var(--ink-2);
-}
-.metric-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.8rem;
-  font-size: 0.76rem;
-  padding: 0.38rem 0;
-  border-top: 1px solid rgba(216, 215, 209, 0.7);
-}
-.metric-row span:first-child { color: var(--ink-3); }
-.metric-row span:last-child {
-  font-family: var(--mono-font);
-  color: var(--ink);
-  font-weight: 500;
-  text-align: right;
-}
-.portal-foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.78rem 1.45rem;
-  background: var(--paper-2);
-  border-top: 1px solid var(--rule);
-  font-family: var(--mono-font);
-  font-size: 0.70rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-.portal-foot .cta {
-  color: var(--tron-teal);
-  font-weight: 600;
-}
-.portal:hover .portal-foot .cta { color: var(--ink); }
+    code {
+      font-family: var(--mono-font);
+      font-size: 0.86em;
+      color: var(--tron-teal);
+    }
 
-.plate {
-  margin: 0 0 1.5rem;
-  background: var(--plate);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  box-shadow: var(--shadow-plate);
-  overflow: hidden;
-}
-.plate figcaption {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.35rem 1.2rem;
-  padding: 0.70rem 0.95rem 0.75rem;
-  font-family: var(--mono-font);
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  border-top: 1px solid var(--rule);
-  background: var(--paper-2);
-}
-.plate figcaption b { color: var(--ink); font-weight: 600; }
+    .wrap {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 clamp(1.25rem, 5vw, 3.5rem);
+    }
 
-table.cmp {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.76rem;
-  line-height: 1.48;
-  table-layout: fixed;
-}
-table.cmp th, table.cmp td {
-  text-align: left;
-  vertical-align: top;
-  padding: 0.52rem 0.68rem;
-  overflow-wrap: anywhere;
-}
-table.cmp th {
-  font-family: var(--mono-font);
-  font-size: 0.62rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  font-weight: 600;
-  background: var(--paper-2);
-  border-bottom: 1px solid var(--rule);
-}
-table.cmp td {
-  border-bottom: 1px solid rgba(216, 215, 209, 0.7);
-  color: var(--ink-2);
-}
-table.cmp tr:last-child td { border-bottom: none; }
-table.cmp tr:hover td { background: rgba(0, 128, 128, 0.025); }
-table.cmp td:first-child { font-family: var(--mono-font); font-weight: 600; color: var(--tron-teal); }
-.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono-font); }
+    nav.sticky {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(247, 247, 245, 0.94);
+      border-bottom: 1px solid var(--rule);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
 
-.badge {
-  display: inline-block;
-  font-family: var(--mono-font);
-  font-size: 0.60rem;
-  line-height: 1.2;
-  padding: 0.18rem 0.42rem;
-  border-radius: 2px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.badge-teal { background: var(--tron-teal-soft); color: var(--tron-teal); border: 1px solid var(--tron-teal-border); }
-.badge-gold { background: var(--tron-gold-soft); color: #8a6230; border: 1px solid var(--tron-gold-border); }
+    .nav-container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0.85rem clamp(1.25rem, 5vw, 3.5rem);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
 
-ul.spec { list-style: none; margin: 0; padding: 0.20rem 0; }
-ul.spec li {
-  display: grid;
-  grid-template-columns: minmax(9rem, 26%) minmax(0, 1fr);
-  gap: 0.6rem 1.25rem;
-  align-items: baseline;
-  padding: 0.62rem 1rem;
-  border-bottom: 1px solid rgba(216, 215, 209, 0.7);
-  font-size: 0.86rem;
-  line-height: 1.55;
-}
-ul.spec li:last-child { border-bottom: none; }
-ul.spec strong {
-  font-family: var(--mono-font);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  color: var(--ink);
-  font-weight: 600;
-}
+    .logo {
+      font-family: var(--mincho-font);
+      font-weight: 700;
+      font-size: 1.35rem;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: baseline;
+      flex: 0 0 auto;
+    }
 
-footer.site {
-  background: #14171a;
-  color: #9ea7b0;
-  padding: clamp(2.6rem, 5vw, 3.8rem) 0 2rem;
-  font-size: 0.82rem;
-  line-height: 1.75;
-}
-footer.site a { color: #ccd3da; }
-footer.site a:hover { color: #ffffff; }
-.footer-columns {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 clamp(1.25rem, 5vw, 3.5rem);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
-  gap: 1.8rem;
-}
-footer.site h4 {
-  font-family: var(--mono-font);
-  font-size: 0.68rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #e4e8ec;
-  margin: 0 0 0.85rem;
-  font-weight: 600;
-}
-footer.site ul { list-style: none; margin: 0; padding: 0; }
-footer.site li { margin-bottom: 0.35rem; }
-.footer-legal {
-  max-width: 1180px;
-  margin: 2rem auto 0;
-  padding: 1.2rem clamp(1.25rem, 5vw, 3.5rem) 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
-.footer-legal p.hold {
-  margin: 0;
-  color: #b8c0c8;
-  font-size: 0.78rem;
-  text-align: center;
-}
+    .logo span {
+      font-family: var(--mono-font);
+      font-weight: 400;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: var(--tron-teal);
+      margin-left: 0.45rem;
+      border: 1px solid var(--tron-teal-border);
+      padding: 0.1rem 0.4rem;
+      border-radius: 2px;
+    }
 
-@media (max-width: 860px) {
-  .portal-grid { grid-template-columns: 1fr; }
-  .band-head { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }
-  .band-intro { grid-template-columns: 1fr; }
-  .band-intro .en { border-left: none; padding-left: 0; border-top: 1px solid var(--rule); padding-top: 1rem; }
-  .nav-container { flex-direction: column; align-items: flex-start; }
-  ul.spec li { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
-}
-@media (max-width: 720px) {
-  table.cmp thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
-  table.cmp, table.cmp tbody, table.cmp tr, table.cmp td { display: block; width: 100%; }
-  table.cmp tr { border-bottom: 1px solid var(--rule); padding: 0.35rem 0; }
-  table.cmp td { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 0.25rem 0.65rem; border-bottom: none; padding: 0.22rem 0.85rem; }
-  table.cmp td::before { content: attr(data-label); font-family: var(--mono-font); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
-  .num { text-align: left; }
-}
-</style>
+    .nav-links {
+      display: flex;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      gap: 1.15rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-links a {
+      font-size: 0.80rem;
+      font-weight: 500;
+      color: var(--ink-3);
+      letter-spacing: 0.02em;
+    }
+
+    .nav-links a:hover,
+    .nav-links a[aria-current="page"] {
+      color: var(--tron-teal);
+    }
+
+    header.hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(0, 128, 128, 0.09), rgba(0, 128, 128, 0) 65%),
+        var(--paper);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    header.hero::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(197, 155, 39, 0), rgba(197, 155, 39, 0.65), rgba(197, 155, 39, 0));
+    }
+
+    .hero-content {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 4.2rem clamp(1.25rem, 5vw, 3.5rem) 4.4rem;
+      text-align: center;
+    }
+
+    .hero-kicker {
+      font-family: var(--mono-font);
+      font-size: 0.76rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--tron-teal);
+      margin: 0 0 1.4rem;
+      font-weight: 600;
+    }
+
+    .hero-content h1 {
+      font-family: var(--mincho-font);
+      font-weight: 700;
+      font-size: clamp(2.4rem, 6vw, 4.4rem);
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      margin: 0 auto;
+      max-width: 16ch;
+    }
+
+    .hero-rule {
+      width: 54px;
+      height: 1px;
+      background: var(--ink);
+      margin: 1.6rem auto;
+      opacity: 0.45;
+    }
+
+    .hero-lede {
+      max-width: 740px;
+      margin: 0 auto;
+      font-size: clamp(1.04rem, 1.65vw, 1.2rem);
+      font-weight: 300;
+      line-height: 1.85;
+      color: var(--ink-2);
+    }
+
+    .hero-lede-en {
+      max-width: 680px;
+      margin: 0.85rem auto 0;
+      font-size: 0.90rem;
+      line-height: 1.75;
+      color: var(--ink-3);
+    }
+
+    .hero-marks {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.6rem;
+      justify-content: center;
+      font-family: var(--mono-font);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: var(--ink-3);
+    }
+
+    .hero-marks span::before {
+      content: "·";
+      margin-right: 0.55rem;
+      color: var(--tron-gold);
+    }
+
+    section.band {
+      padding: clamp(3rem, 5.5vw, 4.8rem) 0;
+    }
+
+    .band-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: baseline;
+      gap: 1.2rem;
+      border-top: 1px solid var(--rule);
+      padding-top: 1.4rem;
+      margin-bottom: clamp(1.4rem, 3vw, 2.2rem);
+    }
+
+    .band-index {
+      font-family: var(--mono-font);
+      font-size: 0.76rem;
+      letter-spacing: 0.22em;
+      color: var(--tron-teal);
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .band-head h2 {
+      font-family: var(--mincho-font);
+      font-weight: 600;
+      font-size: clamp(1.55rem, 3.3vw, 2.3rem);
+      line-height: 1.25;
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .band-eyebrow {
+      grid-column: 1 / -1;
+      font-family: var(--mono-font);
+      font-size: 0.70rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 0;
+    }
+
+    .band-intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(1.4rem, 3.5vw, 2.8rem);
+      margin-bottom: clamp(1.6rem, 3.5vw, 2.4rem);
+    }
+
+    .band-intro p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.88;
+      color: var(--ink-2);
+    }
+
+    .band-intro .en {
+      font-size: 0.88rem;
+      color: var(--ink-3);
+      padding-left: clamp(0rem, 2vw, 1.4rem);
+      border-left: 1px solid var(--rule);
+    }
+
+    /* Portal Cards */
+    .portal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.6rem;
+    }
+
+    .portal {
+      display: flex;
+      flex-direction: column;
+      background: var(--plate);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      box-shadow: var(--shadow-plate);
+      overflow: hidden;
+      transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      color: inherit;
+    }
+
+    .portal:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+      border-color: var(--tron-teal-border);
+      color: inherit;
+    }
+
+    .portal-screen {
+      position: relative;
+      background: #07080c;
+      height: 210px;
+      overflow: hidden;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .portal-screen::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 4px);
+      pointer-events: none;
+    }
+
+    .portal-screen svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .portal-tag {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      font-family: var(--mono-font);
+      font-size: 0.64rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #8fd0c8;
+      background: rgba(7, 8, 12, 0.72);
+      border: 1px solid rgba(143, 208, 200, 0.3);
+      padding: 0.18rem 0.45rem;
+      border-radius: 2px;
+    }
+
+    .portal-tag.hal {
+      color: #ff9a8b;
+      border-color: rgba(217, 56, 41, 0.55);
+    }
+
+    .portal-body {
+      padding: 1.35rem 1.45rem 1.25rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .portal-kicker {
+      font-family: var(--mono-font);
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--tron-teal);
+      font-weight: 600;
+    }
+
+    .portal-body h3 {
+      font-family: var(--mincho-font);
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0.35rem 0 0.55rem;
+      line-height: 1.22;
+    }
+
+    .portal-body p {
+      margin: 0 0 1.1rem;
+      font-size: 0.88rem;
+      line-height: 1.72;
+      color: var(--ink-2);
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      font-size: 0.76rem;
+      padding: 0.38rem 0;
+      border-top: 1px solid rgba(216, 215, 209, 0.7);
+    }
+
+    .metric-row span:first-child {
+      color: var(--ink-3);
+    }
+
+    .metric-row span:last-child {
+      font-family: var(--mono-font);
+      color: var(--ink);
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .portal-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.78rem 1.45rem;
+      background: var(--paper-2);
+      border-top: 1px solid var(--rule);
+      font-family: var(--mono-font);
+      font-size: 0.70rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .portal-foot .cta {
+      color: var(--tron-teal);
+      font-weight: 600;
+    }
+
+    .portal:hover .portal-foot .cta {
+      color: var(--ink);
+    }
+
+    .plate {
+      margin: 0 0 1.5rem;
+      background: var(--plate);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      box-shadow: var(--shadow-plate);
+      overflow: hidden;
+    }
+
+    .plate figcaption {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.35rem 1.2rem;
+      padding: 0.70rem 0.95rem 0.75rem;
+      font-family: var(--mono-font);
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      border-top: 1px solid var(--rule);
+      background: var(--paper-2);
+    }
+
+    .plate figcaption b {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    table.cmp {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+      line-height: 1.48;
+      table-layout: fixed;
+    }
+
+    table.cmp th,
+    table.cmp td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.52rem 0.68rem;
+      overflow-wrap: anywhere;
+    }
+
+    table.cmp th {
+      font-family: var(--mono-font);
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      font-weight: 600;
+      background: var(--paper-2);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    table.cmp td {
+      border-bottom: 1px solid rgba(216, 215, 209, 0.7);
+      color: var(--ink-2);
+    }
+
+    table.cmp tr:last-child td {
+      border-bottom: none;
+    }
+
+    table.cmp tr:hover td {
+      background: rgba(0, 128, 128, 0.025);
+    }
+
+    table.cmp td:first-child {
+      font-family: var(--mono-font);
+      font-weight: 600;
+      color: var(--tron-teal);
+    }
+
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-family: var(--mono-font);
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: var(--mono-font);
+      font-size: 0.60rem;
+      line-height: 1.2;
+      padding: 0.18rem 0.42rem;
+      border-radius: 2px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-teal {
+      background: var(--tron-teal-soft);
+      color: var(--tron-teal);
+      border: 1px solid var(--tron-teal-border);
+    }
+
+    .badge-gold {
+      background: var(--tron-gold-soft);
+      color: #8a6230;
+      border: 1px solid var(--tron-gold-border);
+    }
+
+    ul.spec {
+      list-style: none;
+      margin: 0;
+      padding: 0.20rem 0;
+    }
+
+    ul.spec li {
+      display: grid;
+      grid-template-columns: minmax(9rem, 26%) minmax(0, 1fr);
+      gap: 0.6rem 1.25rem;
+      align-items: baseline;
+      padding: 0.62rem 1rem;
+      border-bottom: 1px solid rgba(216, 215, 209, 0.7);
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    ul.spec li:last-child {
+      border-bottom: none;
+    }
+
+    ul.spec strong {
+      font-family: var(--mono-font);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    footer.site {
+      background: #14171a;
+      color: #9ea7b0;
+      padding: clamp(2.6rem, 5vw, 3.8rem) 0 2rem;
+      font-size: 0.82rem;
+      line-height: 1.75;
+    }
+
+    footer.site a {
+      color: #ccd3da;
+    }
+
+    footer.site a:hover {
+      color: #ffffff;
+    }
+
+    .footer-columns {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 clamp(1.25rem, 5vw, 3.5rem);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+      gap: 1.8rem;
+    }
+
+    footer.site h4 {
+      font-family: var(--mono-font);
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #e4e8ec;
+      margin: 0 0 0.85rem;
+      font-weight: 600;
+    }
+
+    footer.site ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    footer.site li {
+      margin-bottom: 0.35rem;
+    }
+
+    .footer-legal {
+      max-width: 1180px;
+      margin: 2rem auto 0;
+      padding: 1.2rem clamp(1.25rem, 5vw, 3.5rem) 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .footer-legal p.hold {
+      margin: 0;
+      color: #b8c0c8;
+      font-size: 0.78rem;
+      text-align: center;
+    }
+
+    @media (max-width: 860px) {
+      .portal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .band-head {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.35rem;
+      }
+
+      .band-intro {
+        grid-template-columns: 1fr;
+      }
+
+      .band-intro .en {
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px solid var(--rule);
+        padding-top: 1rem;
+      }
+
+      .nav-container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      ul.spec li {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.2rem;
+      }
+    }
+
+    @media (max-width: 720px) {
+      table.cmp thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+      }
+
+      table.cmp,
+      table.cmp tbody,
+      table.cmp tr,
+      table.cmp td {
+        display: block;
+        width: 100%;
+      }
+
+      table.cmp tr {
+        border-bottom: 1px solid var(--rule);
+        padding: 0.35rem 0;
+      }
+
+      table.cmp td {
+        display: grid;
+        grid-template-columns: 6.5rem minmax(0, 1fr);
+        gap: 0.25rem 0.65rem;
+        border-bottom: none;
+        padding: 0.22rem 0.85rem;
+      }
+
+      table.cmp td::before {
+        content: attr(data-label);
+        font-family: var(--mono-font);
+        font-size: 0.58rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        font-weight: 600;
+      }
+
+      .num {
+        text-align: left;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<nav class="sticky" aria-label="B-System EDU navigation">
-  <div class="nav-container">
-    <a href="index.html" class="logo">
-      edu<span>BTRON.PRO</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html" aria-current="page">Portals</a></li>
-      <li><a href="Physics.html">Physics</a></li>
-      <li><a href="Music.html">Music</a></li>
-      <li><a href="BTRON-EDU-SPEC.txt">Spec</a></li>
-    </ul>
-  </div>
-</nav>
-
-<header class="hero">
-  <div class="hero-content">
-    <p class="hero-kicker">B-System EDU · Formal Models &amp; Analytical Synthesis</p>
-    <h1>Equations. Drawn, Heard, Seen.</h1>
-    <div class="hero-rule"></div>
-    <p class="hero-lede">
-      Two zero-dependency interactive CRT portals built directly from governing equations —
-      eighteen real-time physics simulations and sixteen multi-part mathematical synthesizers.
-    </p>
-    <p class="hero-lede-en">
-      No pre-rendered video loops, no external libraries, no texture atlases. Every field line,
-      null geodesic, quantum interference fringe, and 48 kHz acoustic waveform is computed live from closed-form math.
-    </p>
-    <div class="hero-marks">
-      <span>18 Physics Stations</span>
-      <span>16 Math-Synth Demos</span>
-      <span>56 Analytical Parts</span>
-      <span>WebGL1 Vector CRT</span>
-      <span>48 kHz Phase Synth</span>
-      <span>Zero Dependencies</span>
+  <nav class="sticky" aria-label="B-System EDU navigation">
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        edu<span>BTRON.PRO</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" aria-current="page">Portals</a></li>
+        <li><a href="Music.html">Music</a></li>
+        <li><a href="Physics.html">Physics</a></li>
+        <li><a href="BTRON-EDU-SPEC.txt">Spec</a></li>
+      </ul>
     </div>
-  </div>
-</header>
+  </nav>
 
-<main>
-
-  <!-- 00 / Interactive Portals -->
-  <section class="band" id="portals">
-    <div class="wrap">
-      <div class="band-head">
-        <span class="band-index">00 / Portals</span>
-        <h2>Interactive Console Portals</h2>
-        <p class="band-eyebrow">Live Vector Simulation · Real-Time Web Audio Synthesis · Direct Launch</p>
+  <header class="hero">
+    <div class="hero-content">
+      <p class="hero-kicker">B-System EDU · Formal Models &amp; Analytical Synthesis</p>
+      <h1>Equations. Drawn, Heard, Seen.</h1>
+      <div class="hero-rule"></div>
+      <p class="hero-lede">
+        Two zero-dependency interactive CRT portals built directly from governing equations —
+        eighteen real-time physics simulations and sixteen multi-part mathematical synthesizers.
+      </p>
+      <p class="hero-lede-en">
+        No pre-rendered video loops, no external libraries, no texture atlases. Every field line,
+        null geodesic, quantum interference fringe, and 48 kHz acoustic waveform is computed live from closed-form math.
+      </p>
+      <div class="hero-marks">
+        <span>32 Physics Stations</span>
+        <span>16 Math-Synth Demos</span>
+        <span>56 Analytical Parts</span>
+        <span>WebGL1 Vector CRT</span>
+        <span>48 kHz Phase Synth</span>
+        <span>Zero Dependencies</span>
       </div>
-      <div class="band-intro">
-        <p>
-          <strong>Physics.html</strong> renders eighteen undergraduate and relativistic models onto a 1960s-style
-          WebGL1 vector CRT — including exact Maxwell Hertzian dipole contours, 2D double-slit quantum wave-particle
-          interference, Einstein ring spiral lensing, RK4 Schwarzschild null geodesics, and a Luminet black hole accretion disk.
-        </p>
-        <p class="en">
-          <strong>Music.html</strong> digitizes all sixteen multi-part analytical function demos into a minimal
-          HAL 9000 console. Every voice evaluates <code>f(y) = 261.63 · 2^y Hz</code> with continuous sample-rate
-          phase integration so exponential kicks, acid slides, and polyphonic canons sound 1:1 with the equations.
-        </p>
-      </div>
+  </header>
 
-      <div class="portal-grid">
-        <!-- Physics Portal -->
-        <a class="portal" href="Physics.html">
-          <div class="portal-screen">
-            <span class="portal-tag">WEBGL1 VECTOR CRT</span>
-            <svg viewBox="0 0 420 210" aria-hidden="true">
-              <defs>
-                <radialGradient id="bhg" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="#e8a454" stop-opacity="0.28"/>
-                  <stop offset="100%" stop-color="#07080c" stop-opacity="0"/>
-                </radialGradient>
-              </defs>
-              <rect width="420" height="210" fill="#07080c"/>
-              <circle cx="210" cy="105" r="95" fill="url(#bhg)"/>
-              <!-- Stylized Hertzian dipole + photon ring motif -->
-              <g fill="none" stroke-width="1.2">
-                <ellipse cx="160" cy="105" rx="34" ry="24" stroke="#e8a454" stroke-opacity="0.85"/>
-                <ellipse cx="260" cy="105" rx="34" ry="24" stroke="#e8a454" stroke-opacity="0.85"/>
-                <ellipse cx="148" cy="105" rx="52" ry="39" stroke="#5bb8a8" stroke-opacity="0.7"/>
-                <ellipse cx="272" cy="105" rx="52" ry="39" stroke="#5bb8a8" stroke-opacity="0.7"/>
-                <ellipse cx="116" cy="105" rx="44" ry="68" stroke="#3b66c4" stroke-opacity="0.65"/>
-                <ellipse cx="304" cy="105" rx="44" ry="68" stroke="#3b66c4" stroke-opacity="0.65"/>
-                <ellipse cx="102" cy="105" rx="64" ry="84" stroke="#39449e" stroke-opacity="0.45"/>
-                <ellipse cx="318" cy="105" rx="64" ry="84" stroke="#39449e" stroke-opacity="0.45"/>
-              </g>
-              <circle cx="210" cy="96" r="4" fill="#ff7345"/>
-              <circle cx="210" cy="114" r="4" fill="#5da0ff"/>
-            </svg>
-          </div>
-          <div class="portal-body">
-            <div class="portal-kicker">Portal I · Series 18</div>
-            <h3>Physics.html</h3>
-            <p>
-              Eighteen formal physics models driven by exact equations: double pendulum chaos,
-              Maxwell Hertzian dipole radiation, quantum double-slit wavefield, Einstein rings,
-              Schwarzschild null geodesics, and relativistic black hole accretion.
-            </p>
-            <div class="metric-row"><span>Engine</span><span>edu-engine.js (WebGL1)</span></div>
-            <div class="metric-row"><span>Stations</span><span>I – XVIII (18 Models)</span></div>
-            <div class="metric-row"><span>Controls</span><span>← / → · Space · I</span></div>
-          </div>
-          <div class="portal-foot">
-            <span>Formal Models</span>
-            <span class="cta">Launch Physics.html →</span>
-          </div>
-        </a>
+  <main>
 
-        <!-- Music Portal -->
-        <a class="portal" href="Music.html">
-          <div class="portal-screen">
-            <span class="portal-tag hal">HAL 9000 · 48 KHZ SYNTH</span>
-            <svg viewBox="0 0 420 210" aria-hidden="true">
-              <rect width="420" height="210" fill="#050609"/>
-              <line x1="28" y1="105" x2="392" y2="105" stroke="rgba(230,225,214,0.28)" stroke-width="1"/>
-              <line x1="210" y1="22" x2="210" y2="188" stroke="rgba(230,225,214,0.28)" stroke-width="1"/>
-              <!-- Stylized analytical piecewise synth curves -->
-              <path d="M36 142 L68 142 M68 118 L100 118 M100 94 L132 94 M132 118 L164 118 M164 82 L196 82 M196 105 L228 105 M228 68 L260 68 M260 92 L292 92" stroke="#e8a454" stroke-width="2" fill="none"/>
-              <path d="M36 164 Q52 130 68 164 Q84 130 100 164 Q116 130 132 164 Q148 130 164 164 Q180 130 196 164 Q212 130 228 164 Q244 130 260 164 Q276 130 292 164" stroke="#7fd4cc" stroke-width="1.6" fill="none"/>
-              <path d="M36 62 L52 74 L68 62 L84 74 L100 50 L116 64 L132 50 L148 64 L164 42 L180 56 L196 42 L212 56 L228 50 L244 62 L260 44 L276 58 L292 48" stroke="#9bc5ff" stroke-width="1.4" fill="none" stroke-opacity="0.85"/>
-              <!-- HAL playhead -->
-              <line x1="292" y1="22" x2="292" y2="188" stroke="#d93829" stroke-opacity="0.55" stroke-width="1.2"/>
-              <circle cx="292" cy="92" r="4.5" fill="#ffffff" stroke="#e8a454" stroke-width="2"/>
-              <circle cx="292" cy="164" r="4.5" fill="#ffffff" stroke="#7fd4cc" stroke-width="2"/>
-              <circle cx="292" cy="48" r="4.5" fill="#ffffff" stroke="#9bc5ff" stroke-width="2"/>
-            </svg>
-          </div>
-          <div class="portal-body">
-            <div class="portal-kicker">Portal II · Analytical Audio</div>
-            <h3>Music.html</h3>
-            <p>
-              Sixteen multi-part analytical function demos in a minimal HAL 9000 CRT console.
-              Every curve drives continuous 48 kHz phase-integrated synthesis with live cursor
-              scrubbing, exact part formulas, and hidden input legend.
-            </p>
-            <div class="metric-row"><span>Engine</span><span>synth-engine.js (Web Audio)</span></div>
-            <div class="metric-row"><span>Repertoire</span><span>16 Demos · 56 Parts</span></div>
-            <div class="metric-row"><span>Controls</span><span>Drag X · ←/→ · ↑/↓ · ?</span></div>
-          </div>
-          <div class="portal-foot">
-            <span>HAL 9000 Math Synth</span>
-            <span class="cta">Launch Music.html →</span>
-          </div>
-        </a>
-      </div>
-    </div>
-  </section>
+    <!-- 00 / Interactive Portals -->
+    <section class="band" id="portals">
+      <div class="wrap">
+        <div class="band-head">
+          <span class="band-index">00 / Portals</span>
+          <h2>Interactive Console Portals</h2>
+          <p class="band-eyebrow">Live Vector Simulation · Real-Time Web Audio Synthesis · Direct Launch</p>
+        </div>
+        <div class="band-intro">
+          <p>
+            <strong>Music.html</strong> (Lead Portal) digitizes all sixteen multi-part analytical function demos into a
+            unified HAL 9000 console. Every voice evaluates <code>f(y) = 261.63 · 2^y Hz</code> with continuous 48 kHz
+            phase integration so exponential kicks, acid slides, and polyphonic canons sound 1:1 with the equations.
+          </p>
+          <p class="en">
+            <strong>Physics.html</strong> shares the same minimal HAL 9000 CRT shell and renders eighteen formal physics
+            models in WebGL1 — including exact Maxwell Hertzian dipole contours, 2D double-slit quantum interference,
+            bubble-chamber pair production, Einstein rings, RK4 Schwarzschild null geodesics, and a Luminet black hole.
+          </p>
+        </div>
 
-  <!-- 01 / Physics Catalogue -->
-  <section class="band" id="physics-index">
-    <div class="wrap">
-      <div class="band-head">
-        <span class="band-index">01 / Physics</span>
-        <h2>Physics.html — Series 18 Catalogue</h2>
-        <p class="band-eyebrow">Classical · Electrodynamics · Quantum · General Relativity · Black Holes</p>
+        <div class="portal-grid">
+          <!-- Music Portal (Lead Main) -->
+          <a class="portal" href="Music.html">
+            <div class="portal-screen">
+              <span class="portal-tag hal">LEAD PORTAL · HAL 9000 SYNTH</span>
+              <svg viewBox="0 0 420 210" aria-hidden="true">
+                <rect width="420" height="210" fill="#050609" />
+                <line x1="28" y1="105" x2="392" y2="105" stroke="rgba(230,225,214,0.28)" stroke-width="1" />
+                <line x1="210" y1="22" x2="210" y2="188" stroke="rgba(230,225,214,0.28)" stroke-width="1" />
+                <path
+                  d="M36 142 L68 142 M68 118 L100 118 M100 94 L132 94 M132 118 L164 118 M164 82 L196 82 M196 105 L228 105 M228 68 L260 68 M260 92 L292 92"
+                  stroke="#e8a454" stroke-width="2" fill="none" />
+                <path
+                  d="M36 164 Q52 130 68 164 Q84 130 100 164 Q116 130 132 164 Q148 130 164 164 Q180 130 196 164 Q212 130 228 164 Q244 130 260 164 Q276 130 292 164"
+                  stroke="#7fd4cc" stroke-width="1.6" fill="none" />
+                <path
+                  d="M36 62 L52 74 L68 62 L84 74 L100 50 L116 64 L132 50 L148 64 L164 42 L180 56 L196 42 L212 56 L228 50 L244 62 L260 44 L276 58 L292 48"
+                  stroke="#9bc5ff" stroke-width="1.4" fill="none" stroke-opacity="0.85" />
+                <line x1="292" y1="22" x2="292" y2="188" stroke="#d93829" stroke-opacity="0.55" stroke-width="1.2" />
+                <circle cx="292" cy="92" r="4.5" fill="#ffffff" stroke="#e8a454" stroke-width="2" />
+                <circle cx="292" cy="164" r="4.5" fill="#ffffff" stroke="#7fd4cc" stroke-width="2" />
+                <circle cx="292" cy="48" r="4.5" fill="#ffffff" stroke="#9bc5ff" stroke-width="2" />
+              </svg>
+            </div>
+            <div class="portal-body">
+              <div class="portal-kicker">Portal I · Lead Main · Analytical Audio</div>
+              <h3>Music.html</h3>
+              <p>
+                Sixteen multi-part analytical function demos in a minimal HAL 9000 CRT console.
+                Every curve drives continuous 48 kHz phase-integrated synthesis with live cursor
+                scrubbing, exact part formulas, and hidden input legend.
+              </p>
+              <div class="metric-row"><span>Engine</span><span>synth-engine.js (Web Audio)</span></div>
+              <div class="metric-row"><span>Repertoire</span><span>16 Demos · 56 Parts</span></div>
+              <div class="metric-row"><span>Controls</span><span>Drag X · ←/→ · ↑/↓ · I · ?</span></div>
+            </div>
+            <div class="portal-foot">
+              <span>HAL 9000 Math Synth</span>
+              <span class="cta">Launch Music.html →</span>
+            </div>
+          </a>
+
+          <!-- Physics Portal -->
+          <a class="portal" href="Physics.html">
+            <div class="portal-screen">
+              <span class="portal-tag">HAL 9000 · WEBGL1 VECTOR CRT</span>
+              <svg viewBox="0 0 420 210" aria-hidden="true">
+                <defs>
+                  <radialGradient id="bhg" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#e8a454" stop-opacity="0.28" />
+                    <stop offset="100%" stop-color="#07080c" stop-opacity="0" />
+                  </radialGradient>
+                </defs>
+                <rect width="420" height="210" fill="#07080c" />
+                <circle cx="210" cy="105" r="95" fill="url(#bhg)" />
+                <g fill="none" stroke-width="1.2">
+                  <ellipse cx="160" cy="105" rx="34" ry="24" stroke="#e8a454" stroke-opacity="0.85" />
+                  <ellipse cx="260" cy="105" rx="34" ry="24" stroke="#e8a454" stroke-opacity="0.85" />
+                  <ellipse cx="148" cy="105" rx="52" ry="39" stroke="#5bb8a8" stroke-opacity="0.7" />
+                  <ellipse cx="272" cy="105" rx="52" ry="39" stroke="#5bb8a8" stroke-opacity="0.7" />
+                  <ellipse cx="116" cy="105" rx="44" ry="68" stroke="#3b66c4" stroke-opacity="0.65" />
+                  <ellipse cx="304" cy="105" rx="44" ry="68" stroke="#3b66c4" stroke-opacity="0.65" />
+                  <ellipse cx="102" cy="105" rx="64" ry="84" stroke="#39449e" stroke-opacity="0.45" />
+                  <ellipse cx="318" cy="105" rx="64" ry="84" stroke="#39449e" stroke-opacity="0.45" />
+                </g>
+                <circle cx="210" cy="96" r="4" fill="#ff7345" />
+                <circle cx="210" cy="114" r="4" fill="#5da0ff" />
+              </svg>
+            </div>
+            <div class="portal-body">
+              <div class="portal-kicker">Portal II · Series 32</div>
+              <h3>Physics.html</h3>
+              <p>
+                Thirty-two formal physics models driven by exact equations: double pendulum chaos,
+                the full Electrodynamics Field Topology Zoo (static saddles &amp; images, relativistic kinks, Cherenkov,
+                synchrotron, multipoles, phased arrays, waveguides &amp; cavities), thermodynamics, quantum double-slit,
+                Schwarzschild black holes, Lorenz attractor, and 3-body scattering.
+              </p>
+              <div class="metric-row"><span>Engine</span><span>edu-engine.js (WebGL1)</span></div>
+              <div class="metric-row"><span>Stations</span><span>I – XXXII (32 Models)</span></div>
+              <div class="metric-row"><span>Controls</span><span>← / → · ↑ / ↓ · 1–8 · I · ?</span></div>
+            </div>
+            <div class="portal-foot">
+              <span>Formal Models</span>
+              <span class="cta">Launch Physics.html →</span>
+            </div>
+          </a>
+        </div>
+    </section>
+
+    <!-- 01 / Physics Catalogue -->
+    <section class="band" id="physics-index">
+      <div class="wrap">
+        <div class="band-head">
+          <span class="band-index">01 / Physics</span>
+          <h2>Physics.html — Series 18 Catalogue</h2>
+          <p class="band-eyebrow">Classical · Electrodynamics · Quantum · General Relativity · Black Holes</p>
+        </div>
+        <figure class="plate">
+          <table class="cmp">
+            <thead>
+              <tr>
+                <th style="width:9%">Station</th>
+                <th style="width:22%">Discipline</th>
+                <th style="width:29%">Model</th>
+                <th style="width:40%">Governing Relation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Station">I</td>
+                <td data-label="Discipline">Classical Mechanics</td>
+                <td data-label="Model">Double Pendulum (5 bodies, RK4)</td>
+                <td data-label="Equation"><code>d/dt (∂L/∂θ̇) = ∂L/∂θ</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">II</td>
+                <td data-label="Discipline">Electrodynamics</td>
+                <td data-label="Model">Hertzian Dipole Field Contours</td>
+                <td data-label="Equation"><code>∇×E = −∂B/∂t · ∇×B = (1/c²)∂E/∂t</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">III–V</td>
+                <td data-label="Discipline">Optics · Thermo · Stat Mech</td>
+                <td data-label="Model">Cauchy Prism · Carnot · 2D Ising</td>
+                <td data-label="Equation"><code>n(λ) ≈ A+B/λ² · η = 1−Tc/Th · P ∝ e^(−E/kT)</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">VI</td>
+                <td data-label="Discipline">Quantum Mechanics</td>
+                <td data-label="Model">2D Double-Slit Wave-Particle Duality</td>
+                <td data-label="Equation"><code>P(y) = |ψ₁ + ψ₂|² ≠ |ψ₁|² + |ψ₂|²</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">VII–X</td>
+                <td data-label="Discipline">Fields · Fluids · Relativity</td>
+                <td data-label="Model">Cyclotron · Kármán Street · Mach · Light Clock</td>
+                <td data-label="Equation"><code>F = q(v×B) · sin μ = 1/M · Δt = γΔτ</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XI</td>
+                <td data-label="Discipline">Gravitation</td>
+                <td data-label="Model">Spiral Galaxy Einstein Ring</td>
+                <td data-label="Equation"><code>Gμν = (8πG/c⁴)Tμν ⇒ α = 4GM/(c²b)</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XII–XVI</td>
+                <td data-label="Discipline">Astro · Circuits · Signals</td>
+                <td data-label="Model">Transit · Bridge · Adder · Nyquist · Kalman</td>
+                <td data-label="Equation"><code>ΔF/F ≈ (Rp/R★)² · fs &gt; 2fmax · K = P⁻/(P⁻+R)</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XVII</td>
+                <td data-label="Discipline">General Relativity</td>
+                <td data-label="Model">Schwarzschild Null Geodesics (RK4 Binet)</td>
+                <td data-label="Equation"><code>d²u/dφ² + u = (3/2)rs u² · bcrit = 2.598 rs</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XVIII</td>
+                <td data-label="Discipline">Black Holes</td>
+                <td data-label="Model">Luminet Accretion Disk &amp; Photon Ring</td>
+                <td data-label="Equation"><code>g = √(1−3rs/2r)/(1+Ωb sinθ₀ cosα) · F ∝ g⁴</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XIX–XX</td>
+                <td data-label="Discipline">Thermodynamics</td>
+                <td data-label="Model">Maxwell–Boltzmann Gas · 2D Fourier Heat Diffusion</td>
+                <td data-label="Equation"><code>f(v) ∝ v² exp(−mv²/2kT) · ∂T/∂t = α∇²T</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XXI–XXII</td>
+                <td data-label="Discipline">Magnetism 2D &amp; 3D</td>
+                <td data-label="Model">Helmholtz Coils Biot–Savart · 3D Dipole &amp; Magnetic Mirror</td>
+                <td data-label="Equation"><code>∇·B = 0 · B = (μ₀/4π)[3(m·r̂)r̂−m]/r³</code></td>
+              </tr>
+            </tbody>
+          </table>
+          <figcaption>
+            <span><b>Physics.html</b> — 22 Real-Time Vector Stations</span>
+            <span><a href="Physics.html">Open Physics.html →</a></span>
+          </figcaption>
+        </figure>
       </div>
       <figure class="plate">
         <table class="cmp">
@@ -690,116 +981,225 @@ footer.site li { margin-bottom: 0.35rem; }
             </tr>
           </thead>
           <tbody>
-            <tr><td data-label="Station">I</td><td data-label="Discipline">Classical Mechanics</td><td data-label="Model">Double Pendulum (5 bodies, RK4)</td><td data-label="Equation"><code>d/dt (∂L/∂θ̇) = ∂L/∂θ</code></td></tr>
-            <tr><td data-label="Station">II</td><td data-label="Discipline">Electrodynamics</td><td data-label="Model">Hertzian Dipole Field Contours</td><td data-label="Equation"><code>∇×E = −∂B/∂t · ∇×B = (1/c²)∂E/∂t</code></td></tr>
-            <tr><td data-label="Station">III–V</td><td data-label="Discipline">Optics · Thermo · Stat Mech</td><td data-label="Model">Cauchy Prism · Carnot · 2D Ising</td><td data-label="Equation"><code>n(λ) ≈ A+B/λ² · η = 1−Tc/Th · P ∝ e^(−E/kT)</code></td></tr>
-            <tr><td data-label="Station">VI</td><td data-label="Discipline">Quantum Mechanics</td><td data-label="Model">2D Double-Slit Wave-Particle Duality</td><td data-label="Equation"><code>P(y) = |ψ₁ + ψ₂|² ≠ |ψ₁|² + |ψ₂|²</code></td></tr>
-            <tr><td data-label="Station">VII–X</td><td data-label="Discipline">Fields · Fluids · Relativity</td><td data-label="Model">Cyclotron · Kármán Street · Mach · Light Clock</td><td data-label="Equation"><code>F = q(v×B) · sin μ = 1/M · Δt = γΔτ</code></td></tr>
-            <tr><td data-label="Station">XI</td><td data-label="Discipline">Gravitation</td><td data-label="Model">Spiral Galaxy Einstein Ring</td><td data-label="Equation"><code>Gμν = (8πG/c⁴)Tμν ⇒ α = 4GM/(c²b)</code></td></tr>
-            <tr><td data-label="Station">XII–XVI</td><td data-label="Discipline">Astro · Circuits · Signals</td><td data-label="Model">Transit · Bridge · Adder · Nyquist · Kalman</td><td data-label="Equation"><code>ΔF/F ≈ (Rp/R★)² · fs &gt; 2fmax · K = P⁻/(P⁻+R)</code></td></tr>
-            <tr><td data-label="Station">XVII</td><td data-label="Discipline">General Relativity</td><td data-label="Model">Schwarzschild Null Geodesics (RK4 Binet)</td><td data-label="Equation"><code>d²u/dφ² + u = (3/2)rs u² · bcrit = 2.598 rs</code></td></tr>
-            <tr><td data-label="Station">XVIII</td><td data-label="Discipline">Black Holes</td><td data-label="Model">Luminet Accretion Disk &amp; Photon Ring</td><td data-label="Equation"><code>g = √(1−3rs/2r)/(1+Ωb sinθ₀ cosα) · F ∝ g⁴</code></td></tr>
+            <tr>
+              <td data-label="Station">I</td>
+              <td data-label="Discipline">Classical Mechanics</td>
+              <td data-label="Model">Double Pendulum (5 bodies, RK4)</td>
+              <td data-label="Equation"><code>d/dt (∂L/∂θ̇) = ∂L/∂θ</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">II</td>
+              <td data-label="Discipline">Electrodynamics</td>
+              <td data-label="Model">Hertzian Dipole Field Contours</td>
+              <td data-label="Equation"><code>∇×E = −∂B/∂t · ∇×B = (1/c²)∂E/∂t</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">III–V</td>
+              <td data-label="Discipline">Optics · Thermo · Stat Mech</td>
+              <td data-label="Model">Cauchy Prism · Carnot · 2D Ising</td>
+              <td data-label="Equation"><code>n(λ) ≈ A+B/λ² · η = 1−Tc/Th · P ∝ e^(−E/kT)</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">VI</td>
+              <td data-label="Discipline">Quantum Mechanics</td>
+              <td data-label="Model">2D Double-Slit Wave-Particle Duality</td>
+              <td data-label="Equation"><code>P(y) = |ψ₁ + ψ₂|² ≠ |ψ₁|² + |ψ₂|²</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">VII–X</td>
+              <td data-label="Discipline">Fields · Fluids · Relativity</td>
+              <td data-label="Model">Cyclotron · Kármán Street · Mach · Light Clock</td>
+              <td data-label="Equation"><code>F = q(v×B) · sin μ = 1/M · Δt = γΔτ</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XI</td>
+              <td data-label="Discipline">Gravitation</td>
+              <td data-label="Model">Spiral Galaxy Einstein Ring</td>
+              <td data-label="Equation"><code>Gμν = (8πG/c⁴)Tμν ⇒ α = 4GM/(c²b)</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XII–XVI</td>
+              <td data-label="Discipline">Astro · Circuits · Signals</td>
+              <td data-label="Model">Transit · Bridge · Adder · Nyquist · Kalman</td>
+              <td data-label="Equation"><code>ΔF/F ≈ (Rp/R★)² · fs &gt; 2fmax · K = P⁻/(P⁻+R)</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XVII</td>
+              <td data-label="Discipline">General Relativity</td>
+              <td data-label="Model">Schwarzschild Null Geodesics (RK4 Binet)</td>
+              <td data-label="Equation"><code>d²u/dφ² + u = (3/2)rs u² · bcrit = 2.598 rs</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XVIII</td>
+              <td data-label="Discipline">Black Holes</td>
+              <td data-label="Model">Luminet Accretion Disk &amp; Photon Ring</td>
+              <td data-label="Equation"><code>g = √(1−3rs/2r)/(1+Ωb sinθ₀ cosα) · F ∝ g⁴</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XIX–XX</td>
+              <td data-label="Discipline">Thermodynamics</td>
+              <td data-label="Model">Maxwell–Boltzmann Gas · 2D Fourier Heat Diffusion</td>
+              <td data-label="Equation"><code>f(v) ∝ v² exp(−mv²/2kT) · ∂T/∂t = α∇²T</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XXI–XXII</td>
+              <td data-label="Discipline">Magnetism 2D &amp; 3D</td>
+              <td data-label="Model">Helmholtz Coils Biot–Savart · 3D Dipole &amp; Magnetic Mirror</td>
+              <td data-label="Equation"><code>∇·B = 0 · B = (μ₀/4π)[3(m·r̂)r̂−m]/r³</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XXIII–XXIV</td>
+              <td data-label="Discipline">Electrodynamics 2D &amp; 3D</td>
+              <td data-label="Model">Oscillating Quadrupole Contours · 3D Maxwell EM Wave</td>
+              <td data-label="Equation"><code>ΨQ ∝ sin²θ cosθ · S = (1/μ₀) E × B</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XXV–XXVI</td>
+              <td data-label="Discipline">Nonlinear Dynamics</td>
+              <td data-label="Model">Lorenz Attractor · 3-Body Scattering (Real + Phase Space)</td>
+              <td data-label="Equation"><code>ẋ = σ(y−x) · r̈ᵢ = Σ G mⱼ(rⱼ−rᵢ)/|rⱼ−rᵢ|³</code></td>
+            </tr>
+            <tr>
+              <td data-label="Station">XXVII–XXXII</td>
+              <td data-label="Discipline">Electrodynamics Field Zoo</td>
+              <td data-label="Model">Static Saddles/Images · Relativistic/Kink/Cherenkov · Synchrotron · Multipoles · Phased Array · Waveguides/Cavities</td>
+              <td data-label="Equation"><code>E⊥ = γE₀ · Ψl = Pl¹ sinθ hl⁽¹⁾(kr) · (∇²+k²)Ψ = 0</code></td>
+            </tr>
           </tbody>
         </table>
         <figcaption>
-          <span><b>Physics.html</b> — 18 Real-Time Vector Stations</span>
+          <span><b>Physics.html</b> — 32 Real-Time Vector Stations</span>
           <span><a href="Physics.html">Open Physics.html →</a></span>
         </figcaption>
       </figure>
-    </div>
-  </section>
-
-  <!-- 02 / Music Catalogue -->
-  <section class="band" id="music-index">
-    <div class="wrap">
-      <div class="band-head">
-        <span class="band-index">02 / Music</span>
-        <h2>Music.html — 16 Digitized Math-Synth Demos</h2>
-        <p class="band-eyebrow">Piecewise · Bitmask Rhythms · Diatonic Canons · Analytical Etudes</p>
       </div>
-      <figure class="plate">
-        <table class="cmp">
-          <thead>
-            <tr>
-              <th style="width:10%">Demos</th>
-              <th style="width:26%">Suite</th>
-              <th class="num" style="width:14%">Parts</th>
-              <th style="width:50%">Analytical Synthesis Core</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td data-label="Demos">01–04</td><td data-label="Suite">Harmonic Fan · Burgundy · Motor · Sub Swell</td><td class="num" data-label="Parts"><span class="badge badge-teal">17 Parts</span></td><td data-label="Core">10-voice overtone fan <code>s·log₂(n)−2</code>, pitch-envelope kicks, gliding chord progressions</td></tr>
-            <tr><td data-label="Demos">05–09</td><td data-label="Suite">Lime · Cobalt · Crimson · Mint · Emerald</td><td class="num" data-label="Parts"><span class="badge badge-teal">20 Parts</span></td><td data-label="Core">Bitmask rhythms (<code>68161601</code>, <code>44718</code>, <code>27995</code>), 16% swing <code>sw</code>, acid slides, diatonic arps</td></tr>
-            <tr><td data-label="Demos">10–12</td><td data-label="Suite">Violet Drift · Bronze Pulse · Obsidian Canon</td><td class="num" data-label="Parts"><span class="badge badge-gold">9 Parts</span></td><td data-label="Core">6-voice cosine-clamped ambient chords, dyadic accelerating pulse, 4-voice modular canon</td></tr>
-            <tr><td data-label="Demos">13–16</td><td data-label="Suite">Sage · Sapphire · Neon · Analytical Etudes</td><td class="num" data-label="Parts"><span class="badge badge-gold">10 Parts</span></td><td data-label="Core">Piecewise funk/arp leads, vibrato plucks, nested FM <code>2.8 sin(5 sin(4 sin(3 sin(2 sin x))))</code></td></tr>
-          </tbody>
-        </table>
-        <figcaption>
-          <span><b>Music.html</b> — 16 Demos / 56 Parts · 48 kHz Continuous Phase Integration</span>
-          <span><a href="Music.html">Open Music.html →</a></span>
-        </figcaption>
-      </figure>
-    </div>
-  </section>
+    </section>
 
-  <!-- 03 / Architecture -->
-  <section class="band" id="architecture">
-    <div class="wrap">
-      <div class="band-head">
-        <span class="band-index">03 / Architecture</span>
-        <h2>Portability &amp; Minimal Console Contract</h2>
-        <p class="band-eyebrow">Single-Buffer Vector Stroke · Sample-Accurate Audio · Cursor Navigation</p>
+    <!-- 02 / Music Catalogue -->
+    <section class="band" id="music-index">
+      <div class="wrap">
+        <div class="band-head">
+          <span class="band-index">02 / Music</span>
+          <h2>Music.html — 16 Digitized Math-Synth Demos</h2>
+          <p class="band-eyebrow">Piecewise · Bitmask Rhythms · Diatonic Canons · Analytical Etudes</p>
+        </div>
+        <figure class="plate">
+          <table class="cmp">
+            <thead>
+              <tr>
+                <th style="width:10%">Demos</th>
+                <th style="width:26%">Suite</th>
+                <th class="num" style="width:14%">Parts</th>
+                <th style="width:50%">Analytical Synthesis Core</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Demos">01–04</td>
+                <td data-label="Suite">Harmonic Fan · Burgundy · Motor · Sub Swell</td>
+                <td class="num" data-label="Parts"><span class="badge badge-teal">17 Parts</span></td>
+                <td data-label="Core">10-voice overtone fan <code>s·log₂(n)−2</code>, pitch-envelope kicks, gliding
+                  chord progressions</td>
+              </tr>
+              <tr>
+                <td data-label="Demos">05–09</td>
+                <td data-label="Suite">Lime · Cobalt · Crimson · Mint · Emerald</td>
+                <td class="num" data-label="Parts"><span class="badge badge-teal">20 Parts</span></td>
+                <td data-label="Core">Bitmask rhythms (<code>68161601</code>, <code>44718</code>, <code>27995</code>),
+                  16% swing <code>sw</code>, acid slides, diatonic arps</td>
+              </tr>
+              <tr>
+                <td data-label="Demos">10–12</td>
+                <td data-label="Suite">Violet Drift · Bronze Pulse · Obsidian Canon</td>
+                <td class="num" data-label="Parts"><span class="badge badge-gold">9 Parts</span></td>
+                <td data-label="Core">6-voice cosine-clamped ambient chords, dyadic accelerating pulse, 4-voice modular
+                  canon</td>
+              </tr>
+              <tr>
+                <td data-label="Demos">13–16</td>
+                <td data-label="Suite">Sage · Sapphire · Neon · Analytical Etudes</td>
+                <td class="num" data-label="Parts"><span class="badge badge-gold">10 Parts</span></td>
+                <td data-label="Core">Piecewise funk/arp leads, vibrato plucks, nested FM
+                  <code>2.8 sin(5 sin(4 sin(3 sin(2 sin x))))</code>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <figcaption>
+            <span><b>Music.html</b> — 16 Demos / 56 Parts · 48 kHz Continuous Phase Integration</span>
+            <span><a href="Music.html">Open Music.html →</a></span>
+          </figcaption>
+        </figure>
       </div>
-      <figure class="plate">
-        <ul class="spec">
-          <li><strong>Vector Display</strong><span><code>Physics.html</code> draws exclusively through screen-space stroked quads (<code>edu_seg</code>) and cell fills (<code>edu_cell</code>) in WebGL1, capped under 70,000 vertices for direct C99 OpenGL ES 2.0 portability.</span></li>
-          <li><strong>Audio Engine</strong><span><code>Music.html</code> runs continuous phase integration at native AudioContext sample rate with 2.8 ms anti-click voice gating and warm odd-harmonic shaping — works identically over <code>http://</code> and local <code>file://</code>.</span></li>
-          <li><strong>HAL 9000 Controls</strong><span>No overflowing button bars in <code>Music.html</code>: drag on the 2D graph to scrub <code>x</code> live, click left/right screen edges or press <code>←</code>/<code>→</code> for demos, <code>↑</code>/<code>↓</code> or <code>1–8</code> for parts, and <code>?</code> for the hidden legend.</span></li>
-          <li><strong>Specification</strong><span>Full C99 / MCU / GLES2 port notes are documented in <a href="BTRON-EDU-SPEC.txt"><code>BTRON-EDU-SPEC.txt</code></a>.</span></li>
+    </section>
+
+    <!-- 03 / Architecture -->
+    <section class="band" id="architecture">
+      <div class="wrap">
+        <div class="band-head">
+          <span class="band-index">03 / Architecture</span>
+          <h2>Portability &amp; Minimal Console Contract</h2>
+          <p class="band-eyebrow">Single-Buffer Vector Stroke · Sample-Accurate Audio · Cursor Navigation</p>
+        </div>
+        <figure class="plate">
+          <ul class="spec">
+            <li><strong>Vector Display</strong><span><code>Physics.html</code> draws exclusively through screen-space
+                stroked quads (<code>edu_seg</code>) and cell fills (<code>edu_cell</code>) in WebGL1, capped under
+                70,000 vertices for direct C99 OpenGL ES 2.0 portability.</span></li>
+            <li><strong>Audio Engine</strong><span><code>Music.html</code> runs continuous phase integration at native
+                AudioContext sample rate with 2.8 ms anti-click voice gating and warm odd-harmonic shaping — works
+                identically over <code>http://</code> and local <code>file://</code>.</span></li>
+            <li><strong>HAL 9000 Controls</strong><span>No overflowing button bars in <code>Music.html</code>: drag on
+                the 2D graph to scrub <code>x</code> live, click left/right screen edges or press
+                <code>←</code>/<code>→</code> for demos, <code>↑</code>/<code>↓</code> or <code>1–8</code> for parts,
+                and <code>?</code> for the hidden legend.</span></li>
+            <li><strong>Specification</strong><span>Full C99 / MCU / GLES2 port notes are documented in <a
+                  href="BTRON-EDU-SPEC.txt"><code>BTRON-EDU-SPEC.txt</code></a>.</span></li>
+          </ul>
+          <figcaption>
+            <span><b>B-System EDU</b> — Freestanding Web Reference</span>
+            <span>Ink / Paper / TRON Teal Design System</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site">
+    <div class="footer-columns">
+      <div>
+        <h4>Portals</h4>
+        <ul>
+          <li><a href="Physics.html">Physics.html — Series 18</a></li>
+          <li><a href="Music.html">Music.html — HAL 9000 Synth</a></li>
+          <li><a href="BTRON-EDU-SPEC.txt">BTRON-EDU-SPEC.txt</a></li>
         </ul>
-        <figcaption>
-          <span><b>B-System EDU</b> — Freestanding Web Reference</span>
-          <span>Ink / Paper / TRON Teal Design System</span>
-        </figcaption>
-      </figure>
+      </div>
+      <div>
+        <h4>Physics Highlights</h4>
+        <ul>
+          <li><a href="Physics.html">II · Hertzian Dipole Contours</a></li>
+          <li><a href="Physics.html">VI · Quantum Double-Slit</a></li>
+          <li><a href="Physics.html">XI · Einstein Ring Lensing</a></li>
+          <li><a href="Physics.html">XVII–XVIII · Schwarzschild Black Hole</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Music Synth</h4>
+        <ul>
+          <li><a href="Music.html">01 · Harmonic Fan (10 Voices)</a></li>
+          <li><a href="Music.html">06 · Cobalt Euclid</a></li>
+          <li><a href="Music.html">10 · Violet Drift Ambient</a></li>
+          <li><a href="Music.html">16 · Analytical Etudes</a></li>
+        </ul>
+      </div>
     </div>
-  </section>
-
-</main>
-
-<footer class="site">
-  <div class="footer-columns">
-    <div>
-      <h4>Portals</h4>
-      <ul>
-        <li><a href="Physics.html">Physics.html — Series 18</a></li>
-        <li><a href="Music.html">Music.html — HAL 9000 Synth</a></li>
-        <li><a href="BTRON-EDU-SPEC.txt">BTRON-EDU-SPEC.txt</a></li>
-      </ul>
+    <div class="footer-legal">
+      <p class="hold">B-System EDU · Formal Models &amp; Analytical Synthesis · BTRON.PRO</p>
     </div>
-    <div>
-      <h4>Physics Highlights</h4>
-      <ul>
-        <li><a href="Physics.html">II · Hertzian Dipole Contours</a></li>
-        <li><a href="Physics.html">VI · Quantum Double-Slit</a></li>
-        <li><a href="Physics.html">XI · Einstein Ring Lensing</a></li>
-        <li><a href="Physics.html">XVII–XVIII · Schwarzschild Black Hole</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4>Music Synth</h4>
-      <ul>
-        <li><a href="Music.html">01 · Harmonic Fan (10 Voices)</a></li>
-        <li><a href="Music.html">06 · Cobalt Euclid</a></li>
-        <li><a href="Music.html">10 · Violet Drift Ambient</a></li>
-        <li><a href="Music.html">16 · Analytical Etudes</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-legal">
-    <p class="hold">B-System EDU · Formal Models &amp; Analytical Synthesis · BTRON.PRO</p>
-  </div>
-</footer>
+  </footer>
 
 </body>
+
 </html>
