@@ -4074,22 +4074,28 @@ function drawAudioNoiseShaping(V, sim, t, dt, part) {
     // Part 3: R-2R Resistor Ladder DAC & Resistor Tolerance Nonlinearity (INL/DNL)
     const val = Math.floor((t * 14) % 64); // 6-bit animated sweep 0..63
     V.text("R-2R RESISTOR LADDER DAC  (CODE " + String(val).padStart(2, "0") + " / 63)", x0, 0.70, 0.028, COL.paper);
-    // Top: 6-bit R-2R Ladder Schematic
+    // Top: 6-bit R-2R Ladder Schematic (electrically exact: LSB B0 on left with 2R->GND termination, MSB B5 closest to VOUT!)
     const yRail = 0.44, yBot = 0.16;
+    // Left-end 2R termination to GND connected directly to the B0 node
+    V.line(-0.92, yRail, -0.74, yRail, [0.58, 0.72, 0.86, 0.75], 1.5);
+    V.line(-0.92, yRail, -0.92, yBot, [0.42, 0.56, 0.72, 0.65], 1.5);
+    V.text("2R", -0.90, 0.32, 0.020, COL.dim);
+    V.text("GND", -0.96, yBot - 0.05, 0.020, COL.dim);
     for (let b = 0; b < 6; b++) {
-      const bitOn = (val >> (5 - b)) & 1;
-      const x = -0.82 + b * 0.28;
+      // b = 0 is LSB (B0, weight 1/64), b = 5 is MSB (B5, weight 1/2, closest to VOUT)
+      const bitOn = (val >> b) & 1;
+      const x = -0.74 + b * 0.26;
       const col = bitOn ? [1.0, 0.66, 0.24, 0.96] : [0.36, 0.50, 0.66, 0.55];
       if (b < 5) {
-        V.line(x, yRail, x + 0.28, yRail, [0.58, 0.72, 0.86, 0.75], 1.5);
-        V.text("R", x + 0.12, yRail + 0.06, 0.024, COL.dim);
+        V.line(x, yRail, x + 0.26, yRail, [0.58, 0.72, 0.86, 0.75], 1.5);
+        V.text("R", x + 0.11, yRail + 0.06, 0.024, COL.dim);
       }
       V.line(x, yRail, x, yBot, col, 1.8);
       V.text("2R", x + 0.02, 0.32, 0.022, col);
       V.circ(x, yBot, 0.020, col, 1.8, 10);
-      V.text("B" + (5 - b), x - 0.03, yBot - 0.06, 0.024, col);
+      V.text("B" + b, x - 0.03, yBot - 0.06, 0.024, col);
     }
-    V.line(0.58, yRail, 0.84, yRail, [0.42, 0.92, 0.58, 0.95], 1.8);
+    V.line(0.56, yRail, 0.84, yRail, [0.42, 0.92, 0.58, 0.95], 1.8);
     V.text("VOUT", 0.85, yRail + 0.02, 0.026, [0.42, 0.92, 0.58, 0.95]);
 
     // Bottom: Transfer Curve — Ideal Linear (cyan) vs Real R-2R with 1.5% MSB Tolerance Glitch (amber)
@@ -4113,6 +4119,594 @@ function drawAudioNoiseShaping(V, sim, t, dt, part) {
       pxI = x; pyI = yI; pxR = x; pyR = yR;
     }
     return [["BITS", "6-BIT R-2R"], ["GLITCH", "MSB STEP"], ["PART", "3 / 3"]];
+  }
+}
+
+// Shared Digital Logic Gate Kit (matches drawAdder visual style for 8085 / Z80 / MSX CPU building blocks)
+function logicKit(V) {
+  const colOn = [0.98, 0.58, 0.22, 0.96], colGlow = [0.96, 0.46, 0.16, 0.34], colOff = [0.38, 0.46, 0.62, 0.48];
+  const colGateOff = [0.76, 0.80, 0.86, 0.72];
+  return {
+    colOn, colGlow, colOff,
+    wire(x0, y0, x1, y1, bit) {
+      if (bit) V.line(x0, y0, x1, y1, colGlow, 3.8);
+      V.line(x0, y0, x1, y1, bit ? colOn : colOff, bit ? 1.55 : 1.05);
+    },
+    pin(x, y, bit, lbl, dx) {
+      if (bit) V.circ(x, y, 0.025, colGlow, 3.0, 12);
+      V.circ(x, y, 0.016, bit ? colOn : colOff, 1.6, 12);
+      if (lbl) V.text(lbl, x + (dx || -0.09), y + 0.018, 0.032, bit ? colOn : COL.paper);
+    },
+    gateNot(x, y, bit) {
+      const col = bit ? colOn : colGateOff, h = 0.048, w = 0.072;
+      V.line(x, y - h, x, y + h, col, 1.4);
+      V.line(x, y + h, x + w, y, col, 1.4);
+      V.line(x, y - h, x + w, y, col, 1.4);
+      V.circ(x + w + 0.014, y, 0.013, col, 1.4, 10);
+    },
+    gateAnd(x, y, bit, scale) {
+      const sc = scale || 1, col = bit ? colOn : colGateOff, h = 0.068 * sc, w = 0.068 * sc;
+      V.line(x, y - h, x, y + h, col, 1.4);
+      V.line(x, y + h, x + w, y + h, col, 1.4);
+      V.line(x, y - h, x + w, y - h, col, 1.4);
+      let px = x + w, py = y + h;
+      for (let i = 1; i <= 10; i++) {
+        const a = Math.PI * 0.5 - (Math.PI * i) / 10;
+        const qx = x + w + Math.cos(a) * h, qy = y + Math.sin(a) * h;
+        V.line(px, py, qx, qy, col, 1.4); px = qx; py = qy;
+      }
+      V.text("AND", x + 0.015 * sc, y + 0.012 * sc, 0.024 * sc, COL.dim);
+    },
+    gateOr(x, y, bit, isXor, isNor, lbl) {
+      const col = bit ? colOn : colGateOff, h = 0.072, w = 0.145;
+      const pts = [];
+      for (let i = 0; i <= 8; i++) { const u = -1 + (2 * i) / 8; pts.push([x + 0.028 * (1 - u * u), y + u * h]); }
+      for (let i = 0; i <= 8; i++) { const u = 1 - (2 * i) / 8; pts.push([x + w * Math.cos(u * Math.PI * 0.5), y + u * h]); }
+      V.poly(pts.concat([pts[0]]), col, 1.4);
+      if (isXor) {
+        const bar = [];
+        for (let i = 0; i <= 8; i++) { const u = -1 + (2 * i) / 8; bar.push([x - 0.020 + 0.028 * (1 - u * u), y + u * h]); }
+        V.poly(bar, col, 1.4);
+      }
+      if (isNor) V.circ(x + w + 0.014, y, 0.013, col, 1.4, 10);
+      if (lbl) V.text(lbl, x + 0.032, y + 0.012, 0.024, COL.dim);
+    },
+    ffBox(x, y, w, h, q, title) {
+      const col = q ? colOn : colGateOff;
+      V.line(x, y, x + w, y, col, 1.5); V.line(x + w, y, x + w, y + h, col, 1.5);
+      V.line(x + w, y + h, x, y + h, col, 1.5); V.line(x, y + h, x, y, col, 1.5);
+      // Clock triangle at bottom-left
+      V.line(x, y + h * 0.28, x + 0.024, y + h * 0.20, col, 1.2);
+      V.line(x + 0.024, y + h * 0.20, x, y + h * 0.12, col, 1.2);
+      V.text(title, x + w * 0.22, y + h * 0.64, 0.028, col);
+      V.text(q ? "1" : "0", x + w * 0.42, y + h * 0.34, 0.032, q ? colOn : COL.dim);
+    },
+    timing(rows, nTicks, step, yTop, yBot) {
+      const tx0 = -0.68, tx1 = 0.88, tw = tx1 - tx0;
+      const rh = (yTop - yBot) / rows.length;
+      const dx = tw / nTicks;
+      // Vertical tick dividers
+      for (let k = 0; k <= nTicks; k += Math.max(1, nTicks >> 2)) {
+        const x = tx0 + k * dx;
+        V.line(x, yBot, x, yTop + 0.02, COL.grid, 0.7);
+      }
+      const xCur = tx0 + (step + 0.5) * dx;
+      V.line(xCur, yBot, xCur, yTop + 0.02, [0.95, 0.96, 1.0, 0.45], 1.1);
+      rows.forEach((r, ri) => {
+        const yb = yTop - (ri + 1) * rh + rh * 0.18;
+        const yh = yb + rh * 0.56;
+        const curBit = r.vals[step];
+        V.text(r.lbl, tx0 - 0.16, yb + rh * 0.48, 0.026, curBit ? colOn : COL.dim);
+        for (let k = 0; k <= step; k++) {
+          const b = r.vals[k], xa = tx0 + k * dx, xb = xa + dx;
+          const y = b ? yh : yb;
+          if (k > 0 && r.vals[k - 1] !== b) V.line(xa, r.vals[k - 1] ? yh : yb, xa, y, colOn, 1.2);
+          V.line(xa, y, xb, y, b ? colOn : colOff, b ? 1.5 : 1.0);
+        }
+      });
+    },
+  };
+}
+
+// XXXVII. FOUR GATES ROUTE A BUS — 2-to-1 Multiplexer & MSX 2-to-4 Slot Address Decoder (2 parts)
+function drawMuxDecoder(V, sim, t, dt, part) {
+  const p = (part || 0) % 2;
+  const K = logicKit(V);
+
+  if (p === 0) {
+    // Part 1: 2-to-1 Multiplexer (NOT + 2xAND + OR = 4 gates)
+    const nTicks = 16;
+    const step = Math.floor((t * 2.2) % nTicks);
+    const seqS = [], seqD0 = [], seqD1 = [], seqY = [];
+    for (let k = 0; k < nTicks; k++) {
+      const s = (k >> 3) & 1, d0 = (k & 1) ^ ((k >> 2) & 1), d1 = ((k >> 1) & 1);
+      seqS.push(s); seqD0.push(d0); seqD1.push(d1); seqY.push(s ? d1 : d0);
+    }
+    const S = seqS[step], nS = S ^ 1, D0 = seqD0[step], D1 = seqD1[step];
+    const a0 = D0 & nS, a1 = D1 & S, Y = a0 | a1;
+
+    // Schematic (y from 0.05 to 0.72)
+    K.pin(-0.78, 0.60, D0, "D0");
+    K.pin(-0.78, 0.38, S,  "S");
+    K.pin(-0.78, 0.16, D1, "D1");
+    // NOT gate on S -> nS
+    K.wire(-0.76, 0.38, -0.54, 0.38, S);
+    K.wire(-0.54, 0.38, -0.54, 0.48, S);
+    K.wire(-0.54, 0.48, -0.46, 0.48, S);
+    K.gateNot(-0.46, 0.48, nS);
+    K.wire(-0.36, 0.48, -0.14, 0.48, nS);
+    K.wire(-0.14, 0.48, -0.14, 0.54, nS);
+    // D0 -> top AND
+    K.wire(-0.76, 0.60, -0.14, 0.60, D0);
+    K.gateAnd(-0.14, 0.57, a0, 0.92);
+    // S & D1 -> bottom AND
+    K.wire(-0.54, 0.38, -0.54, 0.24, S);
+    K.wire(-0.54, 0.24, -0.14, 0.24, S);
+    K.wire(-0.76, 0.16, -0.14, 0.16, D1);
+    K.gateAnd(-0.14, 0.20, a1, 0.92);
+    // AND outputs -> OR gate -> Y
+    K.wire(-0.01, 0.57, 0.16, 0.57, a0);
+    K.wire(0.16, 0.57, 0.16, 0.42, a0);
+    K.wire(0.16, 0.42, 0.26, 0.42, a0);
+    K.wire(-0.01, 0.20, 0.16, 0.20, a1);
+    K.wire(0.16, 0.20, 0.16, 0.34, a1);
+    K.wire(0.16, 0.34, 0.26, 0.34, a1);
+    K.gateOr(0.24, 0.38, Y, false, false, "OR");
+    K.wire(0.39, 0.38, 0.68, 0.38, Y);
+    K.pin(0.70, 0.38, Y, "Y", 0.04);
+
+    K.timing([
+      { lbl: "S",  vals: seqS },
+      { lbl: "D0", vals: seqD0 },
+      { lbl: "D1", vals: seqD1 },
+      { lbl: "Y",  vals: seqY },
+    ], nTicks, step, -0.04, -0.74);
+    return [["SELECT S", String(S)], ["ROUTED", S ? "D1 -> Y" : "D0 -> Y"], ["GATES", "4 (MUX)"]];
+  } else {
+    // Part 2: MSX 2-to-4 Address Slot Decoder (A15, A14 -> SLOT0..SLOT3 via 2xNOT + 4xAND)
+    const nTicks = 16;
+    const step = Math.floor((t * 1.8) % nTicks);
+    const seqA15 = [], seqA14 = [], seqS0 = [], seqS1 = [], seqS2 = [], seqS3 = [];
+    for (let k = 0; k < nTicks; k++) {
+      const a15 = (k >> 1) & 1, a14 = k & 1;
+      seqA15.push(a15); seqA14.push(a14);
+      seqS0.push((!a15 && !a14) ? 1 : 0); seqS1.push((!a15 && a14) ? 1 : 0);
+      seqS2.push((a15 && !a14) ? 1 : 0);  seqS3.push((a15 && a14) ? 1 : 0);
+    }
+    const A15 = seqA15[step], A14 = seqA14[step], n15 = A15 ^ 1, n14 = A14 ^ 1;
+    const slots = [seqS0[step], seqS1[step], seqS2[step], seqS3[step]];
+    const addrs = ["0000H BIOS", "4000H CART", "8000H RAM", "C000H RAM"];
+
+    // Address rails on left
+    K.pin(-0.82, 0.62, A15, "A15");
+    K.pin(-0.82, 0.26, A14, "A14");
+    K.wire(-0.80, 0.62, -0.64, 0.62, A15); K.wire(-0.64, 0.62, -0.64, 0.04, A15);
+    K.wire(-0.64, 0.50, -0.56, 0.50, A15); K.gateNot(-0.56, 0.50, n15);
+    K.wire(-0.46, 0.50, -0.40, 0.50, n15); K.wire(-0.40, 0.62, -0.40, 0.04, n15);
+
+    K.wire(-0.80, 0.26, -0.52, 0.26, A14); K.wire(-0.52, 0.62, -0.52, 0.04, A14);
+    K.wire(-0.52, 0.14, -0.44, 0.14, A14); K.gateNot(-0.44, 0.14, n14);
+    K.wire(-0.34, 0.14, -0.28, 0.14, n14); K.wire(-0.28, 0.62, -0.28, 0.04, n14);
+
+    // 4 AND gates decoding each 16 KB MSX page
+    const ys = [0.60, 0.42, 0.24, 0.06];
+    for (let s = 0; s < 4; s++) {
+      const y = ys[s], b15 = (s >> 1) & 1, b14 = s & 1;
+      const x15 = b15 ? -0.64 : -0.40, v15 = b15 ? A15 : n15;
+      const x14 = b14 ? -0.52 : -0.28, v14 = b14 ? A14 : n14;
+      K.wire(x15, y + 0.025, 0.04, y + 0.025, v15);
+      K.wire(x14, y - 0.025, 0.04, y - 0.025, v14);
+      K.gateAnd(0.04, y, slots[s], 0.72);
+      K.wire(0.14, y, 0.40, y, slots[s]);
+      K.pin(0.42, y, slots[s], "SLOT" + s + " " + addrs[s], 0.04);
+    }
+
+    K.timing([
+      { lbl: "A15", vals: seqA15 },
+      { lbl: "A14", vals: seqA14 },
+      { lbl: "SL0", vals: seqS0 },
+      { lbl: "SL1", vals: seqS1 },
+      { lbl: "SL2", vals: seqS2 },
+      { lbl: "SL3", vals: seqS3 },
+    ], nTicks, step, -0.08, -0.76);
+    const active = (A15 << 1) | A14;
+    return [["PAGE", addrs[active]], ["ACTIVE", "SLOT " + active], ["GATES", "6 (2:4 DEC)"]];
+  }
+}
+
+// XXXVIII. TWO GATES REMEMBER A BIT — Cross-Coupled NOR SR Latch & Clocked D Flip-Flop (2 parts)
+function drawFlipFlop(V, sim, t, dt, part) {
+  const p = (part || 0) % 2;
+  const K = logicKit(V);
+
+  if (p === 0) {
+    // Part 1: 2-Gate Cross-Coupled NOR SR Latch (demonstrates SET -> HOLD -> RESET -> HOLD!)
+    const nTicks = 16;
+    const seqS = [0,1,1,0,0,0,0,0, 0,0,0,0,1,0,0,0];
+    const seqR = [0,0,0,0,0,0,1,1, 0,0,0,0,0,0,1,0];
+    const seqQ = [], seqNQ = [];
+    let q = 0;
+    for (let k = 0; k < nTicks; k++) {
+      if (seqS[k] && !seqR[k]) q = 1;
+      else if (seqR[k] && !seqS[k]) q = 0;
+      seqQ.push(q); seqNQ.push(q ^ 1);
+    }
+    const step = Math.floor((t * 2.0) % nTicks);
+    const S = seqS[step], R = seqR[step], Q = seqQ[step], nQ = seqNQ[step];
+
+    // Top NOR (R, nQ -> Q), Bottom NOR (S, Q -> nQ) with crisp X-crossing feedback!
+    K.pin(-0.68, 0.56, R, "R (RST)");
+    K.pin(-0.68, 0.14, S, "S (SET)");
+    K.wire(-0.66, 0.56, -0.18, 0.56, R);
+    K.wire(-0.66, 0.14, -0.18, 0.14, S);
+    K.gateOr(-0.20, 0.52, Q,  false, true, "NOR");
+    K.gateOr(-0.20, 0.18, nQ, false, true, "NOR");
+    K.wire(-0.04, 0.52, 0.56, 0.52, Q);
+    K.wire(-0.04, 0.18, 0.56, 0.18, nQ);
+    K.pin(0.58, 0.52, Q,  "Q",  0.04);
+    K.pin(0.58, 0.18, nQ, "NQ", 0.04);
+    // Cross-coupled feedback loops!
+    K.wire(0.24, 0.52, 0.24, 0.40, Q);
+    K.wire(0.24, 0.40, -0.34, 0.24, Q);
+    K.wire(-0.34, 0.24, -0.18, 0.24, Q);
+    K.wire(0.24, 0.18, 0.24, 0.30, nQ);
+    K.wire(0.24, 0.30, -0.34, 0.46, nQ);
+    K.wire(-0.34, 0.46, -0.18, 0.46, nQ);
+    V.text("CROSS-COUPLED FEEDBACK HOLDS STATE", -0.36, 0.68, 0.025, COL.dim);
+
+    K.timing([
+      { lbl: "S",  vals: seqS },
+      { lbl: "R",  vals: seqR },
+      { lbl: "Q",  vals: seqQ },
+      { lbl: "NQ", vals: seqNQ },
+    ], nTicks, step, -0.04, -0.74);
+    const st = S ? "SET (Q=1)" : (R ? "RESET (Q=0)" : "HOLD (" + Q + ")");
+    return [["STATE", st], ["STORED Q", String(Q)], ["GATES", "2 (NOR LATCH)"]];
+  } else {
+    // Part 2: 5-Gate Clocked D Flip-Flop / 1-Bit CPU Register (NOT + 2xAND + 2xNOR)
+    const nTicks = 16;
+    const seqCLK = [0,1,0,0, 1,0,0,1, 0,0,1,0, 0,1,0,0];
+    const seqD   = [0,1,1,0, 0,0,1,1, 1,0,1,0, 1,0,0,1];
+    const seqQ = [], seqNQ = [];
+    let q = 0;
+    for (let k = 0; k < nTicks; k++) {
+      if (seqCLK[k]) q = seqD[k];
+      seqQ.push(q); seqNQ.push(q ^ 1);
+    }
+    const step = Math.floor((t * 2.0) % nTicks);
+    const D = seqD[step], nD = D ^ 1, CLK = seqCLK[step], Q = seqQ[step], nQ = seqNQ[step];
+    const R = nD & CLK, S = D & CLK;
+
+    // Input D & CLK -> NOT + 2xAND -> SR NOR Latch
+    K.pin(-0.84, 0.56, D,   "D");
+    K.pin(-0.84, 0.35, CLK, "CLK");
+    K.wire(-0.82, 0.56, -0.66, 0.56, D);
+    K.gateNot(-0.66, 0.56, nD);
+    K.wire(-0.56, 0.56, -0.36, 0.56, nD);
+    K.wire(-0.74, 0.56, -0.74, 0.14, D);
+    K.wire(-0.74, 0.14, -0.36, 0.14, D);
+    // CLK splits to both AND gates
+    K.wire(-0.82, 0.35, -0.48, 0.35, CLK);
+    K.wire(-0.48, 0.35, -0.48, 0.48, CLK); K.wire(-0.48, 0.48, -0.36, 0.48, CLK);
+    K.wire(-0.48, 0.35, -0.48, 0.22, CLK); K.wire(-0.48, 0.22, -0.36, 0.22, CLK);
+    K.gateAnd(-0.36, 0.52, R, 0.85);
+    K.gateAnd(-0.36, 0.18, S, 0.85);
+    // AND -> cross-coupled NOR latch
+    K.wire(-0.24, 0.52, 0.04, 0.52, R);
+    K.wire(-0.24, 0.18, 0.04, 0.18, S);
+    K.gateOr(0.02, 0.50, Q,  false, true, "NOR");
+    K.gateOr(0.02, 0.20, nQ, false, true, "NOR");
+    K.wire(0.18, 0.50, 0.68, 0.50, Q);
+    K.wire(0.18, 0.20, 0.68, 0.20, nQ);
+    K.pin(0.70, 0.50, Q,  "Q",  0.04);
+    K.pin(0.70, 0.20, nQ, "NQ", 0.04);
+    K.wire(0.42, 0.50, 0.42, 0.39, Q);  K.wire(0.42, 0.39, -0.06, 0.25, Q);  K.wire(-0.06, 0.25, 0.04, 0.25, Q);
+    K.wire(0.42, 0.20, 0.42, 0.31, nQ); K.wire(0.42, 0.31, -0.06, 0.45, nQ); K.wire(-0.06, 0.45, 0.04, 0.45, nQ);
+
+    K.timing([
+      { lbl: "CLK", vals: seqCLK },
+      { lbl: "D",   vals: seqD },
+      { lbl: "Q",   vals: seqQ },
+      { lbl: "NQ",  vals: seqNQ },
+    ], nTicks, step, -0.04, -0.74);
+    return [["MODE", CLK ? "LATCH D" : "HOLD Q"], ["Q", String(Q)], ["GATES", "5 (D-FF)"]];
+  }
+}
+
+// XXXIX. FOUR FLIP-FLOPS COUNT EVERY INSTRUCTION — 4-Bit Program Counter & Shift Register (2 parts)
+function drawCounter(V, sim, t, dt, part) {
+  const p = (part || 0) % 2;
+  const K = logicKit(V);
+
+  if (p === 0) {
+    // Part 1: 4-Bit Binary Ripple Program Counter — 32 half-cycles = 16 full CLK cycles (true /2 /4 /8 /16!)
+    const nTicks = 32;
+    const step = Math.floor((t * 4.4) % nTicks);
+    const seqCLK = [], qRows = [[], [], [], []];
+    for (let k = 0; k < nTicks; k++) {
+      seqCLK.push(k & 1);
+      const cnt = k >> 1; // increments once per full clock cycle -> Q0 = fCLK/2, Q1 = fCLK/4, Q2 = fCLK/8, Q3 = fCLK/16
+      for (let b = 0; b < 4; b++) qRows[b].push((cnt >> b) & 1);
+    }
+    const cntNow = step >> 1;
+    const hex = cntNow.toString(16).toUpperCase();
+    V.text("4-BIT PROGRAM COUNTER   PC = 0X" + hex + "   (" + cntNow.toString(2).padStart(4, "0") + "B)", -0.78, 0.68, 0.028, COL.paper);
+    const xs = [-0.74, -0.34, 0.06, 0.46];
+    K.pin(-0.90, 0.26, seqCLK[step], "CLK", -0.06);
+    K.wire(-0.88, 0.26, xs[0], 0.26, seqCLK[step]);
+    for (let b = 0; b < 4; b++) {
+      const qb = qRows[b][step];
+      K.ffBox(xs[b], 0.18, 0.26, 0.34, qb, "FF" + b);
+      // Output Q goes up to bus indicator & ripples to next FF clock
+      K.wire(xs[b] + 0.26, 0.40, xs[b] + 0.33, 0.40, qb);
+      K.pin(xs[b] + 0.33, 0.56, qb, "Q" + b, -0.02);
+      K.wire(xs[b] + 0.33, 0.40, xs[b] + 0.33, 0.54, qb);
+      if (b < 3) {
+        K.wire(xs[b] + 0.33, 0.40, xs[b] + 0.33, 0.26, qb);
+        K.wire(xs[b] + 0.33, 0.26, xs[b + 1], 0.26, qb);
+      }
+    }
+    K.timing([
+      { lbl: "CLK", vals: seqCLK },
+      { lbl: "Q0",  vals: qRows[0] },
+      { lbl: "Q1",  vals: qRows[1] },
+      { lbl: "Q2",  vals: qRows[2] },
+      { lbl: "Q3",  vals: qRows[3] },
+    ], nTicks, step, -0.02, -0.76);
+    return [["PC HEX", "0X" + hex], ["BINARY", cntNow.toString(2).padStart(4, "0")], ["DIVIDE", "/2 /4 /8 /16"]];
+  } else {
+    // Part 2: 4-Bit Synchronous SIPO Shift Register — shifts strictly on rising edge of CLK (16 half-cycles = 8 shifts)
+    const nTicks = 16;
+    const step = Math.floor((t * 3.6) % nTicks);
+    const dataBits = [1, 0, 1, 1, 0, 1, 0, 0];
+    const seqCLK = [], seqDIN = [], qRows = [[], [], [], []];
+    for (let k = 0; k < nTicks; k++) {
+      const clk = k & 1;
+      const cyc = k >> 1; // 0..7
+      seqCLK.push(clk);
+      seqDIN.push(dataBits[cyc]);
+      // Shift occurs on rising edge (k = 2*cyc + 1); holds during CLK=0 (k = 2*cyc)
+      const latched = (k + 1) >> 1; // number of rising edges elapsed (0..8)
+      for (let b = 0; b < 4; b++) {
+        const srcIdx = latched - 1 - b;
+        qRows[b].push(srcIdx >= 0 ? dataBits[srcIdx] : 0);
+      }
+    }
+    const din = seqDIN[step], clkNow = seqCLK[step];
+    V.text("4-BIT SERIAL SHIFT REGISTER   DIN -> Q0 -> Q1 -> Q2 -> Q3", -0.78, 0.68, 0.028, COL.paper);
+    const xs = [-0.74, -0.34, 0.06, 0.46];
+    K.pin(-0.90, 0.42, din, "DIN", -0.06);
+    K.wire(-0.88, 0.42, xs[0], 0.42, din);
+    K.wire(-0.88, 0.10, xs[3] - 0.04, 0.10, clkNow);
+    K.pin(-0.90, 0.10, clkNow, "CLK", -0.06);
+    for (let b = 0; b < 4; b++) {
+      const qb = qRows[b][step];
+      K.ffBox(xs[b], 0.18, 0.26, 0.34, qb, "SR" + b);
+      K.wire(xs[b] - 0.04, 0.10, xs[b] - 0.04, 0.25, clkNow);
+      K.wire(xs[b] - 0.04, 0.25, xs[b], 0.25, clkNow);
+      K.pin(xs[b] + 0.32, 0.56, qb, "Q" + b, -0.02);
+      K.wire(xs[b] + 0.26, 0.42, xs[b] + 0.32, 0.42, qb);
+      K.wire(xs[b] + 0.32, 0.42, xs[b] + 0.32, 0.54, qb);
+      if (b < 3) K.wire(xs[b] + 0.32, 0.42, xs[b + 1], 0.42, qb);
+    }
+    const word = (qRows[0][step] << 3) | (qRows[1][step] << 2) | (qRows[2][step] << 1) | qRows[3][step];
+    K.timing([
+      { lbl: "CLK", vals: seqCLK },
+      { lbl: "DIN", vals: seqDIN },
+      { lbl: "Q0",  vals: qRows[0] },
+      { lbl: "Q1",  vals: qRows[1] },
+      { lbl: "Q2",  vals: qRows[2] },
+      { lbl: "Q3",  vals: qRows[3] },
+    ], nTicks, step, -0.02, -0.76);
+    return [["WORD", "0X" + word.toString(16).toUpperCase()], ["BITS", word.toString(2).padStart(4, "0")], ["EDGE", clkNow ? "SHIFT" : "HOLD"]];
+  }
+}
+
+// XL. EIGHT GATES MAKE A CPU ALU SLICE — 8085 / Z80 1-Bit ALU (4 parts: ADD / SUB / AND / XOR)
+function drawAluSlice(V, sim, t, dt, part) {
+  const op = (part || 0) % 4; // 0:ADD, 1:SUB, 2:AND, 3:XOR
+  const K = logicKit(V);
+  const nTicks = 16;
+  const step = Math.floor((t * 2.1) % nTicks);
+  const seqA = [], seqB = [], seqCi = [], seqOut = [], seqCo = [];
+  for (let k = 0; k < nTicks; k++) {
+    const a = (k >> 2) & 1, b = (k >> 1) & 1, ci = op === 1 ? (k & 1 ? 1 : 1) : (k & 1);
+    const bEff = op === 1 ? (b ^ 1) : b; // two's complement invert B for SUB
+    const sum = a ^ bEff ^ ci;
+    const co = op < 2 ? ((a & bEff) | ((a ^ bEff) & ci)) : 0;
+    const out = op < 2 ? sum : (op === 2 ? (a & b) : (a ^ b));
+    seqA.push(a); seqB.push(b); seqCi.push(ci); seqOut.push(out); seqCo.push(co);
+  }
+  const A = seqA[step], B = seqB[step], Ci = seqCi[step], bEff = op === 1 ? (B ^ 1) : B;
+  const xorAB = A ^ bEff, andAB = A & bEff;
+  const sum = xorAB ^ Ci, co = op < 2 ? (andAB | (xorAB & Ci)) : 0;
+  const out = seqOut[step];
+  const isArith = op < 2, isAnd = op === 2, isXor = op === 3;
+
+  // Inputs A, B, Cin
+  K.pin(-0.84, 0.58, A,  "A");
+  K.pin(-0.84, 0.34, B,  "B");
+  K.pin(-0.84, 0.10, Ci, "CIN");
+  // Optional B-inverter XOR (B ^ SUB)
+  K.wire(-0.82, 0.34, -0.66, 0.34, B);
+  if (op === 1) {
+    K.gateNot(-0.66, 0.34, bEff);
+    K.wire(-0.56, 0.34, -0.44, 0.34, bEff);
+  } else {
+    K.wire(-0.66, 0.34, -0.44, 0.34, bEff);
+  }
+  // Route A & bEff to XOR1 (top) and AND1 (bottom)
+  K.wire(-0.82, 0.58, -0.34, 0.58, A);
+  K.wire(-0.50, 0.58, -0.50, 0.28, A); K.wire(-0.50, 0.28, -0.34, 0.28, A);
+  K.wire(-0.44, 0.34, -0.44, 0.52, bEff); K.wire(-0.44, 0.52, -0.34, 0.52, bEff);
+  K.wire(-0.44, 0.34, -0.44, 0.22, bEff); K.wire(-0.44, 0.22, -0.34, 0.22, bEff);
+  K.gateOr(-0.36, 0.55, xorAB, true, false, "XOR");
+  K.gateAnd(-0.34, 0.25, andAB, 0.85);
+
+  // Second stage: Full Adder SUM (XOR2) & CARRY-OUT (AND2(xorAB, Ci) + OR(andAB, and2))
+  const and2 = xorAB & Ci;
+  K.wire(-0.20, 0.55, -0.02, 0.55, xorAB);
+  K.wire(-0.82, 0.10, -0.08, 0.10, Ci);
+  K.wire(-0.08, 0.10, -0.08, 0.49, Ci); K.wire(-0.08, 0.49, -0.02, 0.49, Ci);
+  K.gateOr(-0.04, 0.52, isArith ? sum : 0, true, false, "SUM");
+
+  // Explicit Carry-Out gate chain: AND2(xorAB, Ci) -> OR(andAB, and2) -> CY (active only in ADD/SUB)
+  K.wire(-0.14, 0.55, -0.14, 0.16, xorAB); K.wire(-0.14, 0.16, -0.02, 0.16, xorAB);
+  K.wire(-0.08, 0.10, -0.02, 0.10, Ci);
+  K.gateAnd(-0.02, 0.13, isArith ? and2 : 0, 0.72);
+  K.wire(0.08, 0.13, 0.22, 0.13, isArith ? and2 : 0);
+  K.wire(-0.22, 0.25, 0.18, 0.25, andAB);
+  K.wire(0.18, 0.25, 0.18, 0.08, isArith ? andAB : 0); K.wire(0.18, 0.08, 0.26, 0.08, isArith ? andAB : 0);
+  K.gateOr(0.24, 0.10, co, false, false, "OR");
+  K.wire(0.39, 0.10, 0.72, 0.10, co);
+  K.pin(0.74, 0.10, co, "CY", 0.04);
+
+  // 4-to-1 Opcode Output MUX block selecting ADD/SUB (sum) vs AND (andAB) vs XOR (xorAB)
+  const mx = 0.28, my = 0.26, mw = 0.24, mh = 0.34;
+  const colM = out ? K.colOn : [0.76, 0.80, 0.86, 0.75];
+  V.line(mx, my, mx + mw, my, colM, 1.5); V.line(mx + mw, my, mx + mw, my + mh, colM, 1.5);
+  V.line(mx + mw, my + mh, mx, my + mh, colM, 1.5); V.line(mx, my + mh, mx, my, colM, 1.5);
+  V.text("OP MUX", mx + 0.03, my + mh * 0.65, 0.024, colM);
+  const opNames = ["ADD", "SUB", "ANA", "XRA"];
+  V.text(opNames[op], mx + 0.055, my + mh * 0.34, 0.030, K.colOn);
+
+  // Wire active operand branches into OP MUX
+  K.wire(0.12, 0.52, mx, 0.52, isArith ? sum : 0);
+  K.wire(-0.14, 0.42, mx, 0.42, isXor ? xorAB : 0);
+  K.wire(0.18, 0.25, 0.18, 0.31, isAnd ? andAB : 0); K.wire(0.18, 0.31, mx, 0.31, isAnd ? andAB : 0);
+  // Output OUT
+  K.wire(mx + mw, 0.43, 0.72, 0.43, out);
+  K.pin(0.74, 0.43, out, "OUT", 0.04);
+
+  K.timing([
+    { lbl: "A",   vals: seqA },
+    { lbl: "B",   vals: seqB },
+    { lbl: "CIN", vals: seqCi },
+    { lbl: "OUT", vals: seqOut },
+    { lbl: "CY",  vals: seqCo },
+  ], nTicks, step, -0.02, -0.76);
+  const ops = ["8085 ADD", "8085 SUB", "8085 ANA", "8085 XRA"];
+  return [["OPCODE", ops[op]], ["OUT / CY", out + " / " + co], ["PART", (op + 1) + " / 4"]];
+}
+
+// XLI. INTEL 4004 — 4-Bit Multiplexed Bus, 8-Phase Cycle (A1-A3, M1-M2, X1-X3) & MCS-4 Chipset (2 parts)
+function draw4004Bus(V, sim, t, dt, part) {
+  const p = (part || 0) % 2;
+  const K = logicKit(V);
+  const phases = ["A1", "A2", "A3", "M1", "M2", "X1", "X2", "X3"];
+  const phDesc = ["ADDR LOW", "ADDR MID", "ADDR HI", "OPR (ROM)", "OPA (ROM)", "EXEC X1", "EXEC X2", "EXEC X3"];
+  const busNib = [0x4, 0xA, 0x0, 0x8, 0x3, 0x3, 0x5, 0x8]; // PC=0A4h, ADD R3 (0x83), R3=5 + ACC=3 -> 8
+  const step = Math.floor((t * 2.2) % 8);
+  const nib = busNib[step];
+
+  if (p === 0) {
+    // Part 1: 8-Phase Machine Cycle & 4-Bit Multiplexed Bus D0..D3
+    V.text("INTEL 4004   8-PHASE CYCLE: " + phases[step] + " (" + phDesc[step] + ")   D3-D0 = 0X" + nib.toString(16).toUpperCase(), -0.92, 0.72, 0.026, COL.paper);
+    // 8 phase slots across top
+    for (let i = 0; i < 8; i++) {
+      const x = -0.92 + i * 0.23, active = i === step;
+      const col = active ? K.colOn : (i < 3 ? [0.34, 0.76, 0.96, 0.55] : (i < 5 ? [0.42, 0.90, 0.58, 0.55] : [0.76, 0.80, 0.86, 0.45]));
+      V.line(x, 0.46, x + 0.20, 0.46, col, active ? 2.0 : 1.1);
+      V.line(x + 0.20, 0.46, x + 0.20, 0.62, col, active ? 2.0 : 1.1);
+      V.line(x + 0.20, 0.62, x, 0.62, col, active ? 2.0 : 1.1);
+      V.line(x, 0.62, x, 0.46, col, active ? 2.0 : 1.1);
+      if (active) V.fill(x, 0.46, 0.20, 0.16, [0.98, 0.58, 0.22, 0.18]);
+      V.text(phases[i], x + 0.06, 0.58, 0.028, col);
+      V.text(busNib[i].toString(16).toUpperCase(), x + 0.08, 0.51, 0.024, active ? K.colOn : COL.dim);
+    }
+    // 4-bit multiplexed bus wires D3..D0 glowing with current nibble
+    for (let b = 0; b < 4; b++) {
+      const bit = (nib >> (3 - b)) & 1;
+      const y = 0.34 - b * 0.075;
+      K.pin(-0.84, y, bit, "D" + (3 - b), -0.08);
+      K.wire(-0.82, y, 0.84, y, bit);
+      K.pin(0.86, y, bit, bit ? "1" : "0", 0.04);
+    }
+    // Timing diagram: SYNC, PHI1, PHI2, D3..D0 across 8 phases
+    const seqSync = phases.map((_, i) => i === 7 ? 1 : 0);
+    const seqPhi1 = phases.map((_, i) => (i & 1) === 0 ? 1 : 0);
+    const seqPhi2 = phases.map((_, i) => (i & 1) === 1 ? 1 : 0);
+    K.timing([
+      { lbl: "SYNC", vals: seqSync },
+      { lbl: "PHI1", vals: seqPhi1 },
+      { lbl: "PHI2", vals: seqPhi2 },
+      { lbl: "D3",   vals: busNib.map((v) => (v >> 3) & 1) },
+      { lbl: "D2",   vals: busNib.map((v) => (v >> 2) & 1) },
+      { lbl: "D1",   vals: busNib.map((v) => (v >> 1) & 1) },
+      { lbl: "D0",   vals: busNib.map((v) => v & 1) },
+    ], 8, step, -0.02, -0.76);
+    return [["PHASE", phases[step]], ["BUS D3-D0", "0X" + nib.toString(16).toUpperCase()], ["CLOCK", "740 KHZ"]];
+  } else {
+    // Part 2: Exact MCS-4 4-Chip System Wiring (4004 CPU <-> 4001 ROM <-> 4002 RAM -> 4003 SREG)
+    // In the real MCS-4: D3..D0 connects 4004, 4001, 4002; 4003 SREG is driven serially from 4002 RAM's I/O port!
+    const isRom = step < 5;           // A1..A3, M1..M2: 4004 <-> 4001 ROM
+    const isRam = step === 5 || step === 6; // X1..X2: 4004 <-> 4002 RAM
+    const isIo  = step === 7;         // X3 (WMP): 4004 -> 4002 RAM Port -> 4003 SREG serial
+    const cmRom = step >= 2 && step <= 4;   // CM-ROM active during A3, M1, M2
+    const cmRam = step >= 5;                // CM-RAM active during X1, X2, X3
+
+    const chips = [
+      { x: -0.90, w: 0.36, lbl: "4004 CPU",  sub: "4B ALU+PC",  on: true },
+      { x: -0.44, w: 0.36, lbl: "4001 ROM",  sub: "256X8 ROM",  on: isRom },
+      { x:  0.02, w: 0.36, lbl: "4002 RAM",  sub: "320B+PORT",  on: isRam || isIo },
+      { x:  0.54, w: 0.36, lbl: "4003 SREG", sub: "10B SERIAL", on: isIo },
+    ];
+    V.text("MCS-4 SYSTEM BUS   PHASE: " + phases[step] + " (" + phDesc[step] + ")   D=" + nib.toString(2).padStart(4, "0") + "B", -0.90, 0.70, 0.026, COL.paper);
+
+    chips.forEach((c) => {
+      const col = c.on ? K.colOn : [0.58, 0.68, 0.80, 0.62];
+      V.line(c.x, 0.24, c.x + c.w, 0.24, col, c.on ? 2.0 : 1.3);
+      V.line(c.x + c.w, 0.24, c.x + c.w, 0.56, col, c.on ? 2.0 : 1.3);
+      V.line(c.x + c.w, 0.56, c.x, 0.56, col, c.on ? 2.0 : 1.3);
+      V.line(c.x, 0.56, c.x, 0.24, col, c.on ? 2.0 : 1.3);
+      if (c.on) V.fill(c.x, 0.24, c.w, 0.32, [0.98, 0.58, 0.22, 0.12]);
+      V.text(c.lbl, c.x + 0.035, 0.44, 0.027, col);
+      V.text(c.sub, c.x + 0.035, 0.32, 0.021, COL.dim);
+    });
+
+    // 4-bit multiplexed Data Bus D3..D0 connecting ONLY 4004 CPU, 4001 ROM, and 4002 RAM
+    // Each bit wire lights up ONLY on the active span (4004<->4001 on ROM phases, 4004<->4002 on RAM/IO phases)
+    const tapX = (chip, b) => chip.x + 0.08 + b * 0.065;
+    for (let b = 0; b < 4; b++) {
+      const bit = (nib >> (3 - b)) & 1;
+      const y = -0.02 - b * 0.085;
+      const xCpu = tapX(chips[0], b);
+      const xRom = tapX(chips[1], b);
+      const xRam = tapX(chips[2], b);
+      V.text("D" + (3 - b), -0.96, y + 0.014, 0.022, bit ? K.colOn : COL.dim);
+
+      // Horizontal bus segments: [CPU..ROM] always active when bit=1; [ROM..RAM] active ONLY during RAM/IO phases!
+      K.wire(xCpu, y, xRom, y, bit);
+      K.wire(xRom, y, xRam, y, (isRam || isIo) ? bit : 0);
+
+      // Vertical 4-bit pin taps into each bus chip (only active on the two communicating chips!)
+      K.wire(xCpu, 0.24, xCpu, y, bit);
+      K.wire(xRom, 0.24, xRom, y, isRom ? bit : 0);
+      K.wire(xRam, 0.24, xRam, y, (isRam || isIo) ? bit : 0);
+    }
+
+    // CM-ROM control wire: physically routed from 4004 CPU -> 4001 ROM
+    const xCmCpu1 = chips[0].x + 0.03, xCmRom = chips[1].x + 0.03, yCmRom = -0.44;
+    K.wire(xCmCpu1, 0.24, xCmCpu1, yCmRom, cmRom ? 1 : 0);
+    K.wire(xCmCpu1, yCmRom, xCmRom, yCmRom, cmRom ? 1 : 0);
+    K.wire(xCmRom, yCmRom, xCmRom, 0.24, cmRom ? 1 : 0);
+    V.text("CM-ROM", xCmCpu1 + 0.03, yCmRom - 0.035, 0.022, cmRom ? K.colOn : COL.dim);
+
+    // CM-RAM control wire: physically routed from 4004 CPU -> 4002 RAM
+    const xCmCpu2 = chips[0].x + 0.33, xCmRam = chips[2].x + 0.33, yCmRam = -0.58;
+    K.wire(xCmCpu2, 0.24, xCmCpu2, yCmRam, cmRam ? 1 : 0);
+    K.wire(xCmCpu2, yCmRam, xCmRam, yCmRam, cmRam ? 1 : 0);
+    K.wire(xCmRam, yCmRam, xCmRam, 0.24, cmRam ? 1 : 0);
+    V.text("CM-RAM", xCmCpu2 + 0.03, yCmRam - 0.035, 0.022, cmRam ? K.colOn : COL.dim);
+
+    // Serial DATA & CLK lines directly from 4002 RAM output port -> 4003 SREG (NOT on D3..D0 bus!)
+    const xPortL = chips[2].x + chips[2].w, xSregL = chips[3].x;
+    K.wire(xPortL, 0.44, xSregL, 0.44, isIo ? (nib & 1) : 0);
+    K.wire(xPortL, 0.32, xSregL, 0.32, isIo ? 1 : 0);
+    V.text("DATA", xPortL + 0.025, 0.48, 0.020, isIo ? K.colOn : COL.dim);
+    V.text("CLK",  xPortL + 0.035, 0.28, 0.020, isIo ? K.colOn : COL.dim);
+
+    return [["ACTIVE", isRom ? "4004<->4001" : (isRam ? "4004<->4002" : "4002->4003")], ["CTRL", cmRom ? "CM-ROM" : (cmRam ? "CM-RAM" : "ADDR")], ["BUS", "0X" + nib.toString(16).toUpperCase()]];
   }
 }
 
@@ -4271,6 +4865,68 @@ const STATIONS = [
     ],
     draw: drawAudioNoiseShaping,
   },
+  {
+    roman: "XXXVII", cat: "ELECTRONICS & SIGNALS", disc: "CPU BUS LOGIC", parts: 2,
+    title: "Four gates route a bus and map MSX slots",
+    sub: "Minimal gate-level bus routing: 2-to-1 Multiplexer and MSX 2-to-4 Address Slot Decoder (↑/↓ or 1–2).",
+    formula: "Y = (D₀ ∧ ¬S) ∨ (D₁ ∧ S)      SLOTᵢ = (A₁₅, A₁₄)",
+    note: "Every 8085/Z80 register selector and MSX 16 KB slot mapper is built from these gates.",
+    partMeta: [
+      { title: "Four gates route a bus (2-to-1 Multiplexer)", sub: "One NOT, two AND, one OR gate steer D0 or D1 onto output Y under select bit S.", formula: "Y = (D₀ ∧ ¬S) ∨ (D₁ ∧ S)", note: "Part 1/2 — Press ↓ for the MSX 2-to-4 Slot Address Decoder." },
+      { title: "Six gates decode 64 KB into four MSX memory slots", sub: "Two NOT and four AND gates decode A15, A14 into mutually exclusive 16 KB pages (BIOS, Cart, RAM).", formula: "SLOT₀..₃ = decode(A₁₅, A₁₄)      4 × 16 KB = 64 KB", note: "Part 2/2 — The exact combinational core of MSX PPI port A8h slot selection." },
+    ],
+    draw: drawMuxDecoder,
+  },
+  {
+    roman: "XXXVIII", cat: "ELECTRONICS & SIGNALS", disc: "CPU MEMORY", parts: 2,
+    title: "Two cross-coupled gates remember a bit",
+    sub: "Minimal bistable memory: 2-gate NOR SR Latch and 5-gate Clocked D Flip-Flop 1-bit register (↑/↓ or 1–2).",
+    formula: "Q = ¬(R ∨ Q̄)      Q̄ = ¬(S ∨ Q)      Qnext = D (on CLK)",
+    note: "Stack 8 D Flip-Flops to form an 8085/Z80 register (A, B, C, D, E, H, L).",
+    partMeta: [
+      { title: "Two cross-coupled NOR gates remember one bit", sub: "Cross-coupled feedback latches Q=1 on SET and holds the bit indefinitely even after S returns to 0.", formula: "Q = ¬(R ∨ Q̄)      Q̄ = ¬(S ∨ Q)", note: "Part 1/2 — Press ↓ to add a clock gate (D Flip-Flop register)." },
+      { title: "Five gates make a clocked 1-bit CPU register (D-FF)", sub: "Captures input D when CLK is high and freezes Q when CLK drops — the building block of every CPU register.", formula: "Q(t+1) = D  when CLK = 1,  else Q(t)", note: "Part 2/2 — Eight D Flip-Flops in parallel store one 8-bit 8085/Z80 byte." },
+    ],
+    draw: drawFlipFlop,
+  },
+  {
+    roman: "XXXIX", cat: "ELECTRONICS & SIGNALS", disc: "CPU COUNTER", parts: 2,
+    title: "Four flip-flops count every instruction",
+    sub: "Cascaded flip-flops forming a 4-bit binary Program Counter (0x0–0xF) and 4-bit Serial Shift Register (↑/↓ or 1–2).",
+    formula: "PC ← PC + 1      f(Qₙ) = fCLK / 2ⁿ⁺¹",
+    note: "Sixteen cascaded flip-flops form the 8085/Z80 16-bit Program Counter (0000h–FFFFh).",
+    partMeta: [
+      { title: "Four flip-flops count every instruction (4-bit PC)", sub: "Each flip-flop divides the clock by 2, stepping binary addresses 0x0 → 0xF automatically.", formula: "PC ← PC + 1      f(Q₀..Q₃) = fCLK / (2, 4, 8, 16)", note: "Part 1/2 — Press ↓ for the 4-Bit Serial Shift Register." },
+      { title: "Four flip-flops shift bits down a serial bus", sub: "Synchronous SIPO shift register clocks serial data DIN → Q0 → Q1 → Q2 → Q3 — used in VDP sprites and serial I/O.", formula: "Q₀(t+1) = DIN      Qₙ(t+1) = Qₙ₋₁(t)", note: "Part 2/2 — Converts serial bitstreams into parallel CPU bytes." },
+    ],
+    draw: drawCounter,
+  },
+  {
+    roman: "XL", cat: "ELECTRONICS & SIGNALS", disc: "8085 / Z80 ALU", parts: 4,
+    title: "Eight gates make a CPU ALU slice",
+    sub: "Gate-level 1-bit 8085/Z80 ALU combining Full Adder, inverter, logic gates, and opcode MUX (↑/↓ or 1–4).",
+    formula: "OP ∈ {ADD, SUB, ANA, XRA}      CY = Carry Flag",
+    note: "Chain 8 of these slices with Carry-Out → Carry-In to build the complete 8085 / Z80 ALU.",
+    partMeta: [
+      { title: "8085 ALU · ADD A, B (full adder + carry chain)", sub: "Opcode 00 routes the Full Adder sum to OUT and propagates Carry-Out to the next bit slice.", formula: "OUT = A ⊕ B ⊕ Cin      CY = AB + Cin(A ⊕ B)", note: "Part 1/4 — Press ↓ for two's-complement SUB." },
+      { title: "8085 ALU · SUB A, B (invert B + Cin = 1)", sub: "Opcode 01 flips B through a NOT gate and sets Cin = 1, turning the same adder into a two's-complement subtractor.", formula: "A − B = A + (¬B) + 1      (Two's Complement)", note: "Part 2/4 — Press ↓ for bitwise ANA (AND)." },
+      { title: "8085 ALU · ANA B (bitwise AND, CY = 0)", sub: "Opcode 10 selects the AND gate directly through the OP MUX and clears the Carry flag.", formula: "OUT = A ∧ B      CY = 0", note: "Part 3/4 — Press ↓ for bitwise XRA (XOR)." },
+      { title: "8085 ALU · XRA B (bitwise XOR, CY = 0)", sub: "Opcode 11 selects the XOR gate directly — on 8085/Z80, XRA A / XOR A is the fastest way to zero register A.", formula: "OUT = A ⊕ B      CY = 0", note: "Part 4/4 — Combine Adder, MUX, D-FF, Counter, and ALU to build an 8-bit CPU." },
+    ],
+    draw: drawAluSlice,
+  },
+  {
+    roman: "XLI", cat: "ELECTRONICS & SIGNALS", disc: "INTEL 4004 · BUS", parts: 2,
+    title: "Four wires multiplex an entire 1971 CPU",
+    sub: "Intel 4004 8-phase machine cycle (A1–A3, M1–M2, X1–X3) on 4-bit bus D0–D3 and the 4-chip MCS-4 system (↑/↓ or 1–2).",
+    formula: "16-pin DIP: A1·A2·A3 (12b Addr) → M1·M2 (8b Op) → X1·X2·X3",
+    note: "To fit in a 16-pin DIP, Federico Faggin time-multiplexed address, opcode, and data on 4 pins.",
+    partMeta: [
+      { title: "Intel 4004 · 8-phase machine cycle on 4-bit bus D0–D3", sub: "Two-phase clock Φ1/Φ2 & SYNC drive 8 time slots: 12-bit ROM address, 8-bit instruction fetch, and 4-bit execution.", formula: "A1..A3 (12b PC) → M1·M2 (OPR/OPA) → X1..X3 (Exec)", note: "Part 1/2 — Press ↓ for the 4-chip MCS-4 system bus (4004/4001/4002/4003)." },
+      { title: "MCS-4 chipset: 4004 CPU, 4001 ROM, 4002 RAM, 4003 Shift Reg", sub: "CM-ROM and CM-RAM control lines coordinate all four chips over the shared 4-bit data bus.", formula: "4004 (CPU) + 4001 (256B ROM) + 4002 (320b RAM) + 4003 (I/O)", note: "Part 2/2 — The complete 1971 Busicom 141-PF calculator computer." },
+    ],
+    draw: draw4004Bus,
+  },
 ];
 
 const STATION_CATS = [
@@ -4296,6 +4952,21 @@ const EM_ORDER = new Map([
   [drawEMWave3D, 10],
   [drawWaveguideModes, 11],
 ]);
+const ELEC_ORDER = new Map([
+  [drawRect, 0],
+  [drawAdder, 1],
+  [drawMuxDecoder, 2],
+  [drawFlipFlop, 3],
+  [drawCounter, 4],
+  [drawAluSlice, 5],
+  [draw4004Bus, 6],
+  [drawNyquist, 7],
+  [drawKalman, 8],
+  [drawAudioFilters, 9],
+  [drawPcmDsd, 10],
+  [drawImpulseResponse, 11],
+  [drawAudioNoiseShaping, 12],
+]);
 function toRoman(n) {
   const vals = [[40,"XL"],[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]];
   let out = "", x = n;
@@ -4307,6 +4978,9 @@ STATIONS.sort((a, b) => {
   if (ca !== cb) return ca - cb;
   if (a.cat === "ELECTRODYNAMICS & OPTICS") {
     return (EM_ORDER.has(a.draw) ? EM_ORDER.get(a.draw) : 99) - (EM_ORDER.has(b.draw) ? EM_ORDER.get(b.draw) : 99);
+  }
+  if (a.cat === "ELECTRONICS & SIGNALS") {
+    return (ELEC_ORDER.has(a.draw) ? ELEC_ORDER.get(a.draw) : 99) - (ELEC_ORDER.has(b.draw) ? ELEC_ORDER.get(b.draw) : 99);
   }
   return 0;
 });

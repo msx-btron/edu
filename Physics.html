@@ -1,227 +1,545 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>HAL 9000 — PHYSICS</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Michroma&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #050609;
-    --panel: rgba(9, 11, 16, 0.84);
-    --paper: #e6e1d6;
-    --amber: #e8a454;
-    --cyan: #7fd4cc;
-    --hal: #d93829;
-    --hot: #d25b4c;
-    --dim: rgba(230, 225, 214, 0.48);
-    --line: rgba(232, 164, 84, 0.24);
-    --display: "Michroma", "Liberation Sans Narrow", "DejaVu Sans", sans-serif;
-    --mono: "IBM Plex Mono", "DejaVu Sans Mono", ui-monospace, monospace;
-    --math: "DejaVu Sans", "Liberation Sans", sans-serif;
-  }
-  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-  html, body {
-    margin: 0; height: 100%; background: var(--bg); color: var(--paper);
-    overflow: hidden; font-family: var(--mono);
-  }
-  button, a { font-family: inherit; cursor: pointer; text-decoration: none; }
-  #app { position: fixed; inset: 0; }
-  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: var(--bg); }
-  .vignette, .scan { position: absolute; inset: 0; pointer-events: none; }
-  .scan { background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.022) 0 1px, transparent 1px 4px); opacity: 0.55; }
-  .vignette { background: radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(0,0,0,0.68) 100%); }
-  #bar { position: absolute; top: 0; left: 0; height: 2px; width: 0; background: var(--amber); box-shadow: 0 0 8px rgba(232,164,84,0.6); z-index: 4; pointer-events: none; }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>HAL 9000 — PHYSICS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Michroma&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050609;
+      --panel: rgba(9, 11, 16, 0.84);
+      --paper: #e6e1d6;
+      --amber: #e8a454;
+      --cyan: #7fd4cc;
+      --hal: #d93829;
+      --hot: #d25b4c;
+      --dim: rgba(230, 225, 214, 0.48);
+      --line: rgba(232, 164, 84, 0.24);
+      --display: "Michroma", "Liberation Sans Narrow", "DejaVu Sans", sans-serif;
+      --mono: "IBM Plex Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+      --math: "DejaVu Sans", "Liberation Sans", sans-serif;
+    }
 
-  /* Unified HAL 9000 top header */
-  header {
-    position: absolute; top: 0; left: 0; right: 0; z-index: 3;
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    padding: calc(12px + env(safe-area-inset-top)) 20px 10px;
-    border-bottom: 1px solid rgba(230, 225, 214, 0.08);
-    background: linear-gradient(to bottom, rgba(5,6,9,0.92), rgba(5,6,9,0.25));
-    pointer-events: none;
-  }
-  .hal-id {
-    display: flex; align-items: center; gap: 10px;
-    font-family: var(--display); font-size: 11px; letter-spacing: 0.2em;
-    color: var(--paper); pointer-events: auto;
-  }
-  .lamp {
-    width: 11px; height: 11px; border-radius: 50%;
-    background: radial-gradient(circle at 42% 42%, #ffd79e 0%, var(--amber) 50%, #5e380c 100%);
-    box-shadow: 0 0 12px rgba(232, 164, 84, 0.65);
-    animation: pulse 2.8s ease-in-out infinite;
-  }
-  @keyframes pulse { 50% { opacity: 0.55; } }
-  .title-block { text-align: center; flex: 1; min-width: 0; }
-  .title-block .name {
-    font-family: var(--display); font-size: clamp(12px, 1.5vw, 16px);
-    letter-spacing: 0.14em; color: var(--paper);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .title-block .meta {
-    margin-top: 3px; font-size: 10px; letter-spacing: 0.22em; color: var(--cyan);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .status {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 11px; letter-spacing: 0.14em; pointer-events: auto;
-  }
-  .pill {
-    color: var(--amber); border: 1px solid var(--line); padding: 4px 8px;
-    font-size: 10px; letter-spacing: 0.18em; cursor: pointer; background: rgba(5,6,9,0.65);
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .pill:hover, .pill[aria-pressed="true"] { background: rgba(232, 164, 84, 0.14); border-color: rgba(232,164,84,0.55); }
-  .pill.portal-link { color: var(--cyan); border-color: rgba(127,212,204,0.3); }
-  .pill.portal-link:hover { background: rgba(127,212,204,0.12); color: var(--paper); }
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
 
-  /* Subtle top copy anchor (invisible height spacer for plotBox compatibility) */
-  #copy {
-    position: absolute; top: 54px; left: 20px; right: 20px; z-index: 2;
-    pointer-events: none; padding: 6px 0 0; text-align: center;
-  }
-  .formula {
-    margin: 0; color: var(--amber); font-family: var(--math);
-    font-size: clamp(12px, 1.4vw, 16px); letter-spacing: 0.04em; line-height: 1.35;
-  }
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--paper);
+      overflow: hidden;
+      font-family: var(--mono);
+    }
 
-  /* Invisible edge cursor navigation zones */
-  .nav-edge {
-    position: absolute; top: 56px; bottom: 110px; width: 54px; z-index: 2;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; color: rgba(232,164,84,0); transition: color 0.2s, background 0.2s;
-    cursor: pointer;
-  }
-  .nav-edge:hover { color: rgba(232,164,84,0.75); background: rgba(232,164,84,0.04); }
-  #prev { left: 0; }
-  #next { right: 0; }
+    button,
+    a {
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: none;
+    }
 
-  /* Unified HAL 9000 bottom readout screen (no overflowing buttons) */
-  footer#foot {
-    position: absolute; left: 20px; right: 20px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 3;
-    background: var(--panel); border: 1px solid rgba(232, 164, 84, 0.22);
-    padding: 9px 14px; pointer-events: none;
-    box-shadow: inset 0 0 24px rgba(0,0,0,0.65);
-    display: flex; flex-direction: column; gap: 5px;
-  }
-  .f-head {
-    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 18px;
-    border-bottom: 1px solid rgba(230,225,214,0.08); padding-bottom: 5px;
-  }
-  .readout { display: flex; flex-wrap: wrap; gap: 6px 20px; min-height: 1.2em; }
-  .readout div { display: flex; gap: 8px; font-size: 11px; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
-  .readout .k { color: var(--dim); }
-  .readout .v { color: var(--amber); }
-  .f-sub { font-size: 11px; color: var(--paper); line-height: 1.45; }
-  .note { color: rgba(127, 212, 204, 0.78); font-size: 10.5px; letter-spacing: 0.03em; line-height: 1.4; }
+    #app {
+      position: fixed;
+      inset: 0;
+    }
 
-  /* Unified HAL 9000 Index & Hidden Input Legend overlays (with visible CRT scrollbar) */
-  #legend, #index {
-    display: none; position: fixed; inset: 0; z-index: 6;
-    background: rgba(5, 6, 9, 0.94); padding: 64px 28px 36px;
-    overflow-y: scroll; scrollbar-gutter: stable;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(232, 164, 84, 0.72) rgba(255, 255, 255, 0.06);
-  }
-  #legend::-webkit-scrollbar, #index::-webkit-scrollbar { width: 8px; }
-  #legend::-webkit-scrollbar-track, #index::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05); border-left: 1px solid rgba(232, 164, 84, 0.14);
-  }
-  #legend::-webkit-scrollbar-thumb, #index::-webkit-scrollbar-thumb {
-    background: rgba(232, 164, 84, 0.62); border-radius: 2px;
-  }
-  #legend::-webkit-scrollbar-thumb:hover, #index::-webkit-scrollbar-thumb:hover {
-    background: rgba(232, 164, 84, 0.92);
-  }
-  #legend.open { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  #index.open {
-    display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch;
-    padding: 64px max(28px, calc(50% - 460px)) 44px;
-  }
-  .card {
-    border: 1px solid var(--line); background: rgba(10,12,18,0.95);
-    padding: 20px 24px; max-width: 520px; width: 100%;
-  }
-  .card h2, #index h2 {
-    font-family: var(--display); font-weight: 400; font-size: 13px;
-    letter-spacing: 0.22em; color: var(--amber); margin: 0 0 14px;
-  }
-  .krow {
-    display: flex; justify-content: space-between; gap: 16px;
-    padding: 6px 0; border-bottom: 1px solid rgba(230,225,214,0.08); font-size: 12px;
-  }
-  .krow .k { color: var(--cyan); letter-spacing: 0.08em; }
-  .krow .d { color: var(--paper); text-align: right; }
-  .idx-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-  .idx-cat {
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; color: var(--cyan);
-    margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(127,212,204,0.22);
-    text-transform: uppercase;
-  }
-  .idx-cat:first-of-type { margin-top: 4px; }
-  .idx-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px;
-  }
-  .idx-item {
-    text-align: left; background: rgba(12,15,22,0.8); color: var(--paper);
-    border: 1px solid rgba(230,225,214,0.12); padding: 10px 12px; cursor: pointer;
-    font-family: inherit;
-  }
-  .idx-item:hover, .idx-item.on { border-color: var(--amber); background: rgba(232,164,84,0.1); }
-  .idx-item .num { font-size: 10px; color: var(--amber); letter-spacing: 0.16em; }
-  .idx-item .ttl { font-family: var(--display); font-size: 11px; margin-top: 3px; letter-spacing: 0.08em; line-height: 1.35; }
-  .idx-item .pts { font-size: 10px; color: var(--cyan); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: var(--bg);
+    }
 
-  #boot { position: absolute; left: 20px; bottom: 100px; z-index: 5; color: var(--hot); font-size: 12px; max-width: 46ch; }
-  @media (max-width: 720px) { .hal-id span.brand-txt { display: none; } .status .pill.portal-link { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .lamp { animation: none; } .scan { display: none; } }
-</style>
+    .vignette,
+    .scan {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .scan {
+      background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 4px);
+      opacity: 0.55;
+    }
+
+    .vignette {
+      background: radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(0, 0, 0, 0.68) 100%);
+    }
+
+    #bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 2px;
+      width: 0;
+      background: var(--amber);
+      box-shadow: 0 0 8px rgba(232, 164, 84, 0.6);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    /* Unified HAL 9000 top header */
+    header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: calc(12px + env(safe-area-inset-top)) 20px 10px;
+      border-bottom: 1px solid rgba(230, 225, 214, 0.08);
+      background: linear-gradient(to bottom, rgba(5, 6, 9, 0.92), rgba(5, 6, 9, 0.25));
+      pointer-events: none;
+    }
+
+    .hal-id {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--display);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--paper);
+      pointer-events: auto;
+    }
+
+    .lamp {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 42% 42%, #ffd79e 0%, var(--amber) 50%, #5e380c 100%);
+      box-shadow: 0 0 12px rgba(232, 164, 84, 0.65);
+      animation: pulse 2.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: 0.55;
+      }
+    }
+
+    .title-block {
+      text-align: center;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .title-block .name {
+      font-family: var(--display);
+      font-size: clamp(12px, 1.5vw, 16px);
+      letter-spacing: 0.14em;
+      color: var(--paper);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .title-block .meta {
+      margin-top: 3px;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: var(--cyan);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      pointer-events: auto;
+    }
+
+    .pill {
+      color: var(--amber);
+      border: 1px solid var(--line);
+      padding: 4px 8px;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      cursor: pointer;
+      background: rgba(5, 6, 9, 0.65);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pill:hover,
+    .pill[aria-pressed="true"] {
+      background: rgba(232, 164, 84, 0.14);
+      border-color: rgba(232, 164, 84, 0.55);
+    }
+
+    .pill.portal-link {
+      color: var(--cyan);
+      border-color: rgba(127, 212, 204, 0.3);
+    }
+
+    .pill.portal-link:hover {
+      background: rgba(127, 212, 204, 0.12);
+      color: var(--paper);
+    }
+
+    /* Subtle top copy anchor (invisible height spacer for plotBox compatibility) */
+    #copy {
+      position: absolute;
+      top: 54px;
+      left: 20px;
+      right: 20px;
+      z-index: 2;
+      pointer-events: none;
+      padding: 6px 0 0;
+      text-align: center;
+    }
+
+    .formula {
+      margin: 0;
+      color: var(--amber);
+      font-family: var(--math);
+      font-size: clamp(12px, 1.4vw, 16px);
+      letter-spacing: 0.04em;
+      line-height: 1.35;
+    }
+
+    /* Invisible edge cursor navigation zones */
+    .nav-edge {
+      position: absolute;
+      top: 56px;
+      bottom: 110px;
+      width: 54px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: rgba(232, 164, 84, 0);
+      transition: color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-edge:hover {
+      color: rgba(232, 164, 84, 0.75);
+      background: rgba(232, 164, 84, 0.04);
+    }
+
+    #prev {
+      left: 0;
+    }
+
+    #next {
+      right: 0;
+    }
+
+    /* Unified HAL 9000 bottom readout screen (no overflowing buttons) */
+    footer#foot {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: calc(14px + env(safe-area-inset-bottom));
+      z-index: 3;
+      background: var(--panel);
+      border: 1px solid rgba(232, 164, 84, 0.22);
+      padding: 9px 14px;
+      pointer-events: none;
+      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.65);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .f-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px 18px;
+      border-bottom: 1px solid rgba(230, 225, 214, 0.08);
+      padding-bottom: 5px;
+    }
+
+    .readout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 20px;
+      min-height: 1.2em;
+    }
+
+    .readout div {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .readout .k {
+      color: var(--dim);
+    }
+
+    .readout .v {
+      color: var(--amber);
+    }
+
+    .f-sub {
+      font-size: 11px;
+      color: var(--paper);
+      line-height: 1.45;
+    }
+
+    .note {
+      color: rgba(127, 212, 204, 0.78);
+      font-size: 10.5px;
+      letter-spacing: 0.03em;
+      line-height: 1.4;
+    }
+
+    /* Unified HAL 9000 Index & Hidden Input Legend overlays (with visible CRT scrollbar) */
+    #legend,
+    #index {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 6;
+      background: rgba(5, 6, 9, 0.94);
+      padding: 64px 28px 36px;
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(232, 164, 84, 0.72) rgba(255, 255, 255, 0.06);
+    }
+
+    #legend::-webkit-scrollbar,
+    #index::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #legend::-webkit-scrollbar-track,
+    #index::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 1px solid rgba(232, 164, 84, 0.14);
+    }
+
+    #legend::-webkit-scrollbar-thumb,
+    #index::-webkit-scrollbar-thumb {
+      background: rgba(232, 164, 84, 0.62);
+      border-radius: 2px;
+    }
+
+    #legend::-webkit-scrollbar-thumb:hover,
+    #index::-webkit-scrollbar-thumb:hover {
+      background: rgba(232, 164, 84, 0.92);
+    }
+
+    #legend.open {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #index.open {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: stretch;
+      padding: 64px max(28px, calc(50% - 460px)) 44px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: rgba(10, 12, 18, 0.95);
+      padding: 20px 24px;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    .card h2,
+    #index h2 {
+      font-family: var(--display);
+      font-weight: 400;
+      font-size: 13px;
+      letter-spacing: 0.22em;
+      color: var(--amber);
+      margin: 0 0 14px;
+    }
+
+    .krow {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(230, 225, 214, 0.08);
+      font-size: 12px;
+    }
+
+    .krow .k {
+      color: var(--cyan);
+      letter-spacing: 0.08em;
+    }
+
+    .krow .d {
+      color: var(--paper);
+      text-align: right;
+    }
+
+    .idx-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .idx-cat {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: var(--cyan);
+      margin: 16px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(127, 212, 204, 0.22);
+      text-transform: uppercase;
+    }
+
+    .idx-cat:first-of-type {
+      margin-top: 4px;
+    }
+
+    .idx-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 8px;
+    }
+
+    .idx-item {
+      text-align: left;
+      background: rgba(12, 15, 22, 0.8);
+      color: var(--paper);
+      border: 1px solid rgba(230, 225, 214, 0.12);
+      padding: 10px 12px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .idx-item:hover,
+    .idx-item.on {
+      border-color: var(--amber);
+      background: rgba(232, 164, 84, 0.1);
+    }
+
+    .idx-item .num {
+      font-size: 10px;
+      color: var(--amber);
+      letter-spacing: 0.16em;
+    }
+
+    .idx-item .ttl {
+      font-family: var(--display);
+      font-size: 11px;
+      margin-top: 3px;
+      letter-spacing: 0.08em;
+      line-height: 1.35;
+    }
+
+    .idx-item .pts {
+      font-size: 10px;
+      color: var(--cyan);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #boot {
+      position: absolute;
+      left: 20px;
+      bottom: 100px;
+      z-index: 5;
+      color: var(--hot);
+      font-size: 12px;
+      max-width: 46ch;
+    }
+
+    @media (max-width: 720px) {
+      .hal-id span.brand-txt {
+        display: none;
+      }
+
+      .status .pill.portal-link {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .lamp {
+        animation: none;
+      }
+
+      .scan {
+        display: none;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div id="app">
-  <canvas id="c"></canvas>
-  <div class="scan"></div>
-  <div class="vignette"></div>
-  <div id="bar"></div>
+  <div id="app">
+    <canvas id="c"></canvas>
+    <div class="scan"></div>
+    <div class="vignette"></div>
+    <div id="bar"></div>
 
-  <header id="top">
-    <a class="hal-id" href="index.html" title="Back to Home"><span class="lamp" aria-hidden="true"></span> <span class="brand-txt">HAL 9000 <span style="color:var(--amber)">PHYSICS</span></span></a>
-    <div class="title-block">
-      <div class="name" id="title">Same start, different futures</div>
-      <div class="meta"><span id="count">I · 01</span> · <span id="disc">CLASSICAL MECHANICS</span></div>
-    </div>
-    <div class="status">
-      <a class="pill portal-link" href="Music.html" title="Switch to Music Synth">MUSIC</a>
-      <button type="button" class="pill" id="hold" aria-pressed="false" title="Play / Pause (Space)">HOLD</button>
-      <button type="button" class="pill" id="idx" aria-pressed="false" title="Index (I)">IDX</button>
-      <button type="button" class="pill" id="btn-help" title="Controls (?)">?</button>
-    </div>
-  </header>
+    <header id="top">
+      <a class="hal-id" href="index.html" title="Back to Home"><span class="lamp" aria-hidden="true"></span> <span
+          class="brand-txt">HAL 9000 <span style="color:var(--amber)">PHYSICS</span></span></a>
+      <div class="title-block">
+        <div class="name" id="title">Same start, different futures</div>
+        <div class="meta"><span id="count">I · 01</span> · <span id="disc">CLASSICAL MECHANICS</span></div>
+      </div>
+      <div class="status">
+        <a class="pill portal-link" href="Music.html" title="Switch to Music Synth">MUSIC</a>
+        <button type="button" class="pill" id="hold" aria-pressed="false" title="Play / Pause (Space)">HOLD</button>
+        <button type="button" class="pill" id="idx" aria-pressed="false" title="Index (I)">IDX</button>
+        <button type="button" class="pill" id="btn-help" title="Controls (?)">?</button>
+      </div>
+    </header>
 
-  <section id="copy">
-    <p class="formula" id="formula"></p>
-  </section>
+    <section id="copy">
+      <p class="formula" id="formula"></p>
+    </section>
 
-  <div class="nav-edge" id="prev" title="Previous Station (←)">‹</div>
-  <div class="nav-edge" id="next" title="Next Station (→)">›</div>
+    <div class="nav-edge" id="prev" title="Previous Station (←)">‹</div>
+    <div class="nav-edge" id="next" title="Next Station (→)">›</div>
 
-  <footer id="foot">
-    <div class="f-head">
-      <div class="readout" id="readout" aria-live="polite"></div>
-      <span class="note" id="note"></span>
-    </div>
-    <div class="f-sub" id="sub"></div>
-  </footer>
+    <footer id="foot">
+      <div class="f-head">
+        <div class="readout" id="readout" aria-live="polite"></div>
+        <span class="note" id="note"></span>
+      </div>
+      <div class="f-sub" id="sub"></div>
+    </footer>
 
   <aside id="legend" aria-label="Controls Legend">
     <div class="card">
       <h2>HAL 9000 // PHYSICS INPUT MATRIX</h2>
-      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Station (I–XXXVI)</span></div>
+      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Station (I–XLI)</span></div>
       <div class="krow"><span class="k">↑ / ↓  or  1–8</span><span class="d">Previous / Next / Jump Part</span></div>
       <div class="krow"><span class="k">WHEEL</span><span class="d">Switch Station (Shift: Switch Part)</span></div>
       <div class="krow"><span class="k">SPACE</span><span class="d">Hold / Resume Simulation</span></div>
@@ -231,9 +549,10 @@
     </div>
   </aside>
 
-  <nav id="index" aria-label="Catalogue"></nav>
-  <div id="boot" hidden></div>
-</div>
-<script src="edu-engine.js"></script>
+    <nav id="index" aria-label="Catalogue"></nav>
+    <div id="boot" hidden></div>
+  </div>
+  <script src="edu-engine.js"></script>
 </body>
+
 </html>
