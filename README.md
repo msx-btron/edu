@@ -1,9 +1,11 @@
-BTRON Math Synth
-================
+BTRON Education
+===============
 
-* Math.html
-* Physics.html
-* Synth.html
+Three subjects:
+
+* `Math.html`
+* `Music.html`
+* `Physics.html`
 
 Credits
 =======

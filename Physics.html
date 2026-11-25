@@ -113,12 +113,12 @@
     display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 18px;
     border-bottom: 1px solid rgba(230,225,214,0.08); padding-bottom: 5px;
   }
-  .readout { display: flex; flex-wrap: wrap; gap: 6px 20px; min-height: 1.2em; }
-  .readout div { display: flex; gap: 8px; font-size: 11px; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
+  .readout { display: flex; flex-wrap: wrap; gap: 6px 22px; min-height: 1.3em; }
+  .readout div { display: flex; gap: 8px; font-size: 13px; letter-spacing: 0.09em; font-variant-numeric: tabular-nums; }
   .readout .k { color: var(--dim); }
-  .readout .v { color: var(--amber); }
-  .f-sub { font-size: 11px; color: var(--paper); line-height: 1.45; }
-  .note { color: rgba(127, 212, 204, 0.78); font-size: 10.5px; letter-spacing: 0.03em; line-height: 1.4; }
+  .readout .v { color: var(--amber); font-weight: 500; }
+  .f-sub { font-size: 12.5px; color: var(--paper); line-height: 1.45; }
+  .note { color: rgba(127, 212, 204, 0.86); font-size: 11.5px; letter-spacing: 0.03em; line-height: 1.4; }
 
   /* Unified HAL 9000 Index & Hidden Input Legend overlays (with visible CRT scrollbar) */
   #legend, #index {
@@ -178,7 +178,44 @@
   .idx-item .pts { font-size: 10px; color: var(--cyan); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   #boot { position: absolute; left: 20px; bottom: 100px; z-index: 5; color: var(--hot); font-size: 12px; max-width: 46ch; }
-  @media (max-width: 720px) { .hal-id span.brand-txt { display: none; } .status .pill.portal-link { display: none; } }
+
+  /* Station XLII Rocket Throttle & Plume Controls */
+  #rocket-ctrl {
+    position: absolute; top: 82px; right: 20px; z-index: 4; width: 236px;
+    background: rgba(8, 10, 16, 0.88); border: 1px solid rgba(232, 164, 84, 0.34);
+    padding: 10px 12px; pointer-events: auto; backdrop-filter: blur(6px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), inset 0 0 18px rgba(0, 0, 0, 0.5);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #rocket-ctrl[hidden] { display: none; }
+  .rc-title {
+    font-family: var(--display); font-size: 10.5px; letter-spacing: 0.16em;
+    color: var(--amber); display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid rgba(232, 164, 84, 0.2); padding-bottom: 5px;
+  }
+  .rc-row { display: flex; flex-direction: column; gap: 3px; }
+  .rc-lbl {
+    display: flex; justify-content: space-between; font-size: 11px;
+    letter-spacing: 0.06em; color: var(--paper); font-variant-numeric: tabular-nums;
+  }
+  .rc-lbl .rv { color: #52fa9e; font-weight: 500; }
+  #rocket-ctrl input[type="range"] {
+    width: 100%; height: 4px; margin: 2px 0; cursor: pointer;
+    accent-color: #52fa9e; background: rgba(230, 225, 214, 0.16);
+    border-radius: 2px;
+  }
+  .rc-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 2px; }
+  .rc-btn {
+    background: rgba(232, 164, 84, 0.08); border: 1px solid rgba(232, 164, 84, 0.28);
+    color: var(--paper); font-size: 10.5px; letter-spacing: 0.08em; padding: 5px 5px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .rc-btn:hover { background: rgba(82, 250, 158, 0.16); border-color: #52fa9e; color: #52fa9e; }
+  @media (max-width: 720px) {
+    .hal-id span.brand-txt { display: none; }
+    .status .pill.portal-link { display: none; }
+    #rocket-ctrl { width: 196px; top: 72px; right: 10px; padding: 8px 9px; }
+  }
   @media (prefers-reduced-motion: reduce) { .lamp { animation: none; } .scan { display: none; } }
 </style>
 </head>
@@ -207,6 +244,28 @@
   <section id="copy">
     <p class="formula" id="formula"></p>
   </section>
+
+  <aside id="rocket-ctrl" hidden aria-label="Rocket Engine Throttle Controls">
+    <div class="rc-title"><span>PROPULSION THROTTLE</span><span id="rc-regime" style="color:var(--cyan)">OVER-EXP</span></div>
+    <label class="rc-row">
+      <span class="rc-lbl"><span>THROTTLE (GAS PEDAL)</span><span class="rv" id="rc-thr-v">100%</span></span>
+      <input type="range" id="rc-thr" min="20" max="110" step="1" value="100">
+    </label>
+    <label class="rc-row">
+      <span class="rc-lbl"><span>AMBIENT Pₐ (ALTITUDE)</span><span class="rv" id="rc-pa-v">1.01 BAR (SL)</span></span>
+      <input type="range" id="rc-pa" min="0" max="101" step="1" value="101">
+    </label>
+    <label class="rc-row">
+      <span class="rc-lbl"><span>MIXTURE O/F RATIO</span><span class="rv" id="rc-of-v">3.60 (NOM)</span></span>
+      <input type="range" id="rc-of" min="75" max="125" step="1" value="100">
+    </label>
+    <div class="rc-presets">
+      <button type="button" class="rc-btn" data-rc="sl">SEA LEVEL 100%</button>
+      <button type="button" class="rc-btn" data-rc="maxq">MAX-Q 60%</button>
+      <button type="button" class="rc-btn" data-rc="land">LANDING 30%</button>
+      <button type="button" class="rc-btn" data-rc="vac">VACUUM 100%</button>
+    </div>
+  </aside>
 
   <div class="nav-edge" id="prev" title="Previous Station (←)">‹</div>
   <div class="nav-edge" id="next" title="Next Station (→)">›</div>

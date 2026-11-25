@@ -53,6 +53,10 @@ const RAW = {
   "-":["00000","00000","00000","11111","00000","00000","00000"],
   "/":["00001","00010","00010","00100","01000","01000","10000"],
   "=":["00000","00000","11111","00000","11111","00000","00000"],
+  "(":["00010","00100","01000","01000","01000","00100","00010"],
+  ")":["01000","00100","00010","00010","00010","00100","01000"],
+  "^":["00100","01010","10001","00000","00000","00000","00000"],
+  "*":["00000","10101","01110","11111","01110","10101","00000"],
 };
 const GLYPH = {};
 for (const k in RAW) GLYPH[k] = RAW[k].map((row) => parseInt(row, 2));
@@ -92,6 +96,7 @@ const fbuf = new Float32Array(MAXV * 6);
 let nv = 0;
 const segs = [];
 const fills = [];
+const quads2d = [];
 
 function sh(type, src) {
   const s = gl.createShader(type);
@@ -160,6 +165,10 @@ const G = {
     if (!gl || !prog) { fills.push(x, y, w, h, col[0], col[1], col[2], col[3] == null ? 1 : col[3]); return; }
     pushQuad(x, y, x + w, y, x + w, y + h, x, y + h, col);
   },
+  quad(x0, y0, x1, y1, x2, y2, x3, y3, col) {
+    if (!gl || !prog) { quads2d.push([x0, y0, x1, y1, x2, y2, x3, y3, col[0], col[1], col[2], col[3] == null ? 1 : col[3]]); return; }
+    pushQuad(x0, y0, x1, y1, x2, y2, x3, y3, col);
+  },
   circle(cx, cy, r, col, w, n) {
     const N = n || 40;
     let px = cx + r, py = cy;
@@ -205,6 +214,7 @@ function viewOf(box) {
     circ(x, y, r, col, w, n) { G.circle(X(x), Y(y), r * s, col, w, n); },
     poly(pts, col, w) { G.poly(pts.map((p) => [X(p[0]), Y(p[1])]), col, w); },
     fill(x, y, w, h, col) { G.fill(X(x), Y(y), w * s, h * s, col); },
+    quad(x0, y0, x1, y1, x2, y2, x3, y3, col) { G.quad(X(x0), Y(y0), X(x1), Y(y1), X(x2), Y(y2), X(x3), Y(y3), col); },
     text(str, x, y, h, col) { G.text(str, X(x), Y(y), h * s, col); },
     scope(x, y, w, h, values, col, yMin, yMax) {
       this.line(x, y, x + w, y, COL.grid, 1);
@@ -1078,53 +1088,71 @@ function lbmStep(sim, perturb) {
   sim.step++;
 }
 
+// Persistent LBM state + asynchronous chunked background pre-warmer (zero main-thread blocking!)
+const VORTEX_WARM_STEPS = 1450;
+let VORTEX_CACHE = null;
+function initVortexCache() {
+  if (VORTEX_CACHE) return VORTEX_CACHE;
+  const NX = 132, NY = 44, cx = 26, cy = 22, R = 5.6, U0 = 0.125;
+  const nu = (U0 * (2 * R)) / 140, omega = 1 / (3 * nu + 0.5);
+  const c = {
+    NX, NY, cx, cy, R, U0, omega, step: 0, warmDone: false,
+    f: new Float32Array(NX * NY * 9), fn: new Float32Array(NX * NY * 9),
+    ux: new Float32Array(NX * NY), uy: new Float32Array(NX * NY),
+    solid: new Uint8Array(NX * NY), probe: [],
+  };
+  const u2 = 1.5 * U0 * U0;
+  for (let y = 0; y < NY; y++) {
+    for (let x = 0; x < NX; x++) {
+      const idx = y * NX + x;
+      if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= R * R) c.solid[idx] = 1;
+      const o = idx * 9;
+      for (let k = 0; k < 9; k++) {
+        const eu = LBM_EX[k] * U0;
+        c.f[o + k] = LBM_W[k] * (1 + 3 * eu + 4.5 * eu * eu - u2);
+      }
+    }
+  }
+  VORTEX_CACHE = c;
+  return c;
+}
+function prewarmVortexSlice() {
+  const c = initVortexCache();
+  if (c.warmDone) return;
+  const probeIdx = c.cy * c.NX + (c.cx + 30);
+  const t0 = performance.now();
+  // Run small non-blocking micro-slices (~4 ms each) while user views other stations
+  while (c.step < VORTEX_WARM_STEPS && performance.now() - t0 < 4.5) {
+    lbmStep(c, c.step < 140);
+    if (c.step > 650 && c.step % 8 === 0) {
+      c.probe.push(c.uy[probeIdx] / c.U0);
+      if (c.probe.length > 100) c.probe.shift();
+    }
+  }
+  if (c.step >= VORTEX_WARM_STEPS) c.warmDone = true;
+  else if (typeof requestIdleCallback === "function") requestIdleCallback(prewarmVortexSlice, { timeout: 60 });
+  else setTimeout(prewarmVortexSlice, 12);
+}
+// Kick off silent background pre-warming right after page boot so Station VIII opens in <1 ms!
+if (typeof setTimeout === "function") setTimeout(prewarmVortexSlice, 120);
+
 function drawVortex(V, sim, t, dt) {
-  const NX = 132, NY = 44;
-  const cx = 26, cy = 22, R = 5.6;
-  const U0 = 0.125;
-  const nu = (U0 * (2 * R)) / 140; // Re ~ 126-140 crisp shedding
-  const omega = 1 / (3 * nu + 0.5);
+  const c = initVortexCache();
+  const { NX, NY, cx, cy, R, U0 } = c;
+  const probeX = cx + 30, probeY = cy, probeIdx = probeY * NX + probeX;
 
-  if (!sim.ready) {
-    sim.NX = NX; sim.NY = NY; sim.U0 = U0; sim.omega = omega; sim.step = 0;
-    sim.f = new Float32Array(NX * NY * 9);
-    sim.fn = new Float32Array(NX * NY * 9);
-    sim.ux = new Float32Array(NX * NY);
-    sim.uy = new Float32Array(NX * NY);
-    sim.solid = new Uint8Array(NX * NY);
-    sim.probe = [];
-    const u2 = 1.5 * U0 * U0;
-    for (let y = 0; y < NY; y++) {
-      for (let x = 0; x < NX; x++) {
-        const idx = y * NX + x;
-        if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= R * R) sim.solid[idx] = 1;
-        const o = idx * 9;
-        for (let k = 0; k < 9; k++) {
-          const eu = LBM_EX[k] * U0;
-          sim.f[o + k] = LBM_W[k] * (1 + 3 * eu + 4.5 * eu * eu - u2);
-        }
-      }
-    }
-    // Pre-warm LBM until von Kármán vortex street is fully developed & periodically shedding
-    const probeIdx = cy * NX + (cx + 30);
-    for (let s = 0; s < 1450; s++) {
-      lbmStep(sim, s < 140);
-      if (s > 650 && s % 8 === 0) {
-        sim.probe.push(sim.uy[probeIdx] / U0);
-        if (sim.probe.length > 100) sim.probe.shift();
-      }
-    }
-    sim.ready = true;
-  }
-
-  const probeX = cx + 30, probeY = cy;
-  const probeIdx = probeY * NX + probeX;
   if (dt > 0) {
-    const sub = Math.max(1, Math.min(8, Math.round(dt * 380)));
-    for (let s = 0; s < sub; s++) lbmStep(sim, false);
-    sim.probe.push(sim.uy[probeIdx] / U0);
-    if (sim.probe.length > 100) sim.probe.shift();
+    // If user jumped here before background pre-warm finished, smoothly catch up at 24 steps/frame with zero freeze!
+    const sub = !c.warmDone ? 24 : Math.max(1, Math.min(8, Math.round(dt * 380)));
+    for (let s = 0; s < sub; s++) {
+      lbmStep(c, c.step < 140);
+      if (c.step >= VORTEX_WARM_STEPS) c.warmDone = true;
+    }
+    c.probe.push(c.uy[probeIdx] / U0);
+    if (c.probe.length > 100) c.probe.shift();
   }
+  // Mirror cache references onto sim for downstream rendering & probe readout
+  sim.ux = c.ux; sim.uy = c.uy; sim.solid = c.solid; sim.probe = c.probe; sim.step = c.step;
 
   // Channel geometry in world coordinates
   const x0 = -0.92, y0 = -0.02, chW = 1.84, chH = chW * (NY / NX);
@@ -4802,6 +4830,424 @@ function draw4004Bus(V, sim, t, dt, part) {
   }
 }
 
+// ============================================================================
+// XLII. REAL 2D COMPRESSIBLE NOZZLE AIRFLOW & SUPERSONIC PLASMA DYNAMICS (2 parts)
+// Part 1/2: SpaceX Raptor 3 (Methalox 350 bar, CH*/C2* blue-violet plasma, eps=35:1)
+// Part 2/2: Saturn V F-1 (Kerolox 70 bar, incandescent golden plume + film-cooling boundary, eps=16:1)
+// ============================================================================
+function solveAreaMach(areaRatio, gamma, supersonic) {
+  // Exact Newton-Raphson solver for isentropic Area-Mach relation A/A* = (1/M)[(2/(g+1))(1+(g-1)/2 M^2)]^((g+1)/(2(g-1)))
+  const ar = Math.max(1.0001, areaRatio);
+  const gp1 = gamma + 1, gm1 = gamma - 1, exp = gp1 / (2 * gm1);
+  let M = supersonic ? (1.1 + Math.sqrt(ar - 1) * 1.4) : Math.max(0.05, 0.55 / ar);
+  for (let it = 0; it < 7; it++) {
+    const term = (2 / gp1) * (1 + 0.5 * gm1 * M * M);
+    const f = (Math.pow(term, exp) / M) - ar;
+    const df = (Math.pow(term, exp - 1) * (M * M - 1)) / (M * M * term * (gp1 / 2) / (1 + 0.5 * gm1 * M * M) || 1);
+    // Clean exact derivative: d(A/A*)/dM = (A/A*) * (M^2 - 1) / (M * (1 + (g-1)/2 M^2))
+    const dExact = (Math.pow(term, exp) / M) * (M * M - 1) / (M * (1 + 0.5 * gm1 * M * M));
+    const step = f / (Math.abs(dExact) < 1e-6 ? (supersonic ? 1 : -1) : dExact);
+    M = supersonic ? Math.max(1.005, M - step) : Math.max(0.04, Math.min(0.995, M - step));
+  }
+  return M;
+}
+
+const ROCKET_CAM = { yaw: 0.54, pitch: 0.28, zoom: 1.0, userOrbited: false, dragging: false, lastX: 0, lastY: 0 };
+const ROCKET_CTRL = { throttle: 1.0, paBar: 1.01, ofScale: 1.0 };
+
+function drawRocketEngine(V, sim, t, dt, part) {
+  const isF1 = (part || 0) % 2 === 1;
+  const base = isF1
+    ? { name: "SATURN V F-1", prop: "LOX / RP-1", pc: 70, tc: 3570, isp: 263, ispVac: 304, thrust: 6.77, mdot: 2578, mOx: 1789, mFuel: 788, of: 2.27, ve: 2580, eps: 16, dEx: 3.70, gamma: 1.24, rCh: 0.21, rTh: 0.115, rEx: 0.31 }
+    : { name: "SPACEX RAPTOR 2", prop: "GO2 / GCH4 (MECH 6191)", pc: 300, pcCfd: 317.4, tc: 3830, isp: 327, ispVac: 335, thrust: 2.30, mdot: 650, mOx: 510, mFuel: 140, of: 3.60, ve: 3288, eps: 40, dEx: 1.30, gamma: 1.22, rCh: 0.18, rTh: 0.088, rEx: 0.28 };
+
+  // Real-time Throttle, Ambient Back-Pressure (Pa), and Mixture Ratio (O/F) physics coupling!
+  const thr = Math.max(0.20, Math.min(1.10, ROCKET_CTRL.throttle));
+  const paBar = Math.max(0.0, Math.min(1.01, ROCKET_CTRL.paBar));
+  const ofScale = Math.max(0.75, Math.min(1.25, ROCKET_CTRL.ofScale));
+  const ofCur = base.of * ofScale;
+  const ofOff = ofScale - 1.0;
+  // Chamber temperature & c* peak near nominal O/F and dip when running too fuel-rich or ox-rich
+  const tcFactor = Math.max(0.82, 1.0 - 0.55 * ofOff * ofOff + 0.06 * ofOff);
+  const veFactor = Math.sqrt(tcFactor) * (0.94 + 0.06 * thr);
+  const pcCur = base.pc * thr;
+  const tcCur = Math.round(base.tc * tcFactor);
+  const mdotCur = Math.round(base.mdot * thr);
+  const mOxCur = Math.round(mdotCur * (ofCur / (1 + ofCur)));
+  const mFuelCur = Math.max(1, mdotCur - mOxCur);
+  const vacBonus = (1.01 - paBar) / 1.01; // 0 at Sea Level -> 1 in Vacuum
+  const ispCur = Math.round((base.isp + (base.ispVac - base.isp) * vacBonus) * veFactor);
+  const veCur = Math.round(ispCur * 9.80665);
+  const thrustCur = base.thrust * thr * (1 + ((base.ispVac - base.isp) / base.isp) * vacBonus) * veFactor;
+  const eng = {
+    ...base,
+    pc: Math.round(pcCur), tc: tcCur, isp: ispCur, thrust: thrustCur,
+    mdot: mdotCur, mOx: mOxCur, mFuel: mFuelCur, of: Number(ofCur.toFixed(2)), ve: veCur,
+  };
+
+  // 3D axisymmetric nozzle + feed system + plume along X in [-0.95, +1.05], interactively rotatable!
+  const xIn = -0.86, xConv = -0.58, xTh = -0.38, xEx = 0.04, xEnd = 1.05;
+  const yaw = ROCKET_CAM.userOrbited ? ROCKET_CAM.yaw : (0.52 + 0.44 * Math.sin(t * 0.32));
+  const pitch = ROCKET_CAM.userOrbited ? ROCKET_CAM.pitch : (0.28 + 0.10 * Math.cos(t * 0.26));
+  const zoom = ROCKET_CAM.zoom;
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const proj3 = (x, y, z) => {
+    const x1 = x * cy - z * sy, z1 = x * sy + z * cy;
+    const y2 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+    const p = (3.8 / Math.max(0.75, 3.8 + z2 * 0.52)) * zoom;
+    return [x1 * 0.78 * p, 0.12 + y2 * 0.78 * p, z2];
+  };
+  // 3D Mechanical Geometry Helpers: Cylinders, Impellers, and Animated 3D Propellant Ducts
+  const cyl3D = (cx0, cy0, cz0, len, rad, axis, col, nSeg) => {
+    const N = nSeg || 14;
+    const r0 = [], r1 = [];
+    for (let j = 0; j <= N; j++) {
+      const a = (j / N) * Math.PI * 2, ca = Math.cos(a) * rad, sa = Math.sin(a) * rad;
+      if (axis === "x") { r0.push(proj3(cx0, cy0 + ca, cz0 + sa)); r1.push(proj3(cx0 + len, cy0 + ca, cz0 + sa)); }
+      else { r0.push(proj3(cx0 + ca, cy0, cz0 + sa)); r1.push(proj3(cx0 + ca, cy0 + len, cz0 + sa)); }
+    }
+    for (let j = 0; j < N; j++) {
+      V.line(r0[j][0], r0[j][1], r0[j + 1][0], r0[j + 1][1], col, 1.3);
+      V.line(r1[j][0], r1[j][1], r1[j + 1][0], r1[j + 1][1], col, 1.3);
+      if (j % 3 === 0) V.line(r0[j][0], r0[j][1], r1[j][0], r1[j][1], [col[0], col[1], col[2], 0.55], 1.0);
+    }
+  };
+  const impeller3D = (cx0, cy0, cz0, rad, speed, col) => {
+    const ctr = proj3(cx0, cy0, cz0);
+    for (let k = 0; k < 6; k++) {
+      const a = t * speed + (k * Math.PI) / 3;
+      const tip = proj3(cx0, cy0 + Math.cos(a) * rad, cz0 + Math.sin(a) * rad);
+      V.line(ctr[0], ctr[1], tip[0], tip[1], col, 1.45);
+    }
+  };
+  const pipe3D = (pts, col, speed, nBeads) => {
+    const pr = pts.map((p) => proj3(p[0], p[1], p[2]));
+    for (let i = 1; i < pr.length; i++) V.line(pr[i - 1][0], pr[i - 1][1], pr[i][0], pr[i][1], [col[0], col[1], col[2], 0.55], 2.0);
+    const total = pts.length - 1;
+    for (let b = 0; b < nBeads; b++) {
+      const u = ((b / nBeads) + t * speed) % 1;
+      const f = u * total, i = Math.min(total - 1, f | 0), s = f - i;
+      const q = proj3(
+        pts[i][0] + (pts[i + 1][0] - pts[i][0]) * s,
+        pts[i][1] + (pts[i + 1][1] - pts[i][1]) * s,
+        pts[i][2] + (pts[i + 1][2] - pts[i][2]) * s
+      );
+      V.circ(q[0], q[1], 0.011, col, 1.8, 6);
+    }
+  };
+
+  const nozWall = (x) => {
+    if (x <= xConv) return eng.rCh;
+    if (x <= xTh) {
+      const s = (x - xConv) / (xTh - xConv);
+      return eng.rTh + (eng.rCh - eng.rTh) * 0.5 * (1 + Math.cos(s * Math.PI));
+    }
+    const s = Math.min(1, (x - xTh) / (xEx - xTh));
+    return eng.rTh + (eng.rEx - eng.rTh) * Math.pow(s, 0.66); // Rao parabolic bell
+  };
+
+  // Precompute exact 1D isentropic + supersonic Pack shock-cell profile along N_AX stations
+  const N_AX = 76;
+  const axX = new Float32Array(N_AX), axR = new Float32Array(N_AX), axM = new Float32Array(N_AX);
+  const axP = new Float32Array(N_AX), axT = new Float32Array(N_AX), axRho = new Float32Array(N_AX);
+  const axU = new Float32Array(N_AX), axTau = new Float32Array(N_AX), axShock = new Float32Array(N_AX), axF = new Float32Array(N_AX);
+  const gm1 = eng.gamma - 1, gExp = eng.gamma / gm1, rExp = 1 / gm1;
+  const Me = solveAreaMach(eng.eps, eng.gamma, true);
+  const peBar = pcCur * Math.pow(1 / (1 + 0.5 * gm1 * Me * Me), gExp);
+  const expRatio = peBar / Math.max(0.02, paBar); // <1: over-expanded (pinched shocks), ~1: ideal, >1: under-expanded (flared vacuum plume)
+  const shockGain = paBar < 0.04 ? 0.14 : Math.max(0.18, Math.min(1.45, 0.25 + 0.85 * Math.abs(Math.log(Math.max(0.15, Math.min(8, expRatio))))));
+  const plumeFlare = (isF1 ? 0.14 : 0.095) * (expRatio < 0.85 ? (0.45 + 0.55 * expRatio) : (1.0 + 0.72 * Math.min(2.6, Math.log(Math.max(1, expRatio)))));
+  const lambdaS = 0.088 * Math.sqrt(Math.max(1, Me * Me - 1)) * (isF1 ? 1.15 : 0.92) * (0.55 + 0.45 * thr) * (0.82 + 0.28 * Math.min(2.0, expRatio));
+  const fScale = Math.min(1.06, (thrustCur / base.thrust) / 1.12); // normalized to 112% full scale so throttle & vacuum boost visibly reshape F(x)!
+
+  for (let i = 0; i < N_AX; i++) {
+    const x = xIn + (i / (N_AX - 1)) * (xEnd - xIn);
+    axX[i] = x;
+    if (x <= xEx) {
+      const r = nozWall(x);
+      axR[i] = r;
+      const arVis = (r * r) / (eng.rTh * eng.rTh);
+      const arPhys = x <= xTh ? arVis : 1 + (arVis - 1) * ((eng.eps - 1) / Math.max(0.1, (eng.rEx * eng.rEx) / (eng.rTh * eng.rTh) - 1));
+      const M = Math.abs(x - xTh) < 0.015 ? 1.0 : solveAreaMach(arPhys, eng.gamma, x > xTh);
+      const tRat = 1 / (1 + 0.5 * gm1 * M * M);
+      axM[i] = M; axT[i] = tRat; axP[i] = Math.pow(tRat, gExp) * thr; axRho[i] = Math.pow(tRat, rExp) * thr;
+      axU[i] = M * Math.sqrt(tRat) * veFactor; // normalized speed u / a_0
+      axShock[i] = 0;
+      // Normalized cumulative axial thrust build-up F(x) = mdot*u(x) + (P(x)-Pa)*A(x)
+      const uNorm = axU[i] / Math.max(0.1, Me * Math.sqrt(1 / (1 + 0.5 * gm1 * Me * Me)));
+      const pTerm = (axP[i] * base.pc - paBar * (x > xTh ? 0.5 : 0)) / Math.max(1, base.pc);
+      axF[i] = Math.min(1.02, Math.max(0.03, fScale * (0.86 * uNorm + 0.16 * Math.max(0, pTerm) * Math.min(1.2, arVis * 0.25))));
+    } else {
+      const dx = x - xEx;
+      const damp = Math.exp(-dx * (isF1 ? 1.35 : 1.05));
+      const staticPhase = (dx / lambdaS) * Math.PI * 2;
+      const jetOsc = Math.cos(staticPhase) * 0.044 * shockGain * damp;
+      axR[i] = Math.max(eng.rTh * 0.85, eng.rEx + dx * plumeFlare + jetOsc);
+      const disk = Math.pow(Math.max(0, -Math.cos(staticPhase)), 4.0) * damp * shockGain * (1 + 0.08 * Math.sin(t * 14 - staticPhase));
+      const Mloc = Math.max(1.15, Me * (1 - 0.16 * dx) - 0.55 * disk);
+      const tBase = 1 / (1 + 0.5 * gm1 * Mloc * Mloc);
+      axM[i] = Mloc;
+      axT[i] = Math.min(0.96, tBase + 0.34 * disk);
+      axP[i] = Math.min(0.75, (Math.pow(tBase, gExp) * thr) + 0.22 * disk);
+      // Rankine-Hugoniot density compression across each Mach disk
+      axRho[i] = Math.min(0.90, Math.pow(tBase, rExp) * thr * (1 + 2.6 * disk));
+      axU[i] = Mloc * Math.sqrt(tBase) * veFactor * (1 - 0.28 * disk);
+      axShock[i] = disk;
+      // Vacuum under-expansion gives extra pressure-thrust step; over-expansion oscillates across Mach disks
+      axF[i] = Math.min(1.04, Math.max(0.03, fScale * (0.98 + 0.05 * vacBonus - 0.03 * dx + 0.055 * disk)));
+    }
+    // Exact Lagrangian transit time tau(x) = integral dx / u(x) for mass-conserving wavefronts!
+    if (i === 0) axTau[0] = 0;
+    else axTau[i] = axTau[i - 1] + (axX[i] - axX[i - 1]) / Math.max(0.10, 0.5 * (axU[i] + axU[i - 1]));
+  }
+
+  const plasmaCol = (intensity, alpha) => {
+    const v = Math.max(0, Math.min(1, intensity * (0.55 + 0.45 * thr)));
+    const richWarm = Math.max(0, -ofOff) * 1.4; // fuel-rich shifts plasma warmer/amber
+    if (!isF1) return [
+      Math.min(1, 0.26 + 0.92 * Math.pow(v, 1.4) + 0.48 * richWarm),
+      Math.min(1, 0.45 + 0.65 * Math.pow(v, 1.1) - 0.12 * richWarm),
+      Math.min(1, 0.84 + 0.16 * v - 0.45 * richWarm),
+      alpha
+    ];
+    return [Math.min(1, 0.78 + 0.22 * v), Math.min(1, 0.22 + 0.78 * Math.pow(v, 1.25) - 0.10 * richWarm), Math.min(1, 0.08 + 0.72 * Math.pow(v, 2.3) + 0.18 * Math.max(0, ofOff)), alpha];
+  };
+
+  // 1. 3D Rao Bell Nozzle Wireframe Shell (Circumferential Rings + Longitudinal Cooling Channels)
+  const N_PHI = 22, N_RINGS = 16;
+  const ringPts = [];
+  for (let ri = 0; ri <= N_RINGS; ri++) {
+    const x = xIn + (ri / N_RINGS) * (xEx - xIn);
+    const r = nozWall(x);
+    const isThroat = Math.abs(x - xTh) < 0.04;
+    const isExit = ri === N_RINGS;
+    const pts = [];
+    for (let j = 0; j <= N_PHI; j++) {
+      const a = (j / N_PHI) * Math.PI * 2;
+      pts.push(proj3(x, r * Math.cos(a), r * Math.sin(a)));
+    }
+    ringPts.push(pts);
+    const col = isThroat ? [1.0, 0.88, 0.38, 0.92] : (isExit ? COL.paper : [0.45, 0.72, 0.82, 0.42]);
+    const lw = isThroat || isExit ? 1.8 : 1.0;
+    for (let j = 0; j < N_PHI; j++) V.line(pts[j][0], pts[j][1], pts[j + 1][0], pts[j + 1][1], col, lw);
+  }
+  for (let j = 0; j < N_PHI; j += 2) {
+    for (let ri = 0; ri < N_RINGS; ri++) {
+      const a = ringPts[ri][j], b = ringPts[ri + 1][j];
+      V.line(a[0], a[1], b[0], b[1], [0.78, 0.84, 0.90, 0.36], 1.0);
+    }
+  }
+
+  // 1B. REAL 3D INNER PROPELLANT FEED CYCLES, TURBOPUMPS, PREBURNERS & INJECTOR FACE
+  const colLox = [0.30, 0.84, 1.0, 0.96], colFuel = [0.98, 0.68, 0.26, 0.96], colHot = [1.0, 0.46, 0.22, 0.95];
+  // 3D Injector Plate inside chamber head (x = xIn)
+  for (const rf of [0.35, 0.68, 0.94]) {
+    let pPrev = null;
+    for (let j = 0; j <= 16; j++) {
+      const a = (j / 16) * Math.PI * 2;
+      const q = proj3(xIn, eng.rCh * rf * Math.cos(a), eng.rCh * rf * Math.sin(a));
+      if (pPrev) V.line(pPrev[0], pPrev[1], q[0], q[1], rf < 0.5 ? colHot : COL.amber, 1.2);
+      pPrev = q;
+    }
+  }
+  const pumpSpd = 0.32 + 0.68 * thr;
+  if (!isF1) {
+    // SpaceX Raptor 2: Full-Flow Staged Combustion (Dual 3D Preburners + Dual Turbopumps + Regen Cooling Loop!)
+    // Upper: LOX Turbopump + Ox-Rich Preburner (OPB)
+    cyl3D(xIn - 0.26, 0.30, 0.08, 0.26, 0.085, "x", colLox, 14);
+    impeller3D(xIn - 0.16, 0.30, 0.08, 0.072, 13.0 * pumpSpd, colLox);
+    pipe3D([[xIn - 0.38, 0.44, 0.08], [xIn - 0.26, 0.30, 0.08]], colLox, 1.2 * pumpSpd, 3); // LOX inlet
+    pipe3D([[xIn, 0.30, 0.08], [xIn + 0.06, 0.24, 0.06], [xIn, 0.11, 0.04]], [0.68, 0.90, 1.0, 0.96], 1.5 * pumpSpd, 4); // 100% OPB hot-gas duct -> injector
+    const lOpb = proj3(xIn - 0.26, 0.34, 0.08);
+    V.text("OPB GO2 " + eng.mOx + "KG/S", lOpb[0] - 0.56, lOpb[1] + 0.04, 0.028, colLox);
+
+    // Lower: LCH4 Turbopump + Fuel-Rich Preburner (FPB) + Regenerative Bell Cooling Return Duct
+    cyl3D(xIn - 0.26, -0.30, -0.08, 0.26, 0.085, "x", colFuel, 14);
+    impeller3D(xIn - 0.16, -0.30, -0.08, 0.072, -13.0 * pumpSpd, colFuel);
+    pipe3D([[xIn - 0.38, -0.44, -0.08], [xIn - 0.26, -0.30, -0.08]], colFuel, 1.2 * pumpSpd, 3); // LCH4 inlet
+    pipe3D([[xIn, -0.30, -0.08], [xIn + 0.06, -0.24, -0.06], [xIn, -0.11, -0.04]], colHot, 1.5 * pumpSpd, 4); // 100% FPB hot-gas duct -> injector
+    // Regenerative cooling feed down bell wall and back to FPB
+    pipe3D([[xIn - 0.10, -0.30, -0.16], [xTh, -eng.rTh - 0.05, -0.08], [xEx - 0.08, -eng.rEx - 0.04, 0]], [0.98, 0.72, 0.32, 0.85], 0.9 * pumpSpd, 5);
+    const lFpb = proj3(xIn - 0.26, -0.38, -0.08);
+    V.text("FPB GCH4 " + eng.mFuel + "KG/S", lFpb[0] - 0.60, lFpb[1] - 0.01, 0.028, colFuel);
+  } else {
+    // Saturn V F-1: Open Gas-Generator Cycle (Single-Shaft 41MW Twin Turbopump + Side GG + Toroidal Exhaust Manifold!)
+    // Anti-slosh radial copper baffles on F-1 injector face
+    for (let k = 0; k < 6; k++) {
+      const a = (k * Math.PI) / 3;
+      const p0 = proj3(xIn, 0, 0), p1 = proj3(xIn, eng.rCh * 0.92 * Math.cos(a), eng.rCh * 0.92 * Math.sin(a));
+      V.line(p0[0], p0[1], p1[0], p1[1], COL.amber, 1.3);
+    }
+    // Single-Shaft Twin Turbopump (LOX + RP-1 impellers linked on one shaft)
+    cyl3D(xIn - 0.18, 0.34, -0.10, 0.28, 0.075, "x", colLox, 12);
+    cyl3D(xIn - 0.18, 0.34, 0.14, 0.28, 0.075, "x", colFuel, 12);
+    impeller3D(xIn - 0.04, 0.34, -0.10, 0.065, 9.0 * pumpSpd, colLox);
+    impeller3D(xIn - 0.04, 0.34, 0.14, 0.065, 9.0 * pumpSpd, colFuel);
+    const sh0 = proj3(xIn - 0.04, 0.34, -0.10), sh1 = proj3(xIn - 0.04, 0.34, 0.14);
+    V.line(sh0[0], sh0[1], sh1[0], sh1[1], COL.amber, 2.4);
+    pipe3D([[xIn + 0.04, 0.34, -0.10], [xIn + 0.04, 0.18, -0.08], [xIn, 0.12, -0.05]], colLox, 1.1 * pumpSpd, 4);
+    pipe3D([[xIn + 0.04, 0.34, 0.14], [xIn + 0.04, 0.18, 0.10], [xIn, 0.12, 0.06]], colFuel, 1.1 * pumpSpd, 4);
+
+    // Side Gas Generator (GG) + Curved Turbine Exhaust Duct -> Toroidal Exhaust Manifold on lower bell!
+    cyl3D(xIn - 0.14, 0.16, 0.32, 0.20, 0.07, "x", colHot, 12);
+    const xMan = xTh + 0.26, rMan = nozWall(xMan) + 0.045;
+    pipe3D([[xIn + 0.06, 0.16, 0.32], [xTh, 0.08, 0.30], [xMan, 0.0, rMan]], [0.72, 0.64, 0.56, 0.90], 0.9 * pumpSpd, 6);
+    // 3D Toroidal Turbine Exhaust Manifold Ring injecting film cooling into lower bell
+    let mPrev = null;
+    for (let j = 0; j <= 20; j++) {
+      const a = (j / 20) * Math.PI * 2;
+      const q = proj3(xMan, rMan * Math.cos(a), rMan * Math.sin(a));
+      if (mPrev) V.line(mPrev[0], mPrev[1], q[0], q[1], [0.82, 0.70, 0.54, 0.92], 2.2);
+      mPrev = q;
+    }
+    const lPump = proj3(xIn - 0.18, 0.38, 0.02), lGg = proj3(xIn - 0.14, 0.16, 0.42), lMan = proj3(xMan, -rMan - 0.10, 0);
+    V.text("41MW PUMP", lPump[0] - 0.42, lPump[1] + 0.05, 0.028, COL.amber);
+    V.text("GG", lGg[0] - 0.12, lGg[1] + 0.03, 0.028, colHot);
+    V.text("GG FILM MANIFOLD", lMan[0] - 0.24, lMan[1] - 0.02, 0.028, COL.dim);
+  }
+
+  // 2. Luminous Translucent 3D Plasma Cone + Sculptural 3D Hourglass Mach Shock Diamonds!
+  const N_PLUME = 30, N_SHK_PHI = 16;
+  const plumeLen = (xEnd - xEx) * (0.48 + 0.52 * thr);
+  let prevPlume = null;
+  for (let pi = 0; pi <= N_PLUME; pi++) {
+    const x = xEx + (pi / N_PLUME) * plumeLen;
+    const dx = x - xEx;
+    const damp = Math.exp(-dx * (isF1 ? 1.05 : 0.82) / Math.max(0.45, thr));
+    const staticPhase = (dx / lambdaS) * Math.PI * 2;
+    const R = Math.max(eng.rTh * 0.85, eng.rEx + dx * plumeFlare + Math.cos(staticPhase) * 0.032 * shockGain * damp);
+    // Crisp 3D Hourglass Shock Diamond radius: pinches sharply at sea level, widens & softens in vacuum!
+    const pinchDepth = Math.min(1.0, shockGain * 0.85);
+    const shockR = eng.rEx * (0.025 + (1 - 0.72 * pinchDepth) * 0.45 + 0.74 * pinchDepth * Math.pow(Math.abs(Math.cos(staticPhase * 0.5)), 1.15)) * (0.52 + 0.48 * damp) * (0.65 + 0.35 * thr);
+    const nodeGlow = Math.pow(1 - Math.abs(Math.cos(staticPhase * 0.5)), 2.4) * damp * Math.min(1.2, shockGain) * (0.45 + 0.55 * thr);
+    const outerPts = [], innerPts = [];
+    for (let j = 0; j <= N_SHK_PHI; j++) {
+      const a = (j / N_SHK_PHI) * Math.PI * 2;
+      outerPts.push(proj3(x, R * Math.cos(a), R * Math.sin(a)));
+      innerPts.push(proj3(x, shockR * Math.cos(a), shockR * Math.sin(a)));
+    }
+    if (prevPlume) {
+      // Translucent outer plasma cone shell (electric blue-violet Methalox or golden Kerolox, tinted by O/F & throttle)
+      const glowThr = 0.42 + 0.58 * thr;
+      const richWarm = Math.max(0, -ofOff) * 1.1;
+      const shellCol = !isF1
+        ? [Math.min(1, 0.38 + 0.45 * richWarm), 0.44, Math.max(0.35, 1.0 - 0.45 * richWarm), (0.15 * damp + 0.035) * glowThr]
+        : [1.0, 0.52, 0.14, (0.16 * damp + 0.035) * glowThr];
+      // Bright sculptural inner 3D hourglass shock-diamond cones!
+      const diamCol = !isF1
+        ? [Math.min(1, 0.80 + 0.20 * nodeGlow + 0.25 * richWarm), 0.92 + 0.08 * nodeGlow, Math.max(0.5, 1.0 - 0.32 * richWarm), Math.min(0.95, (0.36 * damp + 0.50 * nodeGlow) * glowThr)]
+        : [1.0, 0.88 + 0.12 * nodeGlow, 0.50 + 0.48 * nodeGlow, Math.min(0.95, (0.38 * damp + 0.50 * nodeGlow) * glowThr)];
+      for (let j = 0; j < N_SHK_PHI; j++) {
+        V.quad(prevPlume.out[j][0], prevPlume.out[j][1], prevPlume.out[j + 1][0], prevPlume.out[j + 1][1], outerPts[j + 1][0], outerPts[j + 1][1], outerPts[j][0], outerPts[j][1], shellCol);
+        V.quad(prevPlume.inn[j][0], prevPlume.inn[j][1], prevPlume.inn[j + 1][0], prevPlume.inn[j + 1][1], innerPts[j + 1][0], innerPts[j + 1][1], innerPts[j][0], innerPts[j][1], diamCol);
+      }
+      // Crisp outer plasma boundary rim & shock-diamond ridge lines
+      const rimCol = plasmaCol(0.55 * damp, 0.34 * damp + 0.08);
+      for (let j = 0; j < N_SHK_PHI; j++) {
+        if (pi % 3 === 0) V.line(outerPts[j][0], outerPts[j][1], outerPts[j + 1][0], outerPts[j + 1][1], rimCol, 0.95);
+        if (nodeGlow > 0.35) V.line(innerPts[j][0], innerPts[j][1], innerPts[j + 1][0], innerPts[j + 1][1], [1.0, 0.98, 0.90, 0.92], 1.8);
+      }
+    }
+    prevPlume = { out: outerPts, inn: innerPts };
+  }
+
+  // 3. Exact Mass-Conserving 3D Propellant Stream-Surfaces & Iso-Density Wavefronts (rho * u * A = const!)
+  // Wavefronts spaced at equal transit-time intervals dTau automatically pack tightly in dense chamber/shocks and stretch in supersonic expansion!
+  const tauMax = axTau[N_AX - 1];
+  const sampleAtTau = (tauTarget) => {
+    let lo = 0, hi = N_AX - 1;
+    while (lo + 1 < hi) { const mid = (lo + hi) >> 1; if (axTau[mid] < tauTarget) lo = mid; else hi = mid; }
+    const f = (tauTarget - axTau[lo]) / Math.max(1e-6, axTau[hi] - axTau[lo]);
+    return {
+      x: axX[lo] + (axX[hi] - axX[lo]) * f,
+      R: axR[lo] + (axR[hi] - axR[lo]) * f,
+      T: axT[lo] + (axT[hi] - axT[lo]) * f,
+      rho: axRho[lo] + (axRho[hi] - axRho[lo]) * f,
+      shk: axShock[lo] + (axShock[hi] - axShock[lo]) * f,
+    };
+  };
+  // Draw 18 advected 3D iso-density propellant wavefront rings on two coaxial stream-surfaces (inner core + outer propellant shell)
+  const N_WAVES = 18;
+  const dTau = tauMax / N_WAVES;
+  const tauPhase = (t * 0.95) % dTau;
+  for (let w = 0; w < N_WAVES; w++) {
+    const st = sampleAtTau(w * dTau + tauPhase);
+    const densAlpha = Math.min(0.92, 0.20 + 0.72 * Math.pow(st.rho, 0.55) + 0.45 * st.shk);
+    const colW = plasmaCol(Math.min(1, st.T * 0.85 + st.shk * 0.7), densAlpha);
+    for (const rf of [0.36, 0.76]) {
+      const rr = st.R * rf;
+      let prev = null;
+      for (let j = 0; j <= 16; j++) {
+        const a = (j / 16) * Math.PI * 2 + (st.x < xTh ? (xTh - st.x) * 2.2 : 0);
+        const q = proj3(st.x, rr * Math.cos(a), rr * Math.sin(a));
+        if (prev) V.line(prev[0], prev[1], q[0], q[1], colW, rf < 0.5 ? 1.5 : 1.05);
+        prev = q;
+      }
+    }
+  }
+  // Longitudinal 3D propellant stream-surface ribbons connecting chamber -> throat -> supersonic shock cones
+  for (let s = 0; s < 10; s++) {
+    const phi0 = (s / 10) * Math.PI * 2;
+    let pPrev = null;
+    for (let i = 0; i < N_AX; i += 2) {
+      const a = phi0 + (axX[i] < xTh ? (xTh - axX[i]) * 2.0 : 0);
+      const rr = axR[i] * 0.62;
+      const q = proj3(axX[i], rr * Math.cos(a), rr * Math.sin(a));
+      if (pPrev) V.line(pPrev[0], pPrev[1], q[0], q[1], plasmaCol(axT[i] * 0.85 + axShock[i] * 0.65, 0.25 + 0.52 * Math.pow(axRho[i], 0.5)), 1.1);
+      pPrev = q;
+    }
+  }
+
+  // 3D Landmark Labels pinned to chamber, sonic throat, and exit (all >= 0.028 mono-font size)
+  const pTh = proj3(xTh, eng.rTh + 0.12, 0), pEx = proj3(xEx, eng.rEx + 0.10, 0);
+  V.text(eng.name + "  3D PLASMA + SHOCK DIAMONDS  (DRAG / WHEEL)", -1.08, 0.89, 0.030, COL.amber);
+  V.text("PC=" + eng.pc + "B TC=" + eng.tc + "K MDOT=" + eng.mdot + "KG/S OF=" + eng.of.toFixed(2) + " ISP=" + eng.isp + "S F=" + eng.thrust.toFixed(2) + "MN EPS=" + eng.eps + ":1", -1.08, 0.80, 0.028, COL.cyan);
+  V.text("THROAT M=1", pTh[0] - 0.16, pTh[1] + 0.07, 0.028, COL.amber);
+  V.text("EXIT M=" + Me.toFixed(2), pEx[0] + 0.02, pEx[1] + 0.09, 0.028, COL.paper);
+
+  // 4. Bottom Monitoring Strip: THRUST PROFILE F(x) + M(x), P/Pc, T/Tc, RHO/RHOc + Mach Shock Formulas & Constants
+  const gx0 = -1.08, gx1 = 1.08, gy0 = -0.76, gy1 = -0.44, gh = gy1 - gy0;
+  V.line(gx0, gy0, gx1, gy0, COL.grid, 1.1); V.line(gx0, gy0, gx0, gy1, COL.grid, 1.1);
+  const mapX = (x) => gx0 + ((x - xIn) / (xEnd - xIn)) * (gx1 - gx0);
+  V.line(mapX(xTh), gy0, mapX(xTh), gy1, [1.0, 0.90, 0.42, 0.35], 1.0);
+  V.line(mapX(xEx), gy0, mapX(xEx), gy1, [0.85, 0.88, 0.92, 0.30], 1.0);
+  const colThrust = [0.32, 0.98, 0.62, 0.98];
+  for (let i = 1; i < N_AX; i++) {
+    const x0 = mapX(axX[i - 1]), x1 = mapX(axX[i]);
+    V.line(x0, gy0 + axF[i - 1] * gh, x1, gy0 + axF[i] * gh, colThrust, 2.4);
+    V.line(x0, gy0 + (axM[i - 1] / 4.5) * gh, x1, gy0 + (axM[i] / 4.5) * gh, COL.amber, 1.8);
+    V.line(x0, gy0 + axP[i - 1] * gh, x1, gy0 + axP[i] * gh, COL.cyan, 1.5);
+    V.line(x0, gy0 + axT[i - 1] * gh, x1, gy0 + axT[i] * gh, COL.hot, 1.4);
+    V.line(x0, gy0 + axRho[i - 1] * gh, x1, gy0 + axRho[i] * gh, [0.88, 0.76, 1.0, 0.88], 1.4);
+  }
+  // Enlarged, high-legibility legend below the engine (0.028 baseline)
+  const legY = gy1 + 0.048, legH = 0.028;
+  V.text("F(X) THRUST", gx0 + 0.01, legY, legH, colThrust);
+  V.text("M(X)", gx0 + 0.52, legY, legH, COL.amber);
+  V.text("P/PC", gx0 + 0.78, legY, legH, COL.cyan);
+  V.text("T/TC", gx0 + 1.04, legY, legH, COL.hot);
+  V.text("RHO/RHOC", gx0 + 1.30, legY, legH, [0.88, 0.76, 1.0, 0.96]);
+  V.text("MACH SHOCKS", gx0 + 1.72, legY, legH, [0.82, 0.94, 1.0, 0.95]);
+
+  // Live Mach Shock-Diamond Governing Formulas + All Constants (all >= 0.028 mono-font!)
+  const lamPhysM = (1.3064 * eng.dEx * Math.sqrt(Math.max(0.2, Me * Me - 1)) * (0.55 + 0.45 * thr)).toFixed(2);
+  const muDeg = (Math.asin(1 / Math.max(1.01, Me)) * 180 / Math.PI).toFixed(1);
+  V.text("LAM=(PI/J01)*DE*SQRT(ME^2-1)=" + lamPhysM + "M  SIN(MU)=1/M(" + muDeg + "D)  P2/P1=1+2G/(G+1)*(M^2-1)", gx0 + 0.01, gy0 - 0.022, 0.028, COL.paper);
+  V.text("PI=3.1416 J01=2.4048 PI/J01=1.306 DE=" + eng.dEx.toFixed(2) + "M ME=" + Me.toFixed(2) + " G=" + eng.gamma.toFixed(2) + " PE=" + peBar.toFixed(2) + " PA=" + paBar.toFixed(2) + "B", gx0 + 0.01, gy0 - 0.070, 0.028, COL.cyan);
+
+  const regime = paBar < 0.03 ? "VACUUM" : (expRatio < 0.85 ? "OVER-EXP" : (expRatio > 1.25 ? "UNDER-EXP" : "IDEAL EXP"));
+  const rcRegEl = document.getElementById("rc-regime");
+  if (rcRegEl) rcRegEl.textContent = regime;
+  const rcOfV = document.getElementById("rc-of-v");
+  if (rcOfV) rcOfV.textContent = eng.of.toFixed(2) + (Math.abs(ofOff) < 0.03 ? " (NOM)" : (ofOff < 0 ? " (RICH)" : " (LEAN)"));
+
+  return [
+    ["ENGINE / THROTTLE", eng.name + " · " + Math.round(thr * 100) + "%"],
+    ["THRUST / PC", eng.thrust.toFixed(2) + " MN · " + eng.pc + " BAR"],
+    ["MDOT / VE / REGIME", eng.mdot + " KG/S · " + eng.ve + " M/S · " + regime],
+  ];
+}
+
 const STATIONS = [
   { roman: "I", cat: "MECHANICS & CHAOS", disc: "CLASSICAL MECHANICS", title: "Same start, different futures", sub: "Five double pendulums, released a thousandth of a radian apart.", formula: "d/dt (∂L/∂θ̇) = ∂L/∂θ      L = T − V", note: "A small state error does not stay small.", draw: drawPendulum },
   { roman: "II", cat: "ELECTRODYNAMICS & OPTICS", disc: "ELECTRODYNAMICS", title: "Shake a charge and light escapes", sub: "An oscillating dipole sheds closed loops of electric field.", formula: "∇ × E = −∂B/∂t      ∇ × B = (1/c²) ∂E/∂t", note: "The shortest antenna is a driven dipole.", draw: drawDipole },
@@ -5031,6 +5477,18 @@ const STATIONS = [
     ],
     draw: draw4004Bus,
   },
+  {
+    roman: "XLII", cat: "THERMODYNAMICS", disc: "ROCKET PROPULSION", parts: 2,
+    title: "Raptor 2 FFSC vs Saturn V F-1 Rocket Engines",
+    sub: "Rotatable 3D Full-Flow Staged Combustion (LOX/LCH4, 300 bar, MECH 6191 CFD) vs open Gas-Generator Saturn V F-1 (↑/↓ or 1–2).",
+    formula: "F(x) = ṁ v(x) + (P(x) − Pₐ) A(x)      I_sp = vₑ / g₀      ρ u A = ṁ",
+    note: "Drag to orbit 3D · Scroll to zoom · R/dblclick reset · Press ↓ to compare Raptor 2 vs Saturn V F-1.",
+    partMeta: [
+      { title: "SpaceX Raptor 2 · Full-Flow Staged Combustion (LOX / LCH4)", sub: "Dual preburners (OPB GO2 510 kg/s @ 700 K + FPB GCH4 140 kg/s @ 800 K) drive 300-bar chamber & 40:1 bell (MECH 6191).", formula: "λₛ = (π/j₀₁) Dₑ√(Mₑ²−1)  [π/j₀₁ = 1.306, j₀₁ = 2.4048]     sin μ = 1/M     P₂/P₁ = 1 + [2γ/(γ+1)](M²−1)", note: "Part 1/2 — Drag to orbit 3D · Use Throttle/Pₐ sliders · Press ↓ for Saturn V F-1." },
+      { title: "Saturn V Rocketdyne F-1 · Open Gas-Generator Cycle (LOX / RP-1)", sub: "Single 41 MW turbopump driven by a fuel-rich gas generator dumping exhaust to film-cool the massive 6.77 MN nozzle.", formula: "λₛ = (π/j₀₁) Dₑ√(Mₑ²−1)  [π/j₀₁ = 1.306, j₀₁ = 2.4048]     sin μ = 1/M     P₂/P₁ = 1 + [2γ/(γ+1)](M²−1)", note: "Part 2/2 — Highest-thrust single-chamber liquid rocket engine ever flown." },
+    ],
+    draw: drawRocketEngine,
+  },
 ];
 
 const STATION_CATS = [
@@ -5115,6 +5573,8 @@ function renderChrome() {
   el.sub.textContent = (pm && pm.sub) || s.sub;
   el.formula.textContent = (pm && pm.formula) || s.formula;
   el.note.textContent = (pm && pm.note) || s.note;
+  const rc = document.getElementById("rocket-ctrl");
+  if (rc) rc.hidden = s.draw !== drawRocketEngine;
   document.querySelectorAll(".idx-item").forEach((row) => row.classList.toggle("on", Number(row.dataset.idx) === index));
 }
 function enter(i, p) {
@@ -5255,8 +5715,20 @@ function flush() {
       ctx2.fillStyle = "rgba(" + (fills[i + 4] * 255 | 0) + "," + (fills[i + 5] * 255 | 0) + "," + (fills[i + 6] * 255 | 0) + "," + fills[i + 7] + ")";
       ctx2.fillRect(a[0], b[1], b[0] - a[0], a[1] - b[1]);
     }
+    ctx2.save();
+    ctx2.globalCompositeOperation = "lighter";
+    for (let i = 0; i < quads2d.length; i++) {
+      const q = quads2d[i];
+      const p0 = S(q[0], q[1]), p1 = S(q[2], q[3]), p2 = S(q[4], q[5]), p3 = S(q[6], q[7]);
+      ctx2.fillStyle = "rgba(" + (q[8] * 255 | 0) + "," + (q[9] * 255 | 0) + "," + (q[10] * 255 | 0) + "," + q[11] + ")";
+      ctx2.beginPath();
+      ctx2.moveTo(p0[0], p0[1]); ctx2.lineTo(p1[0], p1[1]); ctx2.lineTo(p2[0], p2[1]); ctx2.lineTo(p3[0], p3[1]);
+      ctx2.closePath();
+      ctx2.fill();
+    }
+    ctx2.restore();
   }
-  nv = 0; segs.length = 0; fills.length = 0;
+  nv = 0; segs.length = 0; fills.length = 0; quads2d.length = 0;
 }
 function paintReadout(rows) {
   el.readout.replaceChildren();
@@ -5300,6 +5772,11 @@ el.index.addEventListener("click", (e) => { if (e.target === el.index) toggleInd
 let wheelLock = 0;
 window.addEventListener("wheel", (e) => {
   if (indexOpen) return;
+  if (STATIONS[index].draw === drawRocketEngine) {
+    e.preventDefault();
+    ROCKET_CAM.zoom = Math.max(0.55, Math.min(2.4, ROCKET_CAM.zoom * Math.exp(-e.deltaY * 0.0014)));
+    return;
+  }
   const now = performance.now();
   if (now - wheelLock < 240) return;
   if (Math.abs(e.deltaY) < 12 && Math.abs(e.deltaX) < 12) return;
@@ -5307,12 +5784,13 @@ window.addEventListener("wheel", (e) => {
   const dir = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) > 0 ? 1 : -1;
   if (e.shiftKey) selectPart(partIdx + dir);
   else enter(index + dir);
-}, { passive: true });
+}, { passive: false });
 window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") { enter(index + 1); e.preventDefault(); }
   else if (e.key === "ArrowLeft") { enter(index - 1); e.preventDefault(); }
   else if (e.key === "ArrowUp") { selectPart(partIdx - 1); e.preventDefault(); }
   else if (e.key === "ArrowDown") { selectPart(partIdx + 1); e.preventDefault(); }
+  else if (e.key === "r" || e.key === "R") { ROCKET_CAM.userOrbited = false; ROCKET_CAM.zoom = 1.0; }
   else if (e.key === " ") { togglePause(); e.preventDefault(); }
   else if (e.key === "i" || e.key === "I" || e.key === "Tab") { e.preventDefault(); toggleIndex(); }
   else if (e.key === "?" || e.key === "h" || e.key === "H") { toggleLegend(); }
@@ -5322,13 +5800,63 @@ window.addEventListener("keydown", (e) => {
     if (p < (STATIONS[index].parts || 1)) selectPart(p);
   }
 });
-window.addEventListener("pointerdown", (e) => { if (!e.target.closest("button, a, nav")) pointerX = e.clientX; });
+window.addEventListener("pointerdown", (e) => {
+  if (e.target.closest("button, a, nav, input, #rocket-ctrl")) return;
+  if (STATIONS[index].draw === drawRocketEngine) {
+    ROCKET_CAM.dragging = true; ROCKET_CAM.userOrbited = true;
+    ROCKET_CAM.lastX = e.clientX; ROCKET_CAM.lastY = e.clientY;
+    return;
+  }
+  pointerX = e.clientX;
+});
+window.addEventListener("pointermove", (e) => {
+  if (!ROCKET_CAM.dragging) return;
+  const dx = e.clientX - ROCKET_CAM.lastX, dy = e.clientY - ROCKET_CAM.lastY;
+  ROCKET_CAM.lastX = e.clientX; ROCKET_CAM.lastY = e.clientY;
+  ROCKET_CAM.yaw += dx * 0.0085;
+  ROCKET_CAM.pitch = Math.max(-1.35, Math.min(1.35, ROCKET_CAM.pitch + dy * 0.0075));
+});
 window.addEventListener("pointerup", (e) => {
+  if (ROCKET_CAM.dragging) { ROCKET_CAM.dragging = false; return; }
   if (pointerX == null) return;
   const dx = e.clientX - pointerX; pointerX = null;
-  if (e.target.closest("button, a, nav")) return;
+  if (e.target.closest("button, a, nav, input, #rocket-ctrl")) return;
   if (Math.abs(dx) > 48) enter(index + (dx < 0 ? 1 : -1));
 });
+window.addEventListener("dblclick", (e) => {
+  if (STATIONS[index].draw === drawRocketEngine && !e.target.closest("button, a, nav, input, #rocket-ctrl")) {
+    ROCKET_CAM.userOrbited = false; ROCKET_CAM.zoom = 1.0;
+  }
+});
+// Station XLII Rocket Throttle, Ambient Pressure & Mixture O/F Slider Controls
+(() => {
+  const sThr = document.getElementById("rc-thr"), vThr = document.getElementById("rc-thr-v");
+  const sPa  = document.getElementById("rc-pa"),  vPa  = document.getElementById("rc-pa-v");
+  const sOf  = document.getElementById("rc-of");
+  const syncRocketUI = () => {
+    ROCKET_CTRL.throttle = Number(sThr.value) / 100;
+    ROCKET_CTRL.paBar = Number(sPa.value) / 100;
+    ROCKET_CTRL.ofScale = Number(sOf.value) / 100;
+    if (vThr) vThr.textContent = sThr.value + "%";
+    if (vPa) vPa.textContent = ROCKET_CTRL.paBar < 0.02 ? "0.00 BAR (VAC)" : (ROCKET_CTRL.paBar.toFixed(2) + (ROCKET_CTRL.paBar > 0.98 ? " BAR (SL)" : " BAR"));
+  };
+  if (sThr && sPa && sOf) {
+    sThr.addEventListener("input", syncRocketUI);
+    sPa.addEventListener("input", syncRocketUI);
+    sOf.addEventListener("input", syncRocketUI);
+    document.querySelectorAll(".rc-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const mode = btn.dataset.rc;
+        if (mode === "sl")   { sThr.value = 100; sPa.value = 101; sOf.value = 100; }
+        if (mode === "maxq") { sThr.value = 60;  sPa.value = 28;  sOf.value = 100; }
+        if (mode === "land") { sThr.value = 30;  sPa.value = 101; sOf.value = 96;  }
+        if (mode === "vac")  { sThr.value = 100; sPa.value = 0;   sOf.value = 100; }
+        syncRocketUI();
+      });
+    });
+    syncRocketUI();
+  }
+})();
 buildIndex();
 renderChrome();
 requestAnimationFrame(frame);

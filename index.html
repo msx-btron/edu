@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Formal Models &amp; Math Synth · B-System EDU</title>
   <meta name="description"
-    content="B-System EDU interactive portals: Physics.html (18 WebGL1 vector CRT formal physics &amp; black hole simulations) and Music.html (HAL 9000 2D analytical function synthesizer with 16 multi-part demos).">
+    content="B-System EDU interactive portals: Math.html (12 pure 3D WebGL1 special functions, Calabi-Yau, Yang-Mills &amp; complex analysis models), Music.html (HAL 9000 2D analytical function synthesizer with 16 multi-part demos), and Physics.html (41 WebGL1 vector CRT formal physics &amp; computer-engineering simulations).">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -313,8 +313,8 @@
     /* Portal Cards */
     .portal-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1.6rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.4rem;
     }
 
     .portal {
@@ -748,21 +748,21 @@
       <h1>Equations. Drawn, Heard, Seen.</h1>
       <div class="hero-rule"></div>
       <p class="hero-lede">
-        Two zero-dependency interactive CRT portals built directly from governing equations —
-        eighteen real-time physics simulations and sixteen multi-part mathematical synthesizers.
+        Zero-dependency interactive portals built directly from governing equations —
+        real-time physics simulations and multi-part mathematical synthesizers.
       </p>
       <p class="hero-lede-en">
         No pre-rendered video loops, no external libraries, no texture atlases. Every field line,
         null geodesic, quantum interference fringe, and 48 kHz acoustic waveform is computed live from closed-form math.
       </p>
       <div class="hero-marks">
-        <span>16 Math-Synth Demos</span>
-        <span>41 Physics Stations</span>
-        <span>12 Pure Math Stations</span>
-        <span>WebGL1 Vector CRT</span>
+        <span>Synth Demos</span>
+        <span>Physics Stations</span>
+        <span>Math Stations</span>
+        <span>WebGL Vector CRT</span>
         <span>48 kHz Phase Synth</span>
-        <span>Zero Dependencies</span>
       </div>
+    </div>
   </header>
 
   <main>
@@ -777,14 +777,14 @@
         </div>
         <div class="band-intro">
           <p>
-            <strong>Music.html</strong> (Lead Portal) digitizes all sixteen multi-part analytical function demos into a
-            unified HAL 9000 console. Every voice evaluates <code>f(y) = 261.63 · 2^y Hz</code> with continuous 48 kHz
-            phase integration so exponential kicks, acid slides, and polyphonic canons sound 1:1 with the equations.
+            <strong>Math.html</strong> renders twelve pure 3D mathematical stations (35 parts) with hidden-line occlusion,
+            3D CAD orbit/pan/zoom, and adjustable wire-mesh density — spanning Complex Special Functions, 5 Calabi–Yau spaces,
+            Yang–Mills &amp; 4D Hopf Fibrations, Lie manifolds, and 3D Complex Analysis.
           </p>
           <p class="en">
-            <strong>Physics.html</strong> shares the same minimal HAL 9000 CRT shell and renders eighteen formal physics
-            models in WebGL1 — including exact Maxwell Hertzian dipole contours, 2D double-slit quantum interference,
-            bubble-chamber pair production, Einstein rings, RK4 Schwarzschild null geodesics, and a Luminet black hole.
+            <strong>Music.html</strong> synthesizes sixteen multi-part analytical demos (56 parts) at 48 kHz continuous phase
+            integration, while <strong>Physics.html</strong> renders forty-one WebGL1 vector CRT models across electrodynamics,
+            8085/Z80/4004 CPU logic, Audio DSP, quantum interference, and Schwarzschild black holes.
           </p>
         </div>
 
@@ -893,32 +893,33 @@
               </svg>
             </div>
             <div class="portal-body">
-              <div class="portal-kicker">Portal III · Pure Math Series · 12 Stations</div>
+              <div class="portal-kicker">Portal III · Pure 3D Math · 12 Stations</div>
               <h3>Math.html</h3>
               <p>
-                Twelve canonical pure-mathematics models (29 parts): 2D Calculus, Orthogonal Polynomials &amp; Complex C-Series,
-                edge-to-edge 3D Special Functions (Γ, ζ(s), Bessel, Airy, Yₗᵐ, ℘), and 3D Topological Surfaces (Enneper, Klein
-                Bottle, Catenoid↔Helicoid, Calabi–Yau Quintic, Yang–Mills Instanton/Hopf Bundle, and Lie Manifolds).
+                Twelve pure 3D mathematical models (35 parts) with back-to-front hidden-line removal and 3D CAD mouse controls:
+                Special Functions (Γ, ζ(s), Bessel, Airy, Yₗᵐ, ℘, η, θ₃, Beta, erf), 5 Calabi–Yau manifolds, Yang–Mills &amp; 4D Hopf
+                Fibration, Lie manifolds, and 3D Taylor/Laurent/Essential/Blaschke/Riemann Sphere models.
               </p>
-              <div class="metric-row"><span>Engine</span><span>math-engine.js (WebGL1)</span></div>
-              <div class="metric-row"><span>Stations</span><span>I – XII (29 Parts)</span></div>
-              <div class="metric-row"><span>Controls</span><span>← / → · ↑ / ↓ · 1–8 · I · ?</span></div>
+              <div class="metric-row"><span>Engine</span><span>math-engine.js (WebGL1 HLR)</span></div>
+              <div class="metric-row"><span>Stations</span><span>I – XII (35 Parts)</span></div>
+              <div class="metric-row"><span>Controls</span><span>Orbit · Pan · Zoom · M± · O</span></div>
             </div>
             <div class="portal-foot">
-              <span>2D Calculus · 3D Surfaces</span>
+              <span>Pure 3D Mathematics</span>
               <span class="cta">Launch Math.html →</span>
             </div>
           </a>
         </div>
+      </div>
     </section>
 
-    <!-- 01 / Physics Catalogue -->
-    <section class="band" id="physics-index">
+    <!-- 01 / Math Catalogue -->
+    <section class="band" id="math-index">
       <div class="wrap">
         <div class="band-head">
-          <span class="band-index">01 / Physics</span>
-          <h2>Physics.html — Series 18 Catalogue</h2>
-          <p class="band-eyebrow">Classical · Electrodynamics · Quantum · General Relativity · Black Holes</p>
+          <span class="band-index">01 / Math</span>
+          <h2>Math.html — Pure 3D Mathematics Catalogue</h2>
+          <p class="band-eyebrow">3D Special Functions · Calabi–Yau · Yang–Mills · Lie Manifolds · 3D Complex Analysis</p>
         </div>
         <figure class="plate">
           <table class="cmp">
@@ -926,205 +927,96 @@
               <tr>
                 <th style="width:9%">Station</th>
                 <th style="width:22%">Discipline</th>
-                <th style="width:29%">Model</th>
+                <th style="width:29%">3D Model</th>
                 <th style="width:40%">Governing Relation</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td data-label="Station">I</td>
-                <td data-label="Discipline">Classical Mechanics</td>
-                <td data-label="Model">Double Pendulum (5 bodies, RK4)</td>
-                <td data-label="Equation"><code>d/dt (∂L/∂θ̇) = ∂L/∂θ</code></td>
+                <td data-label="Discipline">3D Gamma Function</td>
+                <td data-label="Model">Complex |Γ(z)| &amp; Entire |1/Γ(z)| (2 Parts)</td>
+                <td data-label="Equation"><code>Γ(z) Γ(1−z) = π / sin(πz) · Γ(n+1) = n!</code></td>
               </tr>
               <tr>
                 <td data-label="Station">II</td>
-                <td data-label="Discipline">Electrodynamics</td>
-                <td data-label="Model">Hertzian Dipole Field Contours</td>
-                <td data-label="Equation"><code>∇×E = −∂B/∂t · ∇×B = (1/c²)∂E/∂t</code></td>
+                <td data-label="Discipline">3D Riemann Zeta</td>
+                <td data-label="Model">|ζ(s)| over Critical Strip &amp; Critical Line</td>
+                <td data-label="Equation"><code>ζ(s) = (1−2^(1−s))⁻¹ Σ (−1)^(n−1) n⁻ˢ · Re(s) = 1/2</code></td>
               </tr>
               <tr>
-                <td data-label="Station">III–V</td>
-                <td data-label="Discipline">Optics · Thermo · Stat Mech</td>
-                <td data-label="Model">Cauchy Prism · Carnot · 2D Ising</td>
-                <td data-label="Equation"><code>n(λ) ≈ A+B/λ² · η = 1−Tc/Th · P ∝ e^(−E/kT)</code></td>
+                <td data-label="Station">III</td>
+                <td data-label="Discipline">3D Bessel &amp; Airy</td>
+                <td data-label="Model">Bessel Wavefields Jₘ · Complex Airy Caustic Ai(z) (2 Parts)</td>
+                <td data-label="Equation"><code>Jₘ(kr) cos(mθ) · Ai''(z) − z Ai(z) = 0</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">IV</td>
+                <td data-label="Discipline">3D Spherical Harmonics</td>
+                <td data-label="Model">5 Eigenmodes: Y₂⁰, Y₃², Y₄², Y₅³, Y₆⁴ (5 Parts)</td>
+                <td data-label="Equation"><code>∇²_S² Yₗᵐ(θ, φ) = −l(l+1) Yₗᵐ(θ, φ)</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">V</td>
+                <td data-label="Discipline">3D Elliptic &amp; Riemann</td>
+                <td data-label="Model">Weierstrass ℘(z) Lattice · Two-Sheeted w = √z (2 Parts)</td>
+                <td data-label="Equation"><code>(℘')² = 4℘³ − g₂℘ − g₃ · w² = z (4π)</code></td>
               </tr>
               <tr>
                 <td data-label="Station">VI</td>
-                <td data-label="Discipline">Quantum Mechanics</td>
-                <td data-label="Model">2D Double-Slit Wave-Particle Duality</td>
-                <td data-label="Equation"><code>P(y) = |ψ₁ + ψ₂|² ≠ |ψ₁|² + |ψ₂|²</code></td>
+                <td data-label="Discipline">3D Modular · Theta · Beta · Erf</td>
+                <td data-label="Model">Dedekind η(τ) · Jacobi θ₃ · Veneziano B(z,w) · Erf(z) (4 Parts)</td>
+                <td data-label="Equation"><code>η(τ) = q^(1/24) Π(1−qⁿ) · B(z,w) = Γ(z)Γ(w)/Γ(z+w)</code></td>
               </tr>
               <tr>
-                <td data-label="Station">VII–X</td>
-                <td data-label="Discipline">Fields · Fluids · Relativity</td>
-                <td data-label="Model">Cyclotron · Kármán Street · Mach · Light Clock</td>
-                <td data-label="Equation"><code>F = q(v×B) · sin μ = 1/M · Δt = γΔτ</code></td>
+                <td data-label="Station">VII</td>
+                <td data-label="Discipline">3D Minimal Surfaces</td>
+                <td data-label="Model">Enneper (H=0) · Figure-8 Klein Bottle · Catenoid↔Helicoid (3 Parts)</td>
+                <td data-label="Equation"><code>H = (κ₁+κ₂)/2 = 0 · X(α) = cos α X_cat + sin α X_hel</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">VIII</td>
+                <td data-label="Discipline">3D Calabi–Yau Spaces</td>
+                <td data-label="Model">Quintic · K3 Quartic · Sextic · Dwork Conifold · Cubic (5 Parts)</td>
+                <td data-label="Equation"><code>z₁ⁿ + z₂ⁿ − 5ψ z₁z₂ = 1 · Ric(g) = 0 · c₁(M) = 0</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">IX</td>
+                <td data-label="Discipline">3D Yang–Mills &amp; Hopf</td>
+                <td data-label="Model">BPST SU(2) Instanton · 4D Hopf Fibration S³ → S² (2 Parts)</td>
+                <td data-label="Equation"><code>Tr(F²) = 48ρ⁴/(r²+ρ²)⁴ · S¹ ↪ SU(2) ≅ S³ → S²</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">X</td>
+                <td data-label="Discipline">3D Lie Manifolds</td>
+                <td data-label="Model">Conformal Dupin Cyclide · (2,3) Trefoil Seifert in SU(2) (2 Parts)</td>
+                <td data-label="Equation"><code>SU(2) ≅ S³ · z₁² + z₂³ = 0 ∩ S³</code></td>
               </tr>
               <tr>
                 <td data-label="Station">XI</td>
-                <td data-label="Discipline">Gravitation</td>
-                <td data-label="Model">Spiral Galaxy Einstein Ring</td>
-                <td data-label="Equation"><code>Gμν = (8πG/c⁴)Tμν ⇒ α = 4GM/(c²b)</code></td>
+                <td data-label="Discipline">3D Complex Analysis</td>
+                <td data-label="Model">Taylor Wall · Laurent Residues · Essential e^(1/z) · Log(z) (4 Parts)</td>
+                <td data-label="Equation"><code>S_N(z) = Σ (−1)ⁿ z^(2n) · ∮ f dz = 2πi Σ Res · e^(1/z)</code></td>
               </tr>
               <tr>
-                <td data-label="Station">XII–XVI</td>
-                <td data-label="Discipline">Astro · Circuits · Signals</td>
-                <td data-label="Model">Transit · Bridge · Adder · Nyquist · Kalman</td>
-                <td data-label="Equation"><code>ΔF/F ≈ (Rp/R★)² · fs &gt; 2fmax · K = P⁻/(P⁻+R)</code></td>
+                <td data-label="Station">XII</td>
+                <td data-label="Discipline">3D Conformal &amp; ℂ̂</td>
+                <td data-label="Model">Joukowski Relief · Blaschke B₅(z) · Riemann Sphere S² (3 Parts)</td>
+                <td data-label="Equation"><code>w = z + a²/z · B(z) = Π (z−aₖ)/(1−āₖz) · PSL(2,ℂ)</code></td>
               </tr>
               <tr>
-                <td data-label="Station">XVII</td>
-                <td data-label="Discipline">General Relativity</td>
-                <td data-label="Model">Schwarzschild Null Geodesics (RK4 Binet)</td>
-                <td data-label="Equation"><code>d²u/dφ² + u = (3/2)rs u² · bcrit = 2.598 rs</code></td>
-              </tr>
-              <tr>
-                <td data-label="Station">XVIII</td>
-                <td data-label="Discipline">Black Holes</td>
-                <td data-label="Model">Luminet Accretion Disk &amp; Photon Ring</td>
-                <td data-label="Equation"><code>g = √(1−3rs/2r)/(1+Ωb sinθ₀ cosα) · F ∝ g⁴</code></td>
-              </tr>
-              <tr>
-                <td data-label="Station">XIX–XX</td>
-                <td data-label="Discipline">Thermodynamics</td>
-                <td data-label="Model">Maxwell–Boltzmann Gas · 2D Fourier Heat Diffusion</td>
-                <td data-label="Equation"><code>f(v) ∝ v² exp(−mv²/2kT) · ∂T/∂t = α∇²T</code></td>
-              </tr>
-              <tr>
-                <td data-label="Station">XXI–XXII</td>
-                <td data-label="Discipline">Magnetism 2D &amp; 3D</td>
-                <td data-label="Model">Helmholtz Coils Biot–Savart · 3D Dipole &amp; Magnetic Mirror</td>
-                <td data-label="Equation"><code>∇·B = 0 · B = (μ₀/4π)[3(m·r̂)r̂−m]/r³</code></td>
+                <td data-label="Station">XIII</td>
+                <td data-label="Discipline">3D Complex &amp; Gen Logarithms</td>
+                <td data-label="Model">3-Sheet ln(z) Path Observer · Tsallis ln_q · Polylog Liₛ · Lambert W (4 Parts)</td>
+                <td data-label="Equation"><code>ln_q(z) = (z^(1−q)−1)/(1−q) · Liₛ(z) = Σ zⁿ/nˢ · W(z)e^W = z</code></td>
               </tr>
             </tbody>
           </table>
           <figcaption>
-            <span><b>Physics.html</b> — 22 Real-Time Vector Stations</span>
-            <span><a href="Physics.html">Open Physics.html →</a></span>
+            <span><b>Math.html</b> — 13 Pure 3D Stations / 39 Parts · Hidden-Line Removal, 3D Peak Pins &amp; CAD Controls</span>
+            <span><a href="Math.html">Open Math.html →</a></span>
           </figcaption>
         </figure>
-      </div>
-      <figure class="plate">
-        <table class="cmp">
-          <thead>
-            <tr>
-              <th style="width:9%">Station</th>
-              <th style="width:22%">Discipline</th>
-              <th style="width:29%">Model</th>
-              <th style="width:40%">Governing Relation</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td data-label="Station">I</td>
-              <td data-label="Discipline">Classical Mechanics</td>
-              <td data-label="Model">Double Pendulum (5 bodies, RK4)</td>
-              <td data-label="Equation"><code>d/dt (∂L/∂θ̇) = ∂L/∂θ</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">II</td>
-              <td data-label="Discipline">Electrodynamics</td>
-              <td data-label="Model">Hertzian Dipole Field Contours</td>
-              <td data-label="Equation"><code>∇×E = −∂B/∂t · ∇×B = (1/c²)∂E/∂t</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">III–V</td>
-              <td data-label="Discipline">Optics · Thermo · Stat Mech</td>
-              <td data-label="Model">Cauchy Prism · Carnot · 2D Ising</td>
-              <td data-label="Equation"><code>n(λ) ≈ A+B/λ² · η = 1−Tc/Th · P ∝ e^(−E/kT)</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">VI</td>
-              <td data-label="Discipline">Quantum Mechanics</td>
-              <td data-label="Model">2D Double-Slit Wave-Particle Duality</td>
-              <td data-label="Equation"><code>P(y) = |ψ₁ + ψ₂|² ≠ |ψ₁|² + |ψ₂|²</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">VII–X</td>
-              <td data-label="Discipline">Fields · Fluids · Relativity</td>
-              <td data-label="Model">Cyclotron · Kármán Street · Mach · Light Clock</td>
-              <td data-label="Equation"><code>F = q(v×B) · sin μ = 1/M · Δt = γΔτ</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XI</td>
-              <td data-label="Discipline">Gravitation</td>
-              <td data-label="Model">Spiral Galaxy Einstein Ring</td>
-              <td data-label="Equation"><code>Gμν = (8πG/c⁴)Tμν ⇒ α = 4GM/(c²b)</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XII–XVI</td>
-              <td data-label="Discipline">Astro · Circuits · Signals</td>
-              <td data-label="Model">Transit · Bridge · Adder · Nyquist · Kalman</td>
-              <td data-label="Equation"><code>ΔF/F ≈ (Rp/R★)² · fs &gt; 2fmax · K = P⁻/(P⁻+R)</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XVII</td>
-              <td data-label="Discipline">General Relativity</td>
-              <td data-label="Model">Schwarzschild Null Geodesics (RK4 Binet)</td>
-              <td data-label="Equation"><code>d²u/dφ² + u = (3/2)rs u² · bcrit = 2.598 rs</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XVIII</td>
-              <td data-label="Discipline">Black Holes</td>
-              <td data-label="Model">Luminet Accretion Disk &amp; Photon Ring</td>
-              <td data-label="Equation"><code>g = √(1−3rs/2r)/(1+Ωb sinθ₀ cosα) · F ∝ g⁴</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XIX–XX</td>
-              <td data-label="Discipline">Thermodynamics</td>
-              <td data-label="Model">Maxwell–Boltzmann Gas · 2D Fourier Heat Diffusion</td>
-              <td data-label="Equation"><code>f(v) ∝ v² exp(−mv²/2kT) · ∂T/∂t = α∇²T</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XXI–XXII</td>
-              <td data-label="Discipline">Magnetism 2D &amp; 3D</td>
-              <td data-label="Model">Helmholtz Coils Biot–Savart · 3D Dipole &amp; Magnetic Mirror</td>
-              <td data-label="Equation"><code>∇·B = 0 · B = (μ₀/4π)[3(m·r̂)r̂−m]/r³</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XXIII–XXIV</td>
-              <td data-label="Discipline">Electrodynamics 2D &amp; 3D</td>
-              <td data-label="Model">Oscillating Quadrupole Contours · 3D Maxwell EM Wave</td>
-              <td data-label="Equation"><code>ΨQ ∝ sin²θ cosθ · S = (1/μ₀) E × B</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XXV–XXVI</td>
-              <td data-label="Discipline">Nonlinear Dynamics</td>
-              <td data-label="Model">Lorenz Attractor · 3-Body Scattering (Real + Phase Space)</td>
-              <td data-label="Equation"><code>ẋ = σ(y−x) · r̈ᵢ = Σ G mⱼ(rⱼ−rᵢ)/|rⱼ−rᵢ|³</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XXVII–XXXII</td>
-              <td data-label="Discipline">Electrodynamics Field Zoo</td>
-              <td data-label="Model">Static Saddles/Images · Relativistic/Kink/Cherenkov · Synchrotron · Multipoles · Phased Array · Waveguides/Cavities</td>
-              <td data-label="Equation"><code>E⊥ = γE₀ · Ψl = Pl¹ sinθ hl⁽¹⁾(kr) · (∇²+k²)Ψ = 0</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XXXIII–XXXVI</td>
-              <td data-label="Discipline">Audio Filters &amp; DSP</td>
-              <td data-label="Model">LPF/HPF/BPF/Notch · PCM vs 1-Bit DSD ΣΔ · Impulse Response · Dither, Oversampling &amp; R-2R Ladder</td>
-              <td data-label="Equation"><code>H(s) = N(s)/(s²+(ω₀/Q)s+ω₀²) · Y = X + (1−z⁻¹)ᴺE</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XXXVII–XL</td>
-              <td data-label="Discipline">8085 / Z80 / MSX CPU Gates</td>
-              <td data-label="Model">2:1 MUX &amp; MSX Slot Decoder · SR Latch &amp; D-FF · 4-Bit PC &amp; Shift Reg · 8085/Z80 ALU Slice</td>
-              <td data-label="Equation"><code>Y = D₀¬S + D₁S · Qnext = D · OP ∈ {ADD, SUB, ANA, XRA}</code></td>
-            </tr>
-            <tr>
-              <td data-label="Station">XLI</td>
-              <td data-label="Discipline">Intel 4004 (1971 MCS-4)</td>
-              <td data-label="Model">4-Bit Multiplexed Bus (A1–X3) &amp; 4-Chip MCS-4 System Bus (4004/4001/4002/4003)</td>
-              <td data-label="Equation"><code>A1·A2·A3 → M1·M2 → X1·X2·X3 · CM-ROM / CM-RAM</code></td>
-            </tr>
-          </tbody>
-        </table>
-        <figcaption>
-          <span><b>Physics.html</b> — 41 Real-Time Vector Stations</span>
-          <span><a href="Physics.html">Open Physics.html →</a></span>
-        </figcaption>
-      </figure>
       </div>
     </section>
 
@@ -1186,26 +1078,150 @@
       </div>
     </section>
 
-    <!-- 03 / Architecture -->
+    <!-- 03 / Physics Catalogue -->
+    <section class="band" id="physics-index">
+      <div class="wrap">
+        <div class="band-head">
+          <span class="band-index">03 / Physics</span>
+          <h2>Physics.html — Series 41 Catalogue</h2>
+          <p class="band-eyebrow">Classical · Electrodynamics · Quantum · Relativity · Audio DSP · 8085 / Z80 / 4004 CPU</p>
+        </div>
+        <figure class="plate">
+          <table class="cmp">
+            <thead>
+              <tr>
+                <th style="width:9%">Station</th>
+                <th style="width:22%">Discipline</th>
+                <th style="width:29%">Model</th>
+                <th style="width:40%">Governing Relation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Station">I</td>
+                <td data-label="Discipline">Classical Mechanics</td>
+                <td data-label="Model">Double Pendulum (5 bodies, RK4)</td>
+                <td data-label="Equation"><code>d/dt (∂L/∂θ̇) = ∂L/∂θ</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">II</td>
+                <td data-label="Discipline">Electrodynamics</td>
+                <td data-label="Model">Hertzian Dipole Field Contours</td>
+                <td data-label="Equation"><code>∇×E = −∂B/∂t · ∇×B = (1/c²)∂E/∂t</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">III–V</td>
+                <td data-label="Discipline">Optics · Thermo · Stat Mech</td>
+                <td data-label="Model">Cauchy Prism · Carnot · 2D Ising</td>
+                <td data-label="Equation"><code>n(λ) ≈ A+B/λ² · η = 1−Tc/Th · P ∝ e^(−E/kT)</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">VI</td>
+                <td data-label="Discipline">Quantum Mechanics</td>
+                <td data-label="Model">2D Double-Slit Wave-Particle Duality</td>
+                <td data-label="Equation"><code>P(y) = |ψ₁ + ψ₂|² ≠ |ψ₁|² + |ψ₂|²</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">VII–X</td>
+                <td data-label="Discipline">Fields · Fluids · Relativity</td>
+                <td data-label="Model">Cyclotron · Kármán Street · Mach · Light Clock</td>
+                <td data-label="Equation"><code>F = q(v×B) · sin μ = 1/M · Δt = γΔτ</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XI</td>
+                <td data-label="Discipline">Gravitation</td>
+                <td data-label="Model">Spiral Galaxy Einstein Ring</td>
+                <td data-label="Equation"><code>Gμν = (8πG/c⁴)Tμν ⇒ α = 4GM/(c²b)</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XII–XVI</td>
+                <td data-label="Discipline">Astro · Circuits · Signals</td>
+                <td data-label="Model">Transit · Bridge · Adder · Nyquist · Kalman</td>
+                <td data-label="Equation"><code>ΔF/F ≈ (Rp/R★)² · fs &gt; 2fmax · K = P⁻/(P⁻+R)</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XVII–XVIII</td>
+                <td data-label="Discipline">General Relativity &amp; Black Holes</td>
+                <td data-label="Model">Schwarzschild Null Geodesics · Luminet Accretion Disk</td>
+                <td data-label="Equation"><code>d²u/dφ² + u = (3/2)rs u² · g = √(1−3rs/2r)/(1+Ωb sinθ₀ cosα)</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XIX–XX</td>
+                <td data-label="Discipline">Thermodynamics</td>
+                <td data-label="Model">Maxwell–Boltzmann Gas · 2D Fourier Heat Diffusion</td>
+                <td data-label="Equation"><code>f(v) ∝ v² exp(−mv²/2kT) · ∂T/∂t = α∇²T</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XXI–XXIV</td>
+                <td data-label="Discipline">Magnetism &amp; EM 3D</td>
+                <td data-label="Model">Helmholtz Coils · 3D Dipole &amp; Mirror · Quadrupole · 3D EM Wave</td>
+                <td data-label="Equation"><code>∇·B = 0 · ΨQ ∝ sin²θ cosθ · S = (1/μ₀) E × B</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XXV–XXVI</td>
+                <td data-label="Discipline">Nonlinear Dynamics</td>
+                <td data-label="Model">Lorenz Attractor · 3-Body Scattering (Real + Liouville Phase Space)</td>
+                <td data-label="Equation"><code>ẋ = σ(y−x) · r̈ᵢ = Σ G mⱼ(rⱼ−rᵢ)/|rⱼ−rᵢ|³</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XXVII–XXXII</td>
+                <td data-label="Discipline">Electrodynamics Field Zoo</td>
+                <td data-label="Model">Saddles/Images · Relativistic/Kink/Cherenkov · Synchrotron · Multipoles · Phased Array · Waveguides</td>
+                <td data-label="Equation"><code>E⊥ = γE₀ · Ψl = Pl¹ sinθ hl⁽¹⁾(kr) · (∇²+k²)Ψ = 0</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XXXIII–XXXVI</td>
+                <td data-label="Discipline">Audio Filters &amp; DSP</td>
+                <td data-label="Model">LPF/HPF/BPF/Notch · PCM vs 1-Bit DSD ΣΔ · Impulse Response · Dither, Oversampling &amp; R-2R</td>
+                <td data-label="Equation"><code>H(s) = N(s)/(s²+(ω₀/Q)s+ω₀²) · Y = X + (1−z⁻¹)ᴺE</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XXXVII–XL</td>
+                <td data-label="Discipline">8085 / Z80 / MSX CPU Gates</td>
+                <td data-label="Model">2:1 MUX &amp; MSX Slot Decoder · SR Latch &amp; D-FF · 4-Bit PC &amp; Shift Reg · 8085/Z80 ALU Slice</td>
+                <td data-label="Equation"><code>Y = D₀¬S + D₁S · Qnext = D · OP ∈ {ADD, SUB, ANA, XRA}</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XLI</td>
+                <td data-label="Discipline">Intel 4004 (1971 MCS-4)</td>
+                <td data-label="Model">4-Bit Multiplexed Bus (A1–X3) &amp; 4-Chip MCS-4 System Bus (4004/4001/4002/4003)</td>
+                <td data-label="Equation"><code>A1·A2·A3 → M1·M2 → X1·X2·X3 · CM-ROM / CM-RAM</code></td>
+              </tr>
+              <tr>
+                <td data-label="Station">XLII</td>
+                <td data-label="Discipline">Rocket Propulsion</td>
+                <td data-label="Model">SpaceX Raptor 2 (FFSC, 300 bar, 2.30 MN) vs Saturn V F-1 (Gas-Generator, 6.77 MN) (2 Parts)</td>
+                <td data-label="Equation"><code>F(x) = ṁ v(x) + (P−Pₐ)A · I_sp = vₑ/g₀ · ρ u A = ṁ</code></td>
+              </tr>
+            </tbody>
+          </table>
+          <figcaption>
+            <span><b>Physics.html</b> — 42 Real-Time Vector Stations</span>
+            <span><a href="Physics.html">Open Physics.html →</a></span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 04 / Architecture -->
     <section class="band" id="architecture">
       <div class="wrap">
         <div class="band-head">
-          <span class="band-index">03 / Architecture</span>
+          <span class="band-index">04 / Architecture</span>
           <h2>Portability &amp; Minimal Console Contract</h2>
-          <p class="band-eyebrow">Single-Buffer Vector Stroke · Sample-Accurate Audio · Cursor Navigation</p>
+          <p class="band-eyebrow">Single-Buffer Vector Stroke · Hidden-Line Removal · Sample-Accurate Audio</p>
         </div>
         <figure class="plate">
           <ul class="spec">
+            <li><strong>Pure 3D Math Engine</strong><span><code>Math.html</code> runs Painter's Algorithm Hidden-Line
+                Removal (<code>HLR</code>) with Sutherland–Hodgman 2D host-rect clipping, dynamic infinite-plane domain
+                recalculation, 3D CAD mouse orbit/pan/zoom, and adjustable wire-mesh density.</span></li>
             <li><strong>Vector Display</strong><span><code>Physics.html</code> draws exclusively through screen-space
                 stroked quads (<code>edu_seg</code>) and cell fills (<code>edu_cell</code>) in WebGL1, capped under
                 70,000 vertices for direct C99 OpenGL ES 2.0 portability.</span></li>
             <li><strong>Audio Engine</strong><span><code>Music.html</code> runs continuous phase integration at native
                 AudioContext sample rate with 2.8 ms anti-click voice gating and warm odd-harmonic shaping — works
                 identically over <code>http://</code> and local <code>file://</code>.</span></li>
-            <li><strong>HAL 9000 Controls</strong><span>No overflowing button bars in <code>Music.html</code>: drag on
-                the 2D graph to scrub <code>x</code> live, click left/right screen edges or press
-                <code>←</code>/<code>→</code> for demos, <code>↑</code>/<code>↓</code> or <code>1–8</code> for parts,
-                and <code>?</code> for the hidden legend.</span></li>
             <li><strong>Specification</strong><span>Full C99 / MCU / GLES2 port notes are documented in <a
                   href="BTRON-EDU-SPEC.txt"><code>BTRON-EDU-SPEC.txt</code></a>.</span></li>
           </ul>
@@ -1224,27 +1240,28 @@
       <div>
         <h4>Portals</h4>
         <ul>
-          <li><a href="Physics.html">Physics.html — Series 18</a></li>
+          <li><a href="Math.html">Math.html — Pure 3D Series 12</a></li>
           <li><a href="Music.html">Music.html — HAL 9000 Synth</a></li>
+          <li><a href="Physics.html">Physics.html — Series 41</a></li>
           <li><a href="BTRON-EDU-SPEC.txt">BTRON-EDU-SPEC.txt</a></li>
         </ul>
       </div>
       <div>
-        <h4>Physics Highlights</h4>
+        <h4>3D Math Highlights</h4>
         <ul>
-          <li><a href="Physics.html">II · Hertzian Dipole Contours</a></li>
-          <li><a href="Physics.html">VI · Quantum Double-Slit</a></li>
-          <li><a href="Physics.html">XI · Einstein Ring Lensing</a></li>
-          <li><a href="Physics.html">XVII–XVIII · Schwarzschild Black Hole</a></li>
+          <li><a href="Math.html">I–II · Complex Γ(z) &amp; Riemann ζ(s)</a></li>
+          <li><a href="Math.html">IV · 3D Spherical Harmonics Yₗᵐ</a></li>
+          <li><a href="Math.html">VIII · 5 Calabi–Yau Spaces</a></li>
+          <li><a href="Math.html">IX · Yang–Mills &amp; 4D Hopf Bundle</a></li>
         </ul>
       </div>
       <div>
-        <h4>Music Synth</h4>
+        <h4>Physics &amp; Music</h4>
         <ul>
-          <li><a href="Music.html">01 · Harmonic Fan (10 Voices)</a></li>
-          <li><a href="Music.html">06 · Cobalt Euclid</a></li>
-          <li><a href="Music.html">10 · Violet Drift Ambient</a></li>
-          <li><a href="Music.html">16 · Analytical Etudes</a></li>
+          <li><a href="Music.html">01 · Harmonic Fan · 16 · Etudes</a></li>
+          <li><a href="Physics.html">XVII–XVIII · Schwarzschild Black Hole</a></li>
+          <li><a href="Physics.html">XXVII–XXXII · Electrodynamics Zoo</a></li>
+          <li><a href="Physics.html">XXXVII–XLI · 8085 / Z80 / Intel 4004</a></li>
         </ul>
       </div>
     </div>

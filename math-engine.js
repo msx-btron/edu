@@ -264,19 +264,31 @@ function viewOf(box) {
   };
 }
 
-// Smooth domain-coloring wheel tuned for CRT phosphor (arg in [-pi, pi])
+// Perceptually balanced domain-coloring wheel tuned for CRT phosphor (arg in [-pi, pi])
+// Red and blue/violet channels are luminance-lifted so red stripes match cyan/green/yellow brightness!
 function phaseColor(arg, alpha) {
   const h = ((arg / (Math.PI * 2)) % 1 + 1) % 1;
   const i = Math.floor(h * 6), f = h * 6 - i;
-  const p = 0.22, q = 0.96 - 0.74 * f, tv = 0.22 + 0.74 * f;
+  const p = 0.28, q = 0.98 - 0.70 * f, tv = 0.28 + 0.70 * f;
   let r, g, b;
-  if (i === 0) { r = 0.96; g = tv; b = p; }
-  else if (i === 1) { r = q; g = 0.96; b = p; }
-  else if (i === 2) { r = p; g = 0.96; b = tv; }
-  else if (i === 3) { r = p; g = q; b = 0.96; }
-  else if (i === 4) { r = tv; g = p; b = 0.96; }
-  else { r = 0.96; g = p; b = q; }
-  return [r, g, b, alpha == null ? 0.88 : alpha];
+  if (i === 0) { r = 1.00; g = tv; b = p; }
+  else if (i === 1) { r = q; g = 0.98; b = p; }
+  else if (i === 2) { r = p; g = 0.98; b = tv; }
+  else if (i === 3) { r = p; g = q; b = 1.00; }
+  else if (i === 4) { r = tv; g = p; b = 1.00; }
+  else { r = 1.00; g = p; b = q; }
+  // Perceptual luminance boost for red/blue-heavy hues (Rec.709 Y = 0.2126R + 0.7152G + 0.0722B)
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const lift = lum < 0.62 ? (0.62 - lum) * 0.55 : 0;
+  return [Math.min(1, r + lift), Math.min(1, g + lift), Math.min(1, b + lift), alpha == null ? 0.90 : alpha];
+}
+
+// Circular angle midpoint so crossing the +-pi branch cut never averages to 0 (false red seam!)
+function avgAngle(a, b) {
+  let d = b - a;
+  if (d > Math.PI) d -= Math.PI * 2;
+  else if (d < -Math.PI) d += Math.PI * 2;
+  return a + d * 0.5;
 }
 
 // Complex arithmetic & Special Functions
@@ -366,18 +378,48 @@ function openBounds(V, pitch, sc) {
 }
 
 // Painter's Algorithm Hidden-Line Removal (HLR): sorts quads back-to-front, stamps opaque background mask, then wireframe!
-function drawHiddenWireGrid(V, grid, nu, nv, lw, highlightColIdx) {
+// Optional contourFn(u, v) embeds a bright glowing yellow contour + bright mesh-line read stripes directly onto the 3D surface!
+const COL_STRIPE_YEL = [1.0, 0.94, 0.32, 1.0];
+const COL_STRIPE_HOT = [1.0, 0.99, 0.84, 1.0];
+function drawHiddenWireGrid(V, grid, nu, nv, lw, highlightColIdx, hasContour) {
   const row = nu + 1;
+  const bodyFade = (hasContour || highlightColIdx != null) ? 0.72 : 1.0;
+  const drawEdge = (p, q, isHi) => {
+    if (isHi) {
+      V.line(p[0], p[1], q[0], q[1], COL_STRIPE_YEL, 3.0);
+      V.line(p[0], p[1], q[0], q[1], COL_STRIPE_HOT, 1.4);
+      return;
+    }
+    if (hasContour && p[5] != null && q[5] != null && (p[5] * q[5] <= 0 || Math.abs(p[5] + q[5]) < 0.14)) {
+      V.line(p[0], p[1], q[0], q[1], COL_STRIPE_YEL, Math.max(2.1, lw * 2.1));
+      return;
+    }
+    V.line(p[0], p[1], q[0], q[1], phaseColor(avgAngle(p[2], q[2]), Math.min(p[3], q[3]) * bodyFade), lw);
+  };
+  const drawContourSeg = (a, b, c, d) => {
+    if (!hasContour) return;
+    const pts = [];
+    const edges = [[a, b], [b, c], [c, d], [d, a]];
+    for (let e = 0; e < 4; e++) {
+      const p = edges[e][0], q = edges[e][1], fp = p[5], fq = q[5];
+      if ((fp <= 0 && fq > 0) || (fq <= 0 && fp > 0)) {
+        const s = fp / (fp - fq);
+        pts.push([p[0] + (q[0] - p[0]) * s, p[1] + (q[1] - p[1]) * s]);
+      }
+    }
+    if (pts.length >= 2) {
+      V.line(pts[0][0], pts[0][1], pts[1][0], pts[1][1], COL_STRIPE_YEL, 3.4);
+      V.line(pts[0][0], pts[0][1], pts[1][0], pts[1][1], COL_STRIPE_HOT, 1.5);
+    }
+  };
+
   if (!hlrOn) {
     for (let j = 0; j <= nv; j++) {
       for (let i = 0; i <= nu; i++) {
         const a = grid[j * row + i];
-        if (i < nu) { const b = grid[j * row + i + 1]; V.line(a[0], a[1], b[0], b[1], phaseColor(0.5 * (a[2] + b[2]), Math.min(a[3], b[3])), lw); }
-        if (j < nv) {
-          const c = grid[(j + 1) * row + i];
-          const isHi = highlightColIdx != null && i === highlightColIdx;
-          V.line(a[0], a[1], c[0], c[1], isHi ? [1.0, 0.96, 0.84, 0.98] : phaseColor(0.5 * (a[2] + c[2]), Math.min(a[3], c[3])), isHi ? 2.5 : lw);
-        }
+        if (i < nu) drawEdge(a, grid[j * row + i + 1], false);
+        if (j < nv) drawEdge(a, grid[(j + 1) * row + i], highlightColIdx != null && i === highlightColIdx);
+        if (hasContour && i < nu && j < nv) drawContourSeg(a, grid[j * row + i + 1], grid[(j + 1) * row + i + 1], grid[(j + 1) * row + i]);
       }
     }
     return;
@@ -395,23 +437,21 @@ function drawHiddenWireGrid(V, grid, nu, nv, lw, highlightColIdx) {
     }
   }
   cells.sort((p, q) => q.depth - p.depth); // Back-to-front (larger depth = farther)
-  const hiCol = [1.0, 0.96, 0.84, 0.98];
   for (let k = 0; k < cells.length; k++) {
     const { a, b, c, d, i } = cells[k];
     V.quad(a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1], COL_OCCLUDE);
-    const colAB = phaseColor(0.5 * (a[2] + b[2]), Math.min(a[3], b[3]));
-    const colDC = phaseColor(0.5 * (d[2] + c[2]), Math.min(d[3], c[3]));
     const isHiL = highlightColIdx != null && i === highlightColIdx;
     const isHiR = highlightColIdx != null && i + 1 === highlightColIdx;
-    V.line(a[0], a[1], b[0], b[1], colAB, lw);
-    V.line(d[0], d[1], c[0], c[1], colDC, lw);
-    V.line(a[0], a[1], d[0], d[1], isHiL ? hiCol : phaseColor(0.5 * (a[2] + d[2]), Math.min(a[3], d[3])), isHiL ? 2.5 : lw);
-    V.line(b[0], b[1], c[0], c[1], isHiR ? hiCol : phaseColor(0.5 * (b[2] + c[2]), Math.min(b[3], c[3])), isHiR ? 2.5 : lw);
+    drawEdge(a, b, false);
+    drawEdge(d, c, false);
+    drawEdge(a, d, isHiL);
+    drawEdge(b, c, isHiR);
+    drawContourSeg(a, b, c, d);
   }
 }
 
 // Edge-to-edge 3D surface wireframe: dynamically recalculated infinite plane bounded ONLY by 2D host CLIP rect!
-function drawOpenSurface3D(V, evalFn, Nu, Nv, yaw, pitch, sc, highlightU) {
+function drawOpenSurface3D(V, evalFn, Nu, Nv, yaw, pitch, sc, highlightU, contourFn) {
   const m = meshMul();
   const nu = Math.max(18, Math.min(180, Math.round(Math.max(Nu, 44) * m)));
   const nv = Math.max(18, Math.min(180, Math.round(Math.max(Nv, 44) * m)));
@@ -433,10 +473,25 @@ function drawOpenSurface3D(V, evalFn, Nu, Nv, yaw, pitch, sc, highlightU) {
       const u = (hiIdx === i) ? highlightU : (u0 + i * stepU);
       const [z, arg, alpha] = evalFn(u, v);
       const p = proj3D(u, v, z, yaw, pitch, sc, true);
-      grid[j * (nu2 + 1) + i] = [p[0], p[1], arg, alpha == null ? 0.84 : alpha, p[2]];
+      const cf = contourFn ? contourFn(u, v) : null;
+      grid[j * (nu2 + 1) + i] = [p[0], p[1], arg, alpha == null ? 0.84 : alpha, p[2], cf];
     }
   }
-  drawHiddenWireGrid(V, grid, nu2, nv2, meshW(1.15), hiIdx);
+  drawHiddenWireGrid(V, grid, nu2, nv2, meshW(1.15), hiIdx, !!contourFn);
+}
+
+// 3D Mountain-Peak / Landmark Elevation Pin: projects (u, v, z) and draws a crisp leader stem + CRT label!
+function pin3D(V, u, v, z, label, yaw, pitch, sc, isOpen, col) {
+  const b = proj3D(u, v, z, yaw, pitch, sc, isOpen);
+  if (Math.abs(b[0]) > V.w * 0.94 || Math.abs(b[1]) > 0.92) return;
+  const top = proj3D(u, v, z + 0.28, yaw, pitch, sc, isOpen);
+  const c = col || COL_STRIPE_HOT;
+  V.line(b[0], b[1], top[0], top[1], COL_STRIPE_YEL, 1.3);
+  V.circ(b[0], b[1], 0.014, c, 1.8, 8);
+  const h = 0.052;
+  const tx = Math.max(-V.w * 0.94, Math.min(V.w * 0.94 - label.length * h * 0.85, top[0] + 0.02));
+  const ty = Math.min(0.95, top[1] + h * 1.15);
+  V.text(label, tx, ty, h, c);
 }
 
 // ============================================================================
@@ -674,18 +729,22 @@ function drawRiemann2D(V, sim, t, dt, part) {
 function drawGamma3D(V, sim, t, dt, part) {
   const p = (part || 0) % 2;
   const yaw = 0.62 + t * 0.22, pitch = 0.48 + 0.05 * Math.sin(t * 0.35);
+  const deg = ((((CAM.userOrbited ? 0.62 : yaw) + CAM.yaw) * 180 / Math.PI) % 360 + 360) % 360;
   if (p === 0) {
     drawOpenSurface3D(V, (u, v) => {
       const g = cGamma([-0.5 + u * 1.15, v * 1.05]);
       return [Math.min(1.30, Math.log(1 + Math.hypot(g[0], g[1])) * 0.46) - 0.36, Math.atan2(g[1], g[0]), 0.88];
     }, 52, 50, yaw, pitch, 0.58);
-    return [["SURFACE", "|GAMMA(Z)|"], ["POLES", "0, -1, -2, -3..."], ["MESH", meshMul().toFixed(1) + "X"]];
+    // Pole mountain-peak pins at z = 0, -1, -2, -3 (where -0.5 + u*1.15 = k)
+    for (let k = 0; k >= -3; k--) pin3D(V, (k + 0.5) / 1.15, 0, 0.94, "Z=" + k, yaw, pitch, 0.58, true);
+    return [["SURFACE", "|GAMMA(Z)|"], ["YAW", deg.toFixed(1) + " DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
   } else {
     drawOpenSurface3D(V, (u, v) => {
       const g = cDiv([1, 0], cGamma([-0.5 + u * 1.15, v * 1.05]));
       return [Math.min(1.15, Math.log(1 + Math.hypot(g[0], g[1])) * 0.44) - 0.36, Math.atan2(g[1], g[0]), 0.88];
     }, 52, 50, yaw, pitch, 0.58);
-    return [["SURFACE", "|1 / GAMMA(Z)|"], ["ZEROS", "0, -1, -2, -3..."], ["MESH", meshMul().toFixed(1) + "X"]];
+    for (let k = 0; k >= -2; k--) pin3D(V, (k + 0.5) / 1.15, 0, -0.34, "Z=" + k + " (0)", yaw, pitch, 0.58, true, COL.cyan);
+    return [["SURFACE", "|1 / GAMMA(Z)|"], ["YAW", deg.toFixed(1) + " DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
   }
 }
 
@@ -695,6 +754,7 @@ function drawGamma3D(V, sim, t, dt, part) {
 function drawZeta3D(V, sim, t) {
   const yaw = 0.68 + 0.24 * Math.sin(t * 0.26), pitch = 0.48;
   const tShift = (t * 1.5) % 14.0;
+  const imCenter = 22.0 + CAM.panV * 4.6 + tShift * 0.4;
   // Pass highlightU = 0 so the bright white Critical Line Re(s) = 1/2 participates in true HLR occlusion!
   drawOpenSurface3D(V, (u, v) => {
     const sig = 0.5 + u * 0.55;
@@ -702,7 +762,7 @@ function drawZeta3D(V, sim, t) {
     const z = cZeta([sig, im]);
     return [Math.min(1.05, Math.log(1 + Math.hypot(z[0], z[1])) * 0.52) - 0.34, Math.atan2(z[1], z[0]), 0.88];
   }, 50, 52, yaw, pitch, 0.60, 0);
-  return [["CRITICAL LINE", "RE(S) = 1/2"], ["ZOOM", CAM.zoom.toFixed(2) + "X"], ["MESH", meshMul().toFixed(1) + "X"]];
+  return [["CRITICAL LINE", "RE(S) = 1/2"], ["IM(S)", imCenter.toFixed(2)], ["ZOOM", CAM.zoom.toFixed(2) + "X"]];
 }
 
 // ============================================================================
@@ -718,9 +778,11 @@ function drawBesselAiry3D(V, sim, t, dt, part) {
       const val = besselJ(m, r * 3.2) * Math.cos(m * th) * osc;
       return [val * 0.85, val >= 0 ? 0.5 : -2.3, 0.86];
     }, 52, 52, yaw, pitch, 0.58);
-    return [["MODE", "J" + m + "(KR) COS(" + m + "TH)"], ["ZOOM", CAM.zoom.toFixed(2) + "X"], ["MESH", meshMul().toFixed(1) + "X"]];
+    pin3D(V, 0, 0, (m === 0 ? osc * 0.85 : 0), "R=0 J" + m + "=" + (m === 0 ? osc.toFixed(2) : "0"), yaw, pitch, 0.58, true);
+    return [["MODE", "J" + m + "(KR) COS(" + m + "TH)"], ["AMP COS(WT)", osc.toFixed(2)], ["MESH", meshMul().toFixed(1) + "X"]];
   } else {
     // Part 2: 3D Complex Airy Caustic Ai(z)
+    const phShift = (t * 0.3) % (Math.PI * 2);
     drawOpenSurface3D(V, (u, v) => {
       const x = u * 1.45, y = v * 1.35;
       const r = Math.hypot(x, y) + 0.15, a = Math.atan2(y, x);
@@ -729,9 +791,10 @@ function drawBesselAiry3D(V, sim, t, dt, part) {
       const e2 = cExp([Math.max(-3.2, Math.min(3.2, z32[0])), z32[1]]);
       const w = x < 0 ? cAdd(e1, e2) : e1;
       const mag = Math.hypot(w[0], w[1]) / Math.pow(r + 0.35, 0.25);
-      return [Math.min(1.05, Math.log(1 + mag) * 0.42) - 0.34, Math.atan2(w[1], w[0]) + t * 0.3, 0.88];
+      return [Math.min(1.05, Math.log(1 + mag) * 0.42) - 0.34, Math.atan2(w[1], w[0]) + phShift, 0.88];
     }, 50, 50, yaw, pitch, 0.58);
-    return [["FUNCTION", "AIRY AI(Z)"], ["EQ", "Y'' - Z Y = 0"], ["MESH", meshMul().toFixed(1) + "X"]];
+    pin3D(V, 0, 0, 0.05, "Z=0 AI=0.355", yaw, pitch, 0.58, true);
+    return [["FUNCTION", "AIRY AI(Z)"], ["PHASE", phShift.toFixed(2) + " RAD"], ["MESH", meshMul().toFixed(1) + "X"]];
   }
 }
 
@@ -761,7 +824,8 @@ function drawSphericalHarmonics3D(V, sim, t, dt, part) {
     }
   }
   drawHiddenWireGrid(V, pts, Nph, Nth, lw);
-  return [["HARMONIC", "Y(" + l + "," + m + ")"], ["EIGENVAL", "-L(L+1) = -" + (l * (l + 1))], ["MESH", meshMul().toFixed(2) + "X"]];
+  const phiT = ((t * 0.65) % (Math.PI * 2));
+  return [["HARMONIC", "Y(" + l + "," + m + ")"], ["EIGENVAL", "-" + (l * (l + 1))], [m > 0 ? "PHI(T)" : "YAW", (m > 0 ? phiT : yaw).toFixed(2) + " RAD"]];
 }
 
 // ============================================================================
@@ -770,6 +834,7 @@ function drawSphericalHarmonics3D(V, sim, t, dt, part) {
 function drawEllipticRiemann3D(V, sim, t, dt, part) {
   const p = (part || 0) % 2;
   const yaw = 0.58 + t * 0.24, pitch = 0.48;
+  const deg = ((((CAM.userOrbited ? 0.62 : yaw) + CAM.yaw) * 180 / Math.PI) % 360 + 360) % 360;
   if (p === 0) {
     drawOpenSurface3D(V, (u, v) => {
       const z = [u * Math.PI * 0.62, v * Math.PI * 0.62];
@@ -777,7 +842,7 @@ function drawEllipticRiemann3D(V, sim, t, dt, part) {
       const w = cAdd(cDiv([1, 0], cAdd(cMul(s1, s1), [0.10, 0])), cDiv([1, 0], cAdd(cMul(s2, s2), [0.10, 0])));
       return [Math.min(1.05, Math.log(1 + Math.hypot(w[0], w[1])) * 0.40) - 0.36, Math.atan2(w[1], w[0]), 0.88];
     }, 52, 52, yaw, pitch, 0.58);
-    return [["SURFACE", "WEIERSTRASS P(Z)"], ["TOPOLOGY", "TORUS C / LAMBDA"], ["MESH", meshMul().toFixed(1) + "X"]];
+    return [["SURFACE", "WEIERSTRASS P(Z)"], ["YAW", deg.toFixed(1) + " DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
   } else {
     const { R } = openBounds(V, pitch, 0.64);
     const rMax = Math.max(5.2, R * 1.15 + Math.hypot(CAM.panU, CAM.panV));
@@ -800,7 +865,7 @@ function drawEllipticRiemann3D(V, sim, t, dt, part) {
         if (j < Nr && i % 2 === 0) { const c = pts[(j + 1) * (Nth + 1) + i]; V.line(a[0], a[1], c[0], c[1], phaseColor(a[2], 0.62), lw * 0.85); }
       }
     }
-    return [["SURFACE", "W = SQRT(Z)"], ["SHEETS", "2 (4*PI)"], ["MESH", meshMul().toFixed(2) + "X"]];
+    return [["SURFACE", "W = SQRT(Z)"], ["YAW", deg.toFixed(1) + " DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
   }
 }
 
@@ -835,8 +900,9 @@ function drawSpecialZoo3D(V, sim, t, dt, part) {
   const yaw = 0.58 + t * 0.22, pitch = 0.48;
   if (p === 0) {
     // Part 1: Dedekind Eta Modular Form |eta(tau)| on Upper Half-Plane H (weight 1/2)
+    const reShift = (t * 0.06) % 1.0;
     drawOpenSurface3D(V, (u, v) => {
-      const re = u * 0.48 + t * 0.06;
+      const re = u * 0.48 + reShift;
       const im = 0.055 + 0.13 * Math.exp(Math.max(-2.2, Math.min(1.8, v * 0.48)));
       const qm = Math.exp(-2 * Math.PI * im);
       const qa = 2 * Math.PI * re, cq = Math.cos(qa), sq = Math.sin(qa);
@@ -851,7 +917,7 @@ function drawSpecialZoo3D(V, sim, t, dt, part) {
       const mag = Math.hypot(eta[0], eta[1]);
       return [Math.min(1.22, Math.log(1 + mag * 2.4) * 0.68) - 0.42, Math.atan2(eta[1], eta[0]) * 2.0, 0.88];
     }, 52, 50, yaw, pitch, 0.58);
-    return [["MODULAR", "DEDEKIND ETA(TAU)"], ["WEIGHT", "K = 1/2 (SL2Z)"], ["MESH", meshMul().toFixed(1) + "X"]];
+    return [["MODULAR", "DEDEKIND ETA(TAU)"], ["RE(TAU)+", reShift.toFixed(3)], ["WEIGHT", "K = 1/2"]];
   } else if (p === 1) {
     // Part 2: Jacobi Elliptic Theta Function |theta_3(z, q)|
     const tauIm = 0.62 + 0.24 * Math.sin(t * 0.55);
@@ -867,7 +933,7 @@ function drawSpecialZoo3D(V, sim, t, dt, part) {
       const mag = Math.hypot(re, im);
       return [Math.min(1.15, Math.log(1 + mag) * 0.44) - 0.34, Math.atan2(im, re), 0.88];
     }, 52, 50, yaw, pitch, 0.58);
-    return [["THETA", "JACOBI THETA_3(Z,Q)"], ["NOME Q", qBase.toFixed(3)], ["MESH", meshMul().toFixed(1) + "X"]];
+    return [["THETA", "JACOBI THETA_3"], ["IM(TAU)", tauIm.toFixed(3)], ["NOME Q", qBase.toFixed(3)]];
   } else if (p === 2) {
     // Part 3: Euler Beta Function |B(z, w)| = |Gamma(z)Gamma(w)/Gamma(z+w)| (Veneziano String Amplitude!)
     const w = [1.45 + 0.35 * Math.cos(t * 0.4), 0.45 * Math.sin(t * 0.4)];
@@ -877,7 +943,7 @@ function drawSpecialZoo3D(V, sim, t, dt, part) {
       const val = cDiv(cMul(cGamma(z), gw), cGamma(cAdd(z, w)));
       return [Math.min(1.22, Math.log(1 + Math.hypot(val[0], val[1])) * 0.46) - 0.36, Math.atan2(val[1], val[0]), 0.88];
     }, 52, 50, yaw, pitch, 0.58);
-    return [["AMPLITUDE", "EULER BETA B(Z,W)"], ["DUALITY", "VENEZIANO STRING"], ["MESH", meshMul().toFixed(1) + "X"]];
+    return [["AMPLITUDE", "EULER BETA B(Z,W)"], ["W", w[0].toFixed(2) + (w[1] >= 0 ? "+" : "") + w[1].toFixed(2) + "I"], ["MESH", meshMul().toFixed(1) + "X"]];
   } else {
     // Part 4: Complex Error Function |erf(z)| (Stokes Rays at +-45 deg)
     drawOpenSurface3D(V, (u, v) => {
@@ -885,7 +951,7 @@ function drawSpecialZoo3D(V, sim, t, dt, part) {
       const w = cErf(z);
       return [Math.min(1.20, Math.log(1 + Math.hypot(w[0], w[1])) * 0.46) - 0.36, Math.atan2(w[1], w[0]), 0.88];
     }, 52, 50, yaw, pitch, 0.58);
-    return [["FUNCTION", "COMPLEX ERF(Z)"], ["STOKES", "RAYS +-45 DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
+    return [["FUNCTION", "COMPLEX ERF(Z)"], ["YAW", ((((yaw + CAM.yaw) * 180 / Math.PI) % 360 + 360) % 360).toFixed(1) + " DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
   }
 }
 
@@ -946,7 +1012,8 @@ function drawMinimalSurfaces3D(V, sim, t, dt, part) {
   }
   drawHiddenWireGrid(V, pts, Nu, Nv, lw);
   const names = ["ENNEPER H=0", "KLEIN BOTTLE", "CATENOID<->HELICOID"];
-  return [["SURFACE", names[p]], ["CURVATURE", p === 1 ? "NON-ORIENTABLE" : "MINIMAL H = 0"], ["PART", (p + 1) + " / 3"]];
+  const alphaDeg = ((0.5 + 0.5 * Math.sin(t * 0.75 - Math.PI * 0.5)) * 90).toFixed(1);
+  return [["SURFACE", names[p]], p === 2 ? ["BONNET A", alphaDeg + " DEG"] : ["YAW", ((((yaw + CAM.yaw) * 180 / Math.PI) % 360 + 360) % 360).toFixed(1) + " DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
 }
 
 // ============================================================================
@@ -1003,7 +1070,7 @@ function drawCalabiYau3D(V, sim, t, dt, part) {
       }
     }
   }
-  return [["MANIFOLD", cfg.name], ["EULER CHI", cfg.chi], ["PATCHES", String(n * n)]];
+  return [["MANIFOLD", cfg.name], cfg.dwork ? ["MODULUS PSI", psiMod.toFixed(3)] : ["SLICE A", (alpha * 180 / Math.PI).toFixed(1) + " DEG"], ["EULER CHI", cfg.chi]];
 }
 
 // ============================================================================
@@ -1025,7 +1092,9 @@ function drawYangMills3D(V, sim, t, dt, part) {
       const val = s1 + s2;
       return [val * 0.88 - 0.34, s1 > s2 ? 0.55 - val * 0.4 : -2.2 + val * 0.4, 0.88];
     }, 52, 50, yaw, 0.48, 0.62);
-    return [["GAUGE", "SU(2) BPST"], ["CHARGE Q", "+1 / -1"], ["SCALE RHO", rho.toFixed(2)]];
+    pin3D(V, sep, 0, 1.02, "Q=+1 RHO=" + rho.toFixed(2), yaw, 0.48, 0.62, true);
+    pin3D(V, -sep, 0, 1.02, "Q=-1", yaw, 0.48, 0.62, true, COL.cyan);
+    return [["GAUGE", "SU(2) BPST"], ["SCALE RHO", rho.toFixed(2)], ["SEP D", sep.toFixed(2)]];
   } else {
     // Part 2: SU(2) = S^3 -> S^2 Hopf Fibration (4D Isoclinic Rotation & Stereographic Projection from btron.pro)
     const m = meshMul();
@@ -1084,7 +1153,7 @@ function drawYangMills3D(V, sim, t, dt, part) {
       const col = phaseColor(fib.phase, depthAlpha);
       for (let i = 1; i < pts.length; i++) V.line(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], col, lw);
     }
-    return [["BUNDLE", "S^1 -> S^3 -> S^2"], ["FIBERS", totalFibers + " LINKED"], ["CHERN C1", "1 (SU(2))"]];
+    return [["BUNDLE", "S^1 -> S^3 -> S^2"], ["4D PSI", (psi % (Math.PI * 2)).toFixed(2) + " RAD"], ["FIBERS", totalFibers + " LINKED"]];
   }
 }
 
@@ -1113,7 +1182,7 @@ function drawLieSurfaces3D(V, sim, t, dt, part) {
       }
     }
     drawHiddenWireGrid(V, pts, Nu, Nv, lw);
-    return [["MANIFOLD", "DUPIN CYCLIDE / T^2"], ["SYMMETRY", "LIE CONFORMAL"], ["MESH", meshMul().toFixed(2) + "X"]];
+    return [["MANIFOLD", "DUPIN CYCLIDE"], ["INVERSION D", d.toFixed(3)], ["MESH", meshMul().toFixed(1) + "X"]];
   } else {
     // Part 2: (2,3) Trefoil Lie Knot & Twisted Seifert Ribbon in SU(2) = S^3
     const N = Math.max(64, Math.round(120 * meshMul())), Nr = Math.max(4, Math.round(8 * meshMul()));
@@ -1133,13 +1202,275 @@ function drawLieSurfaces3D(V, sim, t, dt, part) {
         px = q[0]; py = q[1];
       }
     }
-    return [["KNOT", "(2,3) TREFOIL IN SU(2)"], ["SURFACE", "SEIFERT RIBBON"], ["MESH", meshMul().toFixed(2) + "X"]];
+    return [["KNOT", "(2,3) TREFOIL IN SU(2)"], ["YAW", ((((yaw + CAM.yaw) * 180 / Math.PI) % 360 + 360) % 360).toFixed(1) + " DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
   }
 }
 
 // ============================================================================
-// CATALOGUE (11 Pure Math Gems: 3D Special Functions, 3D Topological/CY/YM/Lie, 2D Complex/Riemann)
-// (Basic 2D Calculus & Polynomial curve demos disabled as non-impressional)
+// XI. 3D COMPLEX ANALYSIS: TAYLOR CONVERGENCE, LAURENT RESIDUES, ESSENTIAL e^(1/z), LOG(z) (4 parts)
+// ============================================================================
+function drawComplexAnalysis3D(V, sim, t, dt, part) {
+  const p = (part || 0) % 4;
+  const yaw = 0.62 + t * 0.22, pitch = 0.48;
+
+  if (p === 0) {
+    // Part 1: 3D Complex Taylor Series S_N(z) = sum_{n=0}^N (-1)^n z^(2n) -> 1/(1+z^2)
+    // Convergence circle |z| = 1 embedded directly into bright yellow mesh-line read stripes with full HLR!
+    const Nterms = 2 + Math.floor((t * 1.4) % 11);
+    const rC = 1 / 0.72;
+    drawOpenSurface3D(V, (u, v) => {
+      const z = [u * 0.72, v * 0.72];
+      const z2 = cMul(z, z);
+      let sR = 1, sI = 0, pR = 1, pI = 0;
+      for (let n = 1; n < Nterms; n++) {
+        const nr = pR * z2[0] - pI * z2[1], ni = pR * z2[1] + pI * z2[0];
+        pR = -nr; pI = -ni;
+        if (Math.hypot(pR, pI) > 1e5) { sR = pR; sI = pI; break; }
+        sR += pR; sI += pI;
+      }
+      const mag = Math.hypot(sR, sI);
+      return [Math.min(1.25, Math.log(1 + mag) * 0.42) - 0.36, Math.atan2(sI, sR), 0.88];
+    }, 52, 52, yaw, pitch, 0.58, null, (u, v) => Math.hypot(u, v) - rC);
+    pin3D(V, 0, rC, 0.55, "Z=+I", yaw, pitch, 0.58, true);
+    pin3D(V, 0, -rC, 0.55, "Z=-I", yaw, pitch, 0.58, true);
+    pin3D(V, rC, 0, 0.12, "|Z|=1", yaw, pitch, 0.58, true);
+    return [["TAYLOR N", String(Nterms)], ["RADIUS R", "1.00 (POLES +-I)"], ["MESH", meshMul().toFixed(1) + "X"]];
+  } else if (p === 1) {
+    // Part 2: 3D Laurent Series & Cauchy Residues: f(z) = 1/(z-z1) - 2/(z-z2) + 1/(z-z3)^2
+    const z1 = [-1.15, 0.45], z2 = [1.05, -0.35], z3 = [0.05, 1.05];
+    const cx = -1.1 + 2.2 * (0.5 + 0.5 * Math.sin(t * 0.52)), cy = 0.25 * Math.cos(t * 0.38), Rc = 1.05;
+    const in1 = Math.hypot(z1[0] - cx, z1[1] - cy) < Rc;
+    const in2 = Math.hypot(z2[0] - cx, z2[1] - cy) < Rc;
+    const in3 = Math.hypot(z3[0] - cx, z3[1] - cy) < Rc;
+    const resSum = (in1 ? 1 : 0) + (in2 ? -2 : 0); // double pole z3 has residue 0!
+    // Cauchy contour gamma(t) embedded directly into bright yellow mesh-line read stripes on the 3D relief!
+    drawOpenSurface3D(V, (u, v) => {
+      const d1 = [u - z1[0], v - z1[1]], d2 = [u - z2[0], v - z2[1]], d3 = [u - z3[0], v - z3[1]];
+      const t1 = cDiv([1, 0], d1);
+      const t2 = cDiv([-2, 0], d2);
+      const t3 = cDiv([0.65, 0], cMul(d3, d3)); // 2nd-order pole: 4pi phase winding, Res = 0!
+      const w = [t1[0] + t2[0] + t3[0], t1[1] + t2[1] + t3[1]];
+      return [Math.min(1.30, Math.log(1 + Math.hypot(w[0], w[1])) * 0.46) - 0.36, Math.atan2(w[1], w[0]), 0.88];
+    }, 52, 52, yaw, pitch, 0.58, null, (u, v) => {
+      const du = u - cx, dv = v - cy, a = Math.atan2(dv, du);
+      return Math.hypot(du, dv) - Rc * (1 + 0.08 * Math.sin(3 * a + t));
+    });
+    pin3D(V, z1[0], z1[1], 0.92, "RES=+1", yaw, pitch, 0.58, true);
+    pin3D(V, z2[0], z2[1], 0.92, "RES=-2", yaw, pitch, 0.58, true);
+    pin3D(V, z3[0], z3[1], 0.92, "POLE^2 (0)", yaw, pitch, 0.58, true, COL.cyan);
+    return [["SUM RES", String(resSum)], ["INTEGRAL", (resSum * 2) + "*PI*I"], ["CENTER", "(" + cx.toFixed(2) + "," + cy.toFixed(2) + ")"]];
+  } else if (p === 2) {
+    // Part 3: 3D Essential Singularity |exp(1/z)| (Casorati-Weierstrass / Great Picard Theorem!)
+    const rot = (t * 0.35) % (Math.PI * 2);
+    drawOpenSurface3D(V, (u, v) => {
+      const zr = u * 0.65, zi = v * 0.65;
+      const d = zr * zr + zi * zi + 0.018;
+      const inv = [zr / d, -zi / d];
+      const e = cExp([Math.max(-6.5, Math.min(6.5, inv[0])), inv[1] + rot]);
+      return [Math.min(1.28, Math.log(1 + Math.hypot(e[0], e[1])) * 0.36) - 0.36, Math.atan2(e[1], e[0]), 0.88];
+    }, 54, 54, yaw, pitch, 0.58);
+    pin3D(V, 0, 0, 0.92, "Z=0 ESS", yaw, pitch, 0.58, true);
+    return [["SINGULARITY", "ESSENTIAL E^(1/Z)"], ["PHASE", rot.toFixed(2) + " RAD"], ["MESH", meshMul().toFixed(1) + "X"]];
+  } else {
+    // Part 4: 3D Multi-Sheeted Complex Logarithm Helico-Riemann Surface w = log(z)
+    const Nr = Math.max(12, Math.min(48, Math.round(18 * meshMul())));
+    const Nth = Math.max(36, Math.min(168, Math.round(64 * meshMul())));
+    const lw = meshW(1.15), pts = [];
+    for (let j = 0; j <= Nr; j++) {
+      const r = 0.14 + (j / Nr) * 1.55;
+      for (let i = 0; i <= Nth; i++) {
+        const th = -Math.PI * 2.5 + (i / Nth) * Math.PI * 5.0; // 2.5 full Riemann sheets!
+        const x = r * Math.cos(th), y = r * Math.sin(th), z = th * 0.16;
+        const q = proj3D(x, y, z, yaw, 0.44, 0.72);
+        pts.push([q[0], q[1], th, 0.86, q[2]]);
+      }
+    }
+    drawHiddenWireGrid(V, pts, Nth, Nr, lw);
+    return [["SURFACE", "RIEMANN LOG(Z)"], ["YAW", ((((yaw + CAM.yaw) * 180 / Math.PI) % 360 + 360) % 360).toFixed(1) + " DEG"], ["MESH", meshMul().toFixed(1) + "X"]];
+  }
+}
+
+// ============================================================================
+// XII. 3D CONFORMAL MAPS, BLASCHKE PRODUCTS & RIEMANN SPHERE C-HAT (3 parts)
+// ============================================================================
+function drawConformalRiemann3D(V, sim, t, dt, part) {
+  const p = (part || 0) % 3;
+  const yaw = 0.56 + t * 0.24, pitch = 0.48;
+
+  if (p === 0) {
+    // Part 1: 3D Complex Joukowski Map |w(z)| = |z + a^2/z| (Conformal Pole at 0 + Zeros at +-i)
+    const a2 = 0.85 + 0.35 * Math.sin(t * 0.6);
+    drawOpenSurface3D(V, (u, v) => {
+      const z = [u * 0.75, v * 0.75];
+      const inv = cDiv([a2, 0], z);
+      const w = [z[0] + inv[0], z[1] + inv[1]];
+      return [Math.min(1.25, Math.log(1 + Math.hypot(w[0], w[1])) * 0.52) - 0.38, Math.atan2(w[1], w[0]), 0.88];
+    }, 52, 52, yaw, pitch, 0.58);
+    return [["CONFORMAL", "W = Z + A^2 / Z"], ["PARAM A^2", a2.toFixed(3)], ["MESH", meshMul().toFixed(1) + "X"]];
+  } else if (p === 1) {
+    // Part 2: 3D Blaschke Product B(z) = prod_{k=1}^5 (z - a_k) / (1 - conj(a_k)*z)
+    // 5 zeros inside |z|<1 mirrored to 5 poles outside |z|>1, with |B(z)| = 1 on the unit circle!
+    const roots = [];
+    for (let k = 0; k < 5; k++) {
+      const ang = (k / 5) * Math.PI * 2 + t * 0.32;
+      const rad = 0.56 + 0.14 * Math.sin(t * 0.7 + k * 1.3);
+      roots.push([rad * Math.cos(ang), rad * Math.sin(ang)]);
+    }
+    drawOpenSurface3D(V, (u, v) => {
+      const z = [u * 0.75, v * 0.75];
+      let w = [1, 0];
+      for (let k = 0; k < 5; k++) {
+        const ak = roots[k];
+        const num = [z[0] - ak[0], z[1] - ak[1]];
+        const akz = [ak[0] * z[0] + ak[1] * z[1], ak[0] * z[1] - ak[1] * z[0]]; // conj(ak) * z
+        const den = [1 - akz[0], -akz[1]];
+        w = cMul(w, cDiv(num, den));
+      }
+      return [Math.min(1.28, Math.log(1 + Math.hypot(w[0], w[1])) * 0.44) - 0.36, Math.atan2(w[1], w[0]), 0.88];
+    }, 52, 52, yaw, pitch, 0.58, null, (u, v) => Math.hypot(u, v) - (1 / 0.75));
+    return [["FUNCTION", "BLASCHKE B5(Z)"], ["ROOT R", (0.56 + 0.14 * Math.sin(t * 0.7)).toFixed(2)], ["ORBIT", ((t * 0.32) % (Math.PI * 2)).toFixed(2) + " RAD"]];
+  } else {
+    // Part 3: 3D Riemann Sphere C-hat = C U {infty} under PSL(2,C) Mobius Flow
+    const Nth = Math.max(16, Math.round(28 * meshMul())), Nph = Math.max(24, Math.round(44 * meshMul()));
+    const lw = meshW(1.15), pts = [];
+    const shift = [0.45 * Math.cos(t * 0.5), 0.45 * Math.sin(t * 0.5)];
+    for (let j = 0; j <= Nth; j++) {
+      const th = 0.04 + (j / Nth) * (Math.PI - 0.08), s = Math.sin(th), c = Math.cos(th);
+      for (let i = 0; i <= Nph; i++) {
+        const ph = (i / Nph) * Math.PI * 2;
+        const sx = s * Math.cos(ph), sy = s * Math.sin(ph), sz = c;
+        // Stereographic projection S^2 -> C: z = (sx + i*sy) / (1 - sz)
+        const den = Math.max(0.08, 1 - sz);
+        const z = [sx / den, sy / den];
+        // Mobius-shifted cubic rational map f(z) = ((z-a)^3 - 1) / ((z-a)^3 + 1)
+        const zm = [z[0] - shift[0], z[1] - shift[1]];
+        const z3 = cMul(cMul(zm, zm), zm);
+        const fz = cDiv([z3[0] - 1, z3[1]], [z3[0] + 1, z3[1]]);
+        const bump = 0.86 + 0.16 * Math.tanh(Math.log(1 + Math.hypot(fz[0], fz[1])) - 0.5);
+        const q = proj3D(sx * bump, sy * bump, sz * bump, yaw, 0.36, 0.92);
+        pts.push([q[0], q[1], Math.atan2(fz[1], fz[0]), 0.88, q[2]]);
+      }
+    }
+    drawHiddenWireGrid(V, pts, Nph, Nth, lw);
+    return [["MANIFOLD", "RIEMANN SPHERE S^2"], ["MOBIUS A", shift[0].toFixed(2) + (shift[1] >= 0 ? "+" : "") + shift[1].toFixed(2) + "I"], ["MESH", meshMul().toFixed(1) + "X"]];
+  }
+}
+
+// ============================================================================
+// XIII. 3D COMPLEX LOGARITHMS & GENERALIZED LOGARITHMS WITH VIEWPORT PATH OBSERVER (4 parts)
+// ============================================================================
+function cLambertW0(z) {
+  // Complex Halley's method for principal branch Lambert W0(z) (W * exp(W) = z, branch point at -1/e)
+  const r = Math.hypot(z[0], z[1]);
+  let w = r < 0.35 ? [z[0], z[1]] : [Math.log(1 + r), Math.atan2(z[1], z[0]) * 0.65];
+  for (let it = 0; it < 5; it++) {
+    const ew = cExp(w), wew = cMul(w, ew);
+    const f = [wew[0] - z[0], wew[1] - z[1]];
+    const wp1 = [w[0] + 1, w[1]];
+    const wp2 = [w[0] + 2, w[1]];
+    const d1 = cMul(ew, wp1);
+    const denom = [d1[0] - cDiv(cMul(wp2, f), [2 * wp1[0], 2 * wp1[1]])[0], d1[1] - cDiv(cMul(wp2, f), [2 * wp1[0], 2 * wp1[1]])[1]];
+    const step = cDiv(f, denom);
+    w = [w[0] - step[0], w[1] - step[1]];
+  }
+  return w;
+}
+
+function drawLogarithms3D(V, sim, t, dt, part) {
+  const p = (part || 0) % 4;
+  // Gentle cinematic viewport path observation (paused automatically if user drags camera)
+  const yaw = 0.55 + t * 0.24, pitch = 0.44 + 0.08 * Math.sin(t * 0.32);
+
+  if (p === 0) {
+    // Part 1: 3-Sheeted Complex Logarithm w = ln(z) with Climbing 3D Path Observer
+    const Nr = Math.max(14, Math.min(48, Math.round(18 * meshMul())));
+    const Nth = Math.max(48, Math.min(180, Math.round(72 * meshMul())));
+    const lw = meshW(1.12), pts = [];
+    for (let j = 0; j <= Nr; j++) {
+      const r = 0.16 + (j / Nr) * 1.65;
+      for (let i = 0; i <= Nth; i++) {
+        const th = -Math.PI * 3 + (i / Nth) * Math.PI * 6; // 3 full sheets: [-3pi, +3pi]
+        const q = proj3D(r * Math.cos(th), r * Math.sin(th), th * 0.145, yaw, pitch, 0.70);
+        pts.push([q[0], q[1], th, 0.86, q[2]]);
+      }
+    }
+    drawHiddenWireGrid(V, pts, Nth, Nr, lw);
+    // Glowing 3D Path Observer climbing the helicoidal Riemann sheets!
+    const rObs = 1.05, thMax = -Math.PI * 2.7 + ((t * 1.35) % (Math.PI * 5.4));
+    let px = 0, py = 0;
+    for (let k = 0; k <= 80; k++) {
+      const tk = -Math.PI * 2.7 + (k / 80) * (thMax + Math.PI * 2.7);
+      const q = proj3D(rObs * Math.cos(tk), rObs * Math.sin(tk), tk * 0.145 + 0.03, yaw, pitch, 0.70);
+      if (k > 0) {
+        V.line(px, py, q[0], q[1], COL_STRIPE_YEL, 3.0);
+        V.line(px, py, q[0], q[1], COL_STRIPE_HOT, 1.3);
+      }
+      px = q[0]; py = q[1];
+    }
+    return [["LOGARITHM", "LN(Z) = LN|Z| + I*TH"], ["PATH TH", thMax.toFixed(2) + " RAD"], ["SHEET K", String(Math.round(thMax / (Math.PI * 2)))]];
+  } else if (p === 1) {
+    // Part 2: Generalized q-Logarithm (Tsallis Non-Extensive): ln_q(z) = (z^(1-q) - 1) / (1 - q)
+    const qVal = 1.05 + 0.78 * Math.sin(t * 0.55); // sweeps smoothly across classical Boltzmann limit q = 1!
+    const eps = 1 - qVal;
+    const rC = 1 / 0.75;
+    drawOpenSurface3D(V, (u, v) => {
+      const zr = u * 0.75, zi = v * 0.75;
+      const r = Math.hypot(zr, zi) + 1e-4, th = Math.atan2(zi, zr);
+      let w;
+      if (Math.abs(eps) < 0.02) {
+        w = [Math.log(r), th];
+      } else {
+        // z^(1-q) = exp((1-q)*(ln r + i*th))
+        const zp = cExp([Math.max(-6, Math.min(6, eps * Math.log(r))), eps * th]);
+        w = [(zp[0] - 1) / eps, zp[1] / eps];
+      }
+      return [Math.min(1.25, Math.log(1 + Math.hypot(w[0], w[1])) * 0.44) - 0.36, Math.atan2(w[1], w[0]), 0.88];
+    }, 52, 52, yaw, 0.48, 0.58, null, (u, v) => Math.hypot(u, v) - rC);
+    pin3D(V, 0, 0, 0.55, "Z=0", yaw, 0.48, 0.58, true);
+    pin3D(V, rC, 0, -0.34, "Z=1 (LN_Q=0)", yaw, 0.48, 0.58, true);
+    return [["TSALLIS", "LN_Q(Z)"], ["PARAM Q", qVal.toFixed(3)], ["LIMIT", Math.abs(eps) < 0.08 ? "Q=1 SHANNON" : "NON-EXTENSIVE"]];
+  } else if (p === 2) {
+    // Part 3: Complex Polylogarithm Li_s(z) = sum_{n=1}^22 z^n / n^s (Dilogarithm s=2, Trilogarithm s=3)
+    const sOrd = 2.0 + 0.85 * Math.sin(t * 0.48);
+    const rC = 1 / 0.75;
+    drawOpenSurface3D(V, (u, v) => {
+      const z = [u * 0.75, v * 0.75];
+      const r = Math.hypot(z[0], z[1]);
+      let sr = 0, si = 0, pr = 1, pi = 0;
+      const scale = r > 1.05 ? 1.02 / r : 1.0; // smooth analytic damping outside branch cut [1, inf)
+      const zs = [z[0] * scale, z[1] * scale];
+      for (let n = 1; n <= 20; n++) {
+        const nr = pr * zs[0] - pi * zs[1], ni = pr * zs[1] + pi * zs[0];
+        pr = nr; pi = ni;
+        const w = Math.pow(n, -sOrd);
+        sr += pr * w; si += pi * w;
+      }
+      const boost = r > 1.05 ? Math.log(r) * 0.75 : 0;
+      return [Math.min(1.25, Math.log(1 + Math.hypot(sr, si)) * 0.52 + boost) - 0.36, Math.atan2(si, sr), 0.88];
+    }, 52, 52, yaw, 0.48, 0.58, null, (u, v) => Math.hypot(u, v) - rC);
+    // Live 3D Path Observer orbiting branch point z = 1
+    const aObs = t * 1.1;
+    const uO = rC + 0.55 * Math.cos(aObs), vO = 0.55 * Math.sin(aObs);
+    pin3D(V, rC, 0, 0.35, "Z=1 BRANCH", yaw, 0.48, 0.58, true);
+    pin3D(V, uO, vO, 0.18, "OBS", yaw, 0.48, 0.58, true, COL.cyan);
+    return [["POLYLOG", "LI_S(Z)"], ["ORDER S", sOrd.toFixed(2)], ["AT Z=1", "ZETA(S)"]];
+  } else {
+    // Part 4: Complex Lambert W(z) (Product Logarithm: W(z) * exp(W(z)) = z, branch point at -1/e)
+    const uBranch = -1 / (Math.E * 0.72);
+    const rObs = 0.75, aObs = t * 0.9;
+    drawOpenSurface3D(V, (u, v) => {
+      const w = cLambertW0([u * 0.72, v * 0.72]);
+      return [Math.min(1.22, Math.log(1 + Math.hypot(w[0], w[1])) * 0.54) - 0.36, Math.atan2(w[1], w[0]), 0.88];
+    }, 52, 52, yaw, 0.48, 0.58, null, (u, v) => Math.hypot(u - uBranch, v) - rObs);
+    pin3D(V, uBranch, 0, 0.05, "Z=-1/E (W=-1)", yaw, 0.48, 0.58, true);
+    pin3D(V, 0, 0, -0.34, "Z=0 (W=0)", yaw, 0.48, 0.58, true, COL.cyan);
+    pin3D(V, uBranch + rObs * Math.cos(aObs), rObs * Math.sin(aObs), 0.18, "W(Z)", yaw, 0.48, 0.58, true);
+    return [["PRODUCT LOG", "LAMBERT W0(Z)"], ["BRANCH", "Z = -1/E"], ["OBS ANG", (aObs % (Math.PI * 2)).toFixed(2)]];
+  }
+}
+
+// ============================================================================
+// CATALOGUE (12 Pure 3D Math Gems: 3D Special Functions, 3D Topological/CY/YM/Lie, 3D Complex Analysis)
 // ============================================================================
 const STATIONS = [
   {
@@ -1268,36 +1599,52 @@ const STATIONS = [
     draw: drawLieSurfaces3D,
   },
   {
-    roman: "XI", cat: "2D COMPLEX ANALYSIS & RIEMANN", disc: "COMPLEX C-SERIES", parts: 3,
-    title: "Complex C-Series, Cauchy Residues, and Conformal Maps",
-    sub: "Taylor radius bounded by ±i, deforming Cauchy residue contour, and Joukowski conformal airfoil (↑/↓ or 1–3).",
-    formula: "f(z) = Σ aₙ (z − z₀)ⁿ      ∮ f(z) dz = 2πi Σ Res      w = z + 1/z",
-    note: "Complex singularities govern convergence, contour integrals, and conformal geometry.",
+    roman: "XI", cat: "3D COMPLEX ANALYSIS", disc: "3D TAYLOR · LAURENT · LOG", parts: 4,
+    title: "3D Taylor Convergence, Laurent Residues, e^(1/z) & Log(z)",
+    sub: "Complex Taylor convergence wall, 3D Cauchy residue contour, essential singularity e^(1/z), and Log(z) helix (↑/↓ or 1–4).",
+    formula: "S_N(z) = Σ (−1)ⁿ z^(2n)      ∮ f(z) dz = 2πi Σ Res      e^(1/z)      log(z)",
+    note: "Press ↓ or keys 1–4 to explore Taylor Series, Laurent Residues, Essential Singularities, and Log(z).",
     partMeta: [
-      { title: "Taylor C-Series of 1/(1 + z²): Poles at ±i Set R = 1", sub: "Complex poles at z = ±i halt real-axis convergence cleanly at |x| = 1.", formula: "1 / (1 + z²) = Σ_{n=0}^∞ (−1)ⁿ z^(2n)      (|z| < 1)", note: "Part 1/3 — Press ↓ for Cauchy Residue Contours." },
-      { title: "Cauchy Residue Theorem: Topological Contour Invariance", sub: "∮ f(z) dz stays constant under deformation and jumps by 2πi·Res when crossing a pole.", formula: "∮_γ f(z) dz = 2πi Σ Res(f, zₖ)", note: "Part 2/3 — Press ↓ for the Joukowski Conformal Map." },
-      { title: "Joukowski Conformal Map w = z + 1/z", sub: "Morphs concentric circles and radial spokes into an airfoil while preserving every 90° angle.", formula: "w(z) = z + a² / z      f'(z) ≠ 0 ⇒ conformal", note: "Part 3/3 — Complex differentiability is local angle preservation." },
+      { title: "3D Complex Taylor Series Convergence Wall (R = 1)", sub: "Partial sums of 1/(1 + z²) lock onto poles ±i inside the amber unit disk |z| = 1 and erupt outside.", formula: "S_N(z) = Σ_{n=0}^N (−1)ⁿ z^(2n)      (|z| < 1)", note: "Part 1/4 — Press ↓ for 3D Laurent Series & Cauchy Residues." },
+      { title: "3D Laurent Poles & Floating Cauchy Residue Contour", sub: "Simple poles (Res +1, −2) and a 2nd-order pole (4π winding, Res 0) swept by a 3D Cauchy contour γ.", formula: "f(z) = 1/(z−z₁) − 2/(z−z₂) + 1/(z−z₃)²      ∮ f dz = 2πi Σ Res", note: "Part 2/4 — Press ↓ for the Essential Singularity exp(1/z)." },
+      { title: "3D Essential Singularity |exp(1/z)| (Great Picard Theorem)", sub: "Explodes toward 0⁺, vanishes toward 0⁻, and oscillates through every complex phase along the imaginary axis.", formula: "e^(1/z) = Σ_{n=0}^∞ 1 / (n! zⁿ)      (Essential Singularity at 0)", note: "Part 3/4 — Press ↓ for the 3D Complex Logarithm Helix." },
+      { title: "3D Complex Logarithm Riemann Surface w = log(z)", sub: "Infinite helical staircase climbing by 2πi on every loop around the branch point z = 0.", formula: "log(r e^(iθ)) = ln(r) + i(θ + 2πk)      k ∈ ℤ", note: "Part 4/4 — Drag to orbit the multi-sheeted helical sheets." },
     ],
-    draw: drawCSeries2D,
+    draw: drawComplexAnalysis3D,
   },
   {
-    roman: "XII", cat: "2D COMPLEX ANALYSIS & RIEMANN", disc: "RIEMANN HYPOTHESIS 2D", parts: 2,
-    title: "Critical-Line Spiral ζ(1/2 + it) and Prime Synthesis",
-    sub: "ζ(1/2 + it) hitting 0+0i at every Riemann zero, and the explicit formula reconstructing primes ψ(x) (↑/↓ or 1–2).",
-    formula: "ζ(1/2 + iγₙ) = 0      ψ(x) = x − Σ_ρ x^ρ / ρ − ln(2π)",
-    note: "The Riemann zeros act as the harmonic frequencies of the prime numbers.",
+    roman: "XII", cat: "3D COMPLEX ANALYSIS", disc: "3D CONFORMAL & RIEMANN SPHERE", parts: 3,
+    title: "3D Joukowski Map, Blaschke Products & Riemann Sphere ℂ̂",
+    sub: "Conformal 3D Joukowski relief, 5-fold Blaschke zero/pole mirror, and PSL(2,ℂ) Möbius Riemann Sphere (↑/↓ or 1–3).",
+    formula: "w = z + a²/z      B(z) = Π (z−aₖ)/(1−āₖz)      ℂ̂ = ℂ ∪ {∞} ≅ S²",
+    note: "Press ↓ or keys 1–3 to explore Joukowski, Blaschke Products, and the Riemann Sphere.",
     partMeta: [
-      { title: "Critical-Line Spiral ζ(1/2 + it) & First Riemann Zeros", sub: "Left: ζ(1/2 + it) spirals through 0+0i at γ₁=14.13, γ₂=21.02, γ₃=25.01. Right: |ζ(1/2 + it)|.", formula: "ρₙ = 1/2 + i γₙ      γ = 14.13, 21.02, 25.01, 30.42...", note: "Part 1/2 — Press ↓ for the Prime Explicit Formula." },
-      { title: "Explicit Formula: Riemann Zeros Synthesize Primes ψ(x)", sub: "Superposing the first 10 non-trivial zeros reconstructs Chebyshev's prime-power staircase.", formula: "ψ(x) = x − Σ_ρ x^ρ / ρ − ln(2π)", note: "Part 2/2 — More zeros sharpen every prime jump." },
+      { title: "3D Complex Joukowski Conformal Relief |z + a²/z|", sub: "Central simple pole at z = 0 flanked by twin conformal saddle zeros at z = ±ia.", formula: "w(z) = z + a² / z      dw/dz = 0 at z = ±a", note: "Part 1/3 — Press ↓ for 3D Blaschke Products." },
+      { title: "3D Blaschke Product B₅(z): Unit-Circle Zero/Pole Mirror", sub: "Five orbiting zeros inside |z| < 1 mirror into five towering poles outside |z| > 1 with |B| = 1 on S¹.", formula: "B(z) = Π_{k=1}^5 (z − aₖ) / (1 − āₖ z)      |B(e^(iθ))| ≡ 1", note: "Part 2/3 — Press ↓ for the 3D Riemann Sphere ℂ̂." },
+      { title: "3D Riemann Sphere ℂ̂ ≅ S² under Möbius Flow PSL(2,ℂ)", sub: "Stereographic compactification of ℂ ∪ {∞} showing cubic rational poles and zeros flowing across S².", formula: "f(z) = ((z−a)³ − 1) / ((z−a)³ + 1)      M ∈ PSL(2, ℂ)", note: "Part 3/3 — Drag to inspect both hemispheres with full HLR occlusion." },
     ],
-    draw: drawRiemann2D,
+    draw: drawConformalRiemann3D,
+  },
+  {
+    roman: "XIII", cat: "3D COMPLEX ANALYSIS", disc: "3D COMPLEX & GEN LOGARITHMS", parts: 4,
+    title: "3D Complex Logarithm, q-Log, Polylog Liₛ & Lambert W(z)",
+    sub: "Multi-sheeted ln(z) with 3D Path Observer, Tsallis q-Logarithm, Polylogarithm Liₛ(z), and Lambert W(z) (↑/↓ or 1–4).",
+    formula: "ln(z) = ln|z| + i(θ+2πk)      ln_q(z) = (z^(1−q)−1)/(1−q)      Liₛ(z) = Σ zⁿ/nˢ      W(z)e^W = z",
+    note: "Press ↓ or keys 1–4 to explore ln(z), Tsallis q-Log, Polylog Liₛ(z), and Lambert W(z) with on-surface pins.",
+    partMeta: [
+      { title: "3D Multi-Sheeted Complex Logarithm w = ln(z) + Path Observer", sub: "Three helical Riemann sheets (−3π..+3π) with a glowing 3D Path Observer climbing continuously around z = 0.", formula: "ln(r e^(iθ)) = ln(r) + i(θ + 2πk)      k ∈ ℤ", note: "Part 1/4 — Press ↓ for the Generalized Tsallis q-Logarithm." },
+      { title: "3D Generalized q-Logarithm ln_q(z) (Tsallis Non-Extensive)", sub: "Deforms smoothly across the classical Boltzmann–Shannon limit q = 1 while bending the branch cut.", formula: "ln_q(z) = (z^(1−q) − 1) / (1 − q)      lim_{q→1} ln_q(z) = ln(z)", note: "Part 2/4 — Press ↓ for the Complex Polylogarithm Liₛ(z)." },
+      { title: "3D Complex Polylogarithm Liₛ(z) (Dilogarithm & Trilogarithm)", sub: "Order s(t) sweeps between Li₁, Li₂, and Li₃ with embedded |z| = 1 circle and path observer at z = 1.", formula: "Liₛ(z) = Σ_{n=1}^∞ zⁿ / nˢ      Liₛ(1) = ζ(s)", note: "Part 3/4 — Press ↓ for the Complex Lambert W(z) Product Logarithm." },
+      { title: "3D Complex Lambert W(z) (Product Logarithm: W e^W = z)", sub: "Principal branch W₀(z) solved via complex Halley iteration, pinning the branch point z = −1/e.", formula: "W(z) e^(W(z)) = z      Branch Point: z = −1/e ≈ −0.3679", note: "Part 4/4 — Inverse of f(w) = w e^w governing delay equations and tree combinatorics." },
+    ],
+    draw: drawLogarithms3D,
   },
 ];
 
 // ============================================================================
 // RUNTIME, CHROME, CATEGORIZED INDEX & CONTROLS
 // ============================================================================
-const CATS = ["3D SPECIAL FUNCTIONS", "3D TOPOLOGICAL · CALABI–YAU · YM · LIE", "2D COMPLEX ANALYSIS & RIEMANN"];
+const CATS = ["3D SPECIAL FUNCTIONS", "3D TOPOLOGICAL · CALABI–YAU · YM · LIE", "3D COMPLEX ANALYSIS"];
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 let index = 0, partIdx = 0, sim = {}, simTime = 0, dwell = 0, paused = false, indexOpen = false;
 let last = performance.now(), lastDom = 0;
