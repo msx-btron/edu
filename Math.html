@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>HAL 9000 · PURE MATHEMATICS</title>
+<style>
+  :root {
+    --bg: #050609;
+    --bg2: #0a0d13;
+    --paper: #e6e1d6;
+    --dim: #737b8c;
+    --line: rgba(230,225,214,0.14);
+    --amber: #e8a454;
+    --cyan: #7fd4cc;
+    --hot: #e3614a;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --display: "Eurostile", "Microgramma", "Bank Gothic", "Orbitron", ui-sans-serif, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--paper);
+    font-family: var(--mono);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+  #app { position: fixed; inset: 0; overflow: hidden; }
+  #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .scan {
+    position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    background: repeating-linear-gradient(to bottom,
+      rgba(255,255,255,0) 0px, rgba(255,255,255,0) 2px,
+      rgba(0,0,0,0.16) 3px, rgba(0,0,0,0.16) 4px);
+    opacity: 0.42;
+  }
+  .vignette {
+    position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    background: radial-gradient(ellipse at 50% 48%,
+      transparent 56%, rgba(0,0,0,0.52) 92%, rgba(0,0,0,0.82) 100%);
+  }
+
+  #top {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 4;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(to bottom, rgba(5,6,9,0.94), rgba(5,6,9,0.52));
+    gap: 12px;
+  }
+  .hal-id {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--display); letter-spacing: 0.2em; font-size: 11px;
+    color: var(--paper); text-decoration: none;
+  }
+  .lamp {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, #ffbd9e 0%, #e03a22 46%, #4a0704 100%);
+    box-shadow: 0 0 10px rgba(224,58,34,0.85), 0 0 22px rgba(224,58,34,0.35);
+    animation: halpulse 3.6s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes halpulse { 0%,100% { opacity: 0.85; } 50% { opacity: 1; } }
+
+  .title-block { text-align: center; min-width: 0; flex: 1; }
+  .title-block .name {
+    font-family: var(--display); font-size: clamp(12px, 1.5vw, 15px);
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .title-block .meta {
+    font-size: 10px; letter-spacing: 0.18em; color: var(--amber); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .status { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.14em; }
+  .pill {
+    padding: 4px 9px; border: 1px solid var(--line); border-radius: 2px;
+    background: rgba(12,15,22,0.75); color: var(--paper); cursor: pointer;
+    font-family: inherit; font-size: 10px; letter-spacing: 0.14em; text-decoration: none;
+    display: inline-flex; align-items: center;
+  }
+  .pill:hover { border-color: var(--amber); color: var(--amber); }
+  .pill[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); background: rgba(127,212,204,0.08); }
+  .pill.portal-link { border-color: rgba(127,212,204,0.35); color: var(--cyan); }
+  .pill.portal-link:hover { border-color: var(--cyan); background: rgba(127,212,204,0.12); }
+
+  #copy {
+    position: absolute; top: 64px; left: 20px; right: 20px; z-index: 3;
+    pointer-events: none;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .formula {
+    margin: 0; align-self: flex-start;
+    font-size: clamp(11px, 1.35vw, 13.5px); letter-spacing: 0.05em;
+    color: var(--cyan);
+    padding: 6px 11px;
+    border: 1px solid rgba(127,212,204,0.22);
+    background: rgba(5,8,12,0.72);
+    text-shadow: 0 0 12px rgba(127,212,204,0.25);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  #foot {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+    padding: 9px 18px 11px;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(to top, rgba(5,6,9,0.95), rgba(5,6,9,0.58));
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .f-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; font-size: 10px; letter-spacing: 0.14em; color: var(--dim);
+  }
+  .readout { display: flex; flex-wrap: wrap; gap: 16px; color: var(--amber); font-variant-numeric: tabular-nums; }
+  .readout .k { color: var(--dim); margin-right: 5px; }
+  .note { color: var(--dim); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .f-sub { font-size: 11px; color: var(--paper); opacity: 0.78; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  #bar {
+    position: absolute; top: 53px; left: 0; height: 2px; width: 0%; z-index: 5;
+    background: linear-gradient(90deg, var(--amber), var(--cyan));
+    opacity: 0.75; pointer-events: none;
+  }
+
+  .nav-edge {
+    position: absolute; top: 56px; bottom: 56px; width: 42px; z-index: 3;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; opacity: 0; transition: opacity 0.2s;
+    font-size: 20px; color: var(--amber);
+  }
+  .nav-edge:hover { opacity: 0.9; background: rgba(232,164,84,0.06); }
+  #prev { left: 0; }
+  #next { right: 0; }
+
+  #legend, #index {
+    position: fixed; inset: 0; z-index: 20;
+    background: rgba(5,6,9,0.92); backdrop-filter: blur(8px);
+    display: none; padding: 32px 24px;
+    overflow-y: auto; overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(232,164,84,0.65) rgba(12,15,22,0.85);
+  }
+  #legend::-webkit-scrollbar, #index::-webkit-scrollbar { width: 10px; }
+  #legend::-webkit-scrollbar-track, #index::-webkit-scrollbar-track {
+    background: rgba(12,15,22,0.9); border-left: 1px solid rgba(230,225,214,0.1);
+  }
+  #legend::-webkit-scrollbar-thumb, #index::-webkit-scrollbar-thumb {
+    background: rgba(232,164,84,0.55); border: 2px solid rgba(12,15,22,0.9); border-radius: 5px;
+  }
+  #legend::-webkit-scrollbar-thumb:hover, #index::-webkit-scrollbar-thumb:hover {
+    background: rgba(127,212,204,0.85);
+  }
+  #legend.open { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #index.open {
+    display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch;
+    padding: 64px max(28px, calc(50% - 460px)) 44px;
+  }
+  .card {
+    border: 1px solid var(--line); background: rgba(10,12,18,0.95);
+    padding: 20px 24px; max-width: 520px; width: 100%;
+  }
+  .card h2, #index h2 {
+    font-family: var(--display); font-weight: 400; font-size: 13px;
+    letter-spacing: 0.22em; color: var(--amber); margin: 0 0 14px;
+  }
+  .krow {
+    display: flex; justify-content: space-between; gap: 16px;
+    padding: 6px 0; border-bottom: 1px solid rgba(230,225,214,0.08); font-size: 12px;
+  }
+  .krow .k { color: var(--cyan); letter-spacing: 0.08em; }
+  .krow .d { color: var(--paper); text-align: right; }
+  .idx-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .idx-cat {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; color: var(--cyan);
+    margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(127,212,204,0.22);
+    text-transform: uppercase;
+  }
+  .idx-cat:first-of-type { margin-top: 4px; }
+  .idx-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px;
+  }
+  .idx-item {
+    text-align: left; background: rgba(12,15,22,0.8); color: var(--paper);
+    border: 1px solid rgba(230,225,214,0.12); padding: 10px 12px; cursor: pointer;
+    font-family: inherit;
+  }
+  .idx-item:hover, .idx-item.on { border-color: var(--amber); background: rgba(232,164,84,0.1); }
+  .idx-item .num { font-size: 10px; color: var(--amber); letter-spacing: 0.16em; }
+  .idx-item .ttl { font-family: var(--display); font-size: 11px; margin-top: 3px; letter-spacing: 0.08em; line-height: 1.35; }
+  .idx-item .pts { font-size: 10px; color: var(--cyan); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  @media (max-width: 720px) { .hal-id span.brand-txt { display: none; } .status .pill.portal-link { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .lamp { animation: none; } .scan { display: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+  <div class="scan"></div>
+  <div class="vignette"></div>
+  <div id="bar"></div>
+
+  <header id="top">
+    <a class="hal-id" href="index.html" title="Back to Home"><span class="lamp" aria-hidden="true"></span> <span class="brand-txt">HAL 9000 <span style="color:var(--amber)">MATH</span></span></a>
+    <div class="title-block">
+      <div class="name" id="title">Canonical 3D Special Functions</div>
+      <div class="meta"><span id="count">I · 01</span> · <span id="disc">SPECIAL FUNCTIONS 3D</span></div>
+    </div>
+    <div class="status">
+      <a class="pill portal-link" href="Music.html" title="Switch to Music Synth">MUSIC</a>
+      <a class="pill portal-link" href="Physics.html" title="Switch to Physics">PHYSICS</a>
+      <button type="button" class="pill" id="mesh-dec" title="Coarser Wire Mesh ([ or -)">M−</button>
+      <button type="button" class="pill" id="mesh-lbl" title="Mesh Discretization (Click to Reset 3.0×)">3.0×</button>
+      <button type="button" class="pill" id="mesh-inc" title="Finer Wire Mesh (] or +)">M+</button>
+      <button type="button" class="pill" id="hlr" aria-pressed="true" title="Toggle Hidden-Line Occlusion (O)">HLR</button>
+      <button type="button" class="pill" id="cam-rst" title="Reset 3D CAD View (R / Double-Click)">RST</button>
+      <button type="button" class="pill" id="hold" aria-pressed="false" title="Play / Pause (Space)">HOLD</button>
+      <button type="button" class="pill" id="idx" aria-pressed="false" title="Index (I)">IDX</button>
+      <button type="button" class="pill" id="btn-help" title="Controls (?)">?</button>
+    </div>
+  </header>
+
+  <section id="copy">
+    <p class="formula" id="formula"></p>
+  </section>
+
+  <div class="nav-edge" id="prev" title="Previous Station (←)">‹</div>
+  <div class="nav-edge" id="next" title="Next Station (→)">›</div>
+
+  <footer id="foot">
+    <div class="f-head">
+      <div class="readout" id="readout" aria-live="polite"></div>
+      <span class="note" id="note"></span>
+    </div>
+    <div class="f-sub" id="sub"></div>
+  </footer>
+
+  <aside id="legend" aria-label="Controls Legend">
+    <div class="card">
+      <h2>HAL 9000 // PURE MATH INPUT MATRIX</h2>
+      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Station (I–XII)</span></div>
+      <div class="krow"><span class="k">↑ / ↓  or  1–8</span><span class="d">Previous / Next / Jump Part</span></div>
+      <div class="krow"><span class="k">LEFT DRAG</span><span class="d">3D CAD Orbit (Yaw / Pitch)</span></div>
+      <div class="krow"><span class="k">RIGHT / SHIFT+DRAG</span><span class="d">3D CAD Pan (Infinite Domain)</span></div>
+      <div class="krow"><span class="k">WHEEL</span><span class="d">3D CAD Zoom (Recalculates Bounds)</span></div>
+      <div class="krow"><span class="k">[ / ]  or  − / +</span><span class="d">Decrease / Increase Wire Mesh Density</span></div>
+      <div class="krow"><span class="k">O  or  HLR</span><span class="d">Toggle Hidden-Line Occlusion</span></div>
+      <div class="krow"><span class="k">R  or  DBL-CLICK</span><span class="d">Reset 3D CAD Camera</span></div>
+      <div class="krow"><span class="k">SPACE</span><span class="d">Hold / Resume Simulation</span></div>
+      <div class="krow"><span class="k">I / TAB</span><span class="d">Pure Math Catalogue Index</span></div>
+      <div class="krow"><span class="k">? / H / ESC</span><span class="d">Toggle / Close Overlay</span></div>
+      <div class="krow"><span class="k">MUSIC / PHYSICS</span><span class="d">Switch Portal / Home</span></div>
+    </div>
+  </aside>
+
+  <nav id="index" aria-label="Catalogue"></nav>
+</div>
+<script src="math-engine.js"></script>
+</body>
+</html>

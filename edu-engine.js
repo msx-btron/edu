@@ -2926,7 +2926,99 @@ function rk4ThreeBody(s, h) {
   const k4 = deriv3Body(add(s, k3, h));
   return s.map((v, i) => v + (h / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
 }
-function drawThreeBody(V, sim, t, dt) {
+function drawThreeBody(V, sim, t, dt, part) {
+  const p = (part || 0) % 3;
+
+  // Parts 1 & 2: Prigogine–Petrosky–Miyasaka (UT Austin) 3-Body Quantum Scattering
+  // Part 1 = Extended Liouville-Space Scattering (persistent horizontal correlation bar / arrow of time)
+  // Part 2 = Conventional Hilbert-Space Scattering (time-reversible, no horizontal bar)
+  if (p < 2) {
+    const isLiouville = p === 0;
+    const cycle = (t * 0.24) % 1.0; // 0..1: Before -> During (0.45) -> After collision
+    const tau = (cycle - 0.45) * 2.2; // -1.0 .. +1.2
+    const stage = cycle < 0.32 ? "BEFORE COLLISION" : (cycle < 0.58 ? "DURING 3-BODY COLLISION" : "AFTER COLLISION");
+
+    // Left Panel: 3-Body Real Space Scattering (Red, Green, Blue particles matching UT Austin diagram)
+    const Lcx = -0.50, Lcy = 0.0;
+    V.text("REAL SPACE  (" + stage + ")", -0.94, 0.72, 0.026, COL.dim);
+    V.line(-0.04, -0.78, -0.04, 0.74, COL.grid, 1.0);
+
+    // 3 incoming -> 3-body interaction -> 3 outgoing trajectories (smooth hyperbolic scattering)
+    const cols3 = [[0.96, 0.26, 0.24, 0.96], [0.28, 0.88, 0.36, 0.96], [0.28, 0.56, 0.98, 0.96]];
+    function pos3(idx, s) {
+      const bend = 0.5 * (1 + Math.tanh(s * 3.2)); // smooth 0 -> 1 transition through collision
+      const xIn  = idx === 0 ? -0.34 + 0.27 * (s + 1) : (idx === 1 ? -0.10 + 0.08 * (s + 1) :  0.34 - 0.27 * (s + 1));
+      const xOut = idx === 0 ? -0.07 - 0.32 * Math.max(0, s) : (idx === 1 ? -0.02 + 0.14 * Math.max(0, s) :  0.07 + 0.26 * Math.max(0, s));
+      const x = s < 0 ? xIn : (xIn * (1 - bend) + xOut * bend);
+      const y = -0.04 + s * 0.56 + (idx === 1 ? 0.05 : -0.02) * Math.exp(-s * s * 6);
+      return [Lcx + x, Lcy + y];
+    }
+    for (let i = 0; i < 3; i++) {
+      // Full faint path
+      let px = 0, py = 0;
+      for (let k = 0; k <= 40; k++) {
+        const s = -1.0 + (k / 40) * 2.15;
+        const [x, y] = pos3(i, s);
+        if (k > 0) V.line(px, py, x, y, [cols3[i][0], cols3[i][1], cols3[i][2], s <= tau ? 0.82 : 0.20], s <= tau ? 1.6 : 1.0);
+        px = x; py = y;
+      }
+      const [hx, hy] = pos3(i, tau);
+      V.circ(hx, hy, 0.032, cols3[i], 2.4, 14);
+      V.circ(hx, hy, 0.016, cols3[i], 2.0, 10);
+    }
+    // 3-body interaction glow during collision
+    const collGlow = Math.exp(-tau * tau * 8.0);
+    if (collGlow > 0.05) {
+      V.circ(Lcx, Lcy, 0.11 + 0.04 * (1 - collGlow), [1.0, 0.72, 0.28, 0.45 * collGlow], 1.6, 24);
+    }
+
+    // Right Panel: Jacobi Relative-Momentum Probability Portrait P(k, q)
+    // k = (p1 - p2)/sqrt(2), q = (p1 + p2 - 2p3)/sqrt(6)
+    const Rx0 = 0.06, Rx1 = 0.94, Ry0 = -0.68, Ry1 = 0.64;
+    const Rcx = 0.5 * (Rx0 + Rx1), Rcy = 0.5 * (Ry0 + Ry1), Rw = 0.5 * (Rx1 - Rx0), Rh = 0.5 * (Ry1 - Ry0);
+    V.text(isLiouville ? "LIOUVILLE SPACE P(K,Q)  [PRIGOGINE BAR]" : "HILBERT SPACE P(K,Q)  [CONVENTIONAL]", Rx0, 0.72, 0.025, isLiouville ? [1.0, 0.68, 0.24, 0.95] : [0.34, 0.78, 0.98, 0.95]);
+    V.line(Rx0, Ry0, Rx1, Ry0, COL.grid, 0.9); V.line(Rx0, Ry1, Rx1, Ry1, COL.grid, 0.9);
+    V.line(Rx0, Ry0, Rx0, Ry1, COL.grid, 0.9); V.line(Rx1, Ry0, Rx1, Ry1, COL.grid, 0.9);
+
+    const NX = 52, NY = 52, M = NX + 1;
+    if (!sim.psi || sim.psi.length !== M * (NY + 1)) sim.psi = new Float32Array(M * (NY + 1));
+    const psi = sim.psi;
+    // Prigogine horizontal bar builds up smoothly during the 3-body collision and persists afterward!
+    const barAmp = isLiouville ? (0.18 + 0.82 * (0.5 * (1 + Math.tanh((tau + 0.25) * 3.5)))) : 0.0;
+    const ripple = 0.08 * Math.sin(t * 2.4);
+
+    for (let j = 0; j <= NY; j++) {
+      const q = -1.0 + (2.0 * j) / NY; // vertical Jacobi momentum q
+      for (let i = 0; i <= NX; i++) {
+        const k = -1.0 + (2.0 * i) / NX; // horizontal Jacobi momentum k
+        const ak = Math.abs(k);
+        // 1) Central energy-conservation shell ring (centered slightly above origin as in Miyasaka's plots)
+        const rRing = Math.hypot(k, q - 0.22);
+        const ring = Math.exp(-Math.pow((rRing - 0.36) / 0.085, 2)) * (0.85 + 0.35 * Math.exp(-Math.pow((q + 0.02) / 0.28, 2)));
+        // 2) Asymptotic binary-collision V-wings (q = 1.65*|k| - 0.56)
+        const dWing = Math.abs(q - (1.62 * ak - 0.58));
+        const wings = Math.exp(-Math.pow(dWing / 0.072, 2)) * Math.exp(-Math.pow(ak - 0.52, 2) * 0.9);
+        // 3) Lower interference X-saddle (two crossing binary channels below the energy shell)
+        const dX1 = Math.abs(q + 0.62 - 1.55 * k);
+        const dX2 = Math.abs(q + 0.62 + 1.55 * k);
+        const xSaddle = 0.72 * (Math.exp(-Math.pow(dX1 / 0.075, 2)) + Math.exp(-Math.pow(dX2 / 0.075, 2))) * Math.exp(-Math.pow((q + 0.62) / 0.34, 2));
+        // 4) Prigogine Liouville-space persistent horizontal correlation bar (q ~ -0.06, independent of k!)
+        const hBar = barAmp * 0.95 * Math.exp(-Math.pow((q + 0.06) / 0.145, 2)) * (0.68 + 0.32 * Math.cos(k * 7.5 + ripple));
+        psi[j * M + i] = ring + 0.85 * wings + xSaddle + hBar;
+      }
+    }
+
+    const levels = [0.22, 0.42, 0.65, 0.90, 1.18, 1.48, 1.80];
+    marchContours(V, psi, NX, NY, Rx0, Rx1, Ry0, Ry1, levels, (xm, ym, v0, v1, v2, v3) => {
+      const val = 0.25 * (v0 + v1 + v2 + v3);
+      const uCol = Math.max(0.04, Math.min(0.95, 1.0 - val / 1.95));
+      return [dipoleColor(uCol, 0.38 + 0.56 * Math.min(1, val / 1.4)), 1.25 + 0.45 * Math.min(1, val / 1.5)];
+    });
+    V.text("K = (P1-P2)/SQRT(2)", Rcx - 0.20, Ry0 - 0.04, 0.022, COL.dim);
+    return [["FORMALISM", isLiouville ? "LIOUVILLE" : "HILBERT"], ["BAR", isLiouville ? "PERSISTENT" : "ABSENT"], ["PART", (p + 1) + " / 3"]];
+  }
+
+  // Part 3: Classical RK4 Chaotic 3-Body Gravitational Scattering (Real X-Y + Radial Phase Space)
   function reset() {
     // Classic chaotic binary + intruder scattering encounter (zero net momentum)
     sim.st = [
@@ -4736,7 +4828,19 @@ const STATIONS = [
   { roman: "XXIII", cat: "ELECTRODYNAMICS & OPTICS", disc: "ELECTRODYNAMICS 2D", title: "Four charges radiate in four lobes", sub: "Exact 2D oscillating electric quadrupole stream-function contours shedding cloverleaf radiation loops.", formula: "ΨQ = sin²θ cosθ [(3/(kr)² − 1)cos + (3/kr)sin]", note: "When dipole moment vanishes, quadrupole radiation dominates in four symmetric quadrants.", draw: drawQuadrupole2D },
   { roman: "XXIV", cat: "ELECTRODYNAMICS & OPTICS", disc: "ELECTRODYNAMICS 3D", title: "Electric and magnetic waves travel at right angles", sub: "Rotating 3D transverse Maxwell wave showing E ⊥ B ⊥ k and Poynting energy flux S = E × B / μ₀.", formula: "E(x,t) = E₀ sin(kx−ωt) ŷ      S = (1/μ₀) E × B", note: "Changing E sustains B and changing B sustains E at speed c.", draw: drawEMWave3D },
   { roman: "XXV", cat: "MECHANICS & CHAOS", disc: "NONLINEAR DYNAMICS", title: "Deterministic equations, unpredictable wings", sub: "Two Lorenz trajectories 0.0005 apart shown in real 3D space and simultaneous X–Z / X–Y phase space.", formula: "ẋ = σ(y−x)      ẏ = x(ρ−z)−y      ż = xy−βz", note: "Bounded, deterministic, and exponentially sensitive to initial state.", draw: drawLorenz },
-  { roman: "XXVI", cat: "MECHANICS & CHAOS", disc: "NONLINEAR DYNAMICS", title: "Three bodies have no closed-form future", sub: "Chaotic 3-body gravitational scattering shown simultaneously in real (X,Y) and radial phase space (r, vr).", formula: "r̈ᵢ = Σ G mⱼ (rⱼ − rᵢ) / |rⱼ − rᵢ|³", note: "A single intruder transfers energy chaotically across bound and unbound phase branches.", draw: drawThreeBody },
+  {
+    roman: "XXVI", cat: "MECHANICS & CHAOS", disc: "NONLINEAR DYNAMICS", parts: 3,
+    title: "Three bodies scatter across irreversible correlations",
+    sub: "Prigogine–Petrosky–Miyasaka Liouville-space 3-body scattering vs Hilbert space and classical RK4 chaos (↑/↓ or 1–3).",
+    formula: "i ∂ρ/∂t = L ρ      k = (p₁−p₂)/√2      q = (p₁+p₂−2p₃)/√6",
+    note: "Press ↓ to compare Liouville-space (horizontal bar), Hilbert-space, and classical 3-body chaos.",
+    partMeta: [
+      { title: "Prigogine Liouville-space 3-body scattering (arrow of time)", sub: "Real-space 3-body collision (left) and Jacobi relative-momentum portrait P(k, q) (right) showing the persistent horizontal correlation bar.", formula: "i ∂ρ/∂t = L ρ      P(k, q) develops persistent bar at q ≈ q₀", note: "Part 1/3 — UT Austin Prigogine Center model. Press ↓ for conventional Hilbert space." },
+      { title: "Conventional Hilbert-space 3-body scattering (reversible)", sub: "Same 3-body collision in conventional quantum scattering theory: energy-shell ring & V-wings without the horizontal bar.", formula: "iℏ ∂ψ/∂t = H ψ      T-symmetric (no persistent bar)", note: "Part 2/3 — Press ↓ for classical RK4 chaotic 3-body gravitational scattering." },
+      { title: "Classical RK4 chaotic 3-body gravitational scattering", sub: "Binary + intruder encounter shown simultaneously in real space (X, Y) and radial phase space (r, vr).", formula: "r̈ᵢ = Σ G mⱼ (rⱼ − rᵢ) / |rⱼ − rᵢ|³", note: "Part 3/3 — Chaotic energy exchange across bound and unbound phase branches." },
+    ],
+    draw: drawThreeBody,
+  },
   {
     roman: "XXVII", cat: "ELECTRODYNAMICS & OPTICS", disc: "FIELD TOPOLOGY I", parts: 4,
     title: "Static fields organize around saddles and mirrors",
@@ -5022,10 +5126,7 @@ function enter(i, p) {
 }
 function selectPart(p) {
   const nParts = STATIONS[index].parts || 1;
-  if (nParts <= 1) {
-    enter(index + (p >= partIdx ? 1 : -1), 0);
-    return;
-  }
+  if (nParts <= 1) return;
   partIdx = ((p % nParts) + nParts) % nParts;
   sim = {}; simTime = 0; dwell = 0;
   renderChrome();
