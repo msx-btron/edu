@@ -123,14 +123,14 @@
   #legend::-webkit-scrollbar-thumb:hover, #index::-webkit-scrollbar-thumb:hover {
     background: rgba(232, 164, 84, 0.92);
   }
-  #legend.open { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #legend.open { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 16px; }
   #index.open {
     display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch;
     padding: 64px max(28px, calc(50% - 460px)) 44px;
   }
   .card {
     border: 1px solid var(--line); background: rgba(10,12,18,0.95);
-    padding: 20px 24px; max-width: 520px; width: 100%;
+    padding: 20px 24px; max-width: 720px; width: 100%;
   }
   .card h2, #index h2 {
     font-family: var(--display); font-weight: 400; font-size: 13px;
@@ -140,8 +140,16 @@
     display: flex; justify-content: space-between; gap: 16px;
     padding: 6px 0; border-bottom: 1px solid rgba(230,225,214,0.08); font-size: 12px;
   }
-  .krow .k { color: var(--cyan); letter-spacing: 0.08em; }
+  .krow .k { color: var(--cyan); letter-spacing: 0.08em; white-space: nowrap; }
   .krow .d { color: var(--paper); text-align: right; }
+  .mrow {
+    display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: baseline;
+    padding: 7px 0; border-bottom: 1px solid rgba(230,225,214,0.08); font-size: 11.5px; line-height: 1.5;
+  }
+  .mrow:last-child { border-bottom: none; }
+  .mrow .mk { color: var(--amber); font-weight: 500; letter-spacing: 0.08em; white-space: nowrap; }
+  .mrow .mf { color: var(--paper); }
+  .mrow .ms { display: block; color: var(--dim); font-size: 10.5px; margin-top: 2px; }
   .idx-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
   .idx-cat {
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; color: var(--cyan);
@@ -174,11 +182,12 @@
     <a class="hal-id" href="index.html" style="color:inherit;text-decoration:none;pointer-events:auto" title="Back to Home"><span class="eye" id="eye"></span> HAL 9000 <span style="color:var(--amber)">SYNTH</span></a>
     <div class="title-block">
       <div class="name" id="d-name">HARMONIC FAN</div>
-      <div class="meta" id="d-meta">DEMO 01/16 · PART 1/4 · F(Y) = 261.63 · 2^Y HZ</div>
+      <div class="meta" id="d-meta">DEMO 01/24 · PART 1/4 · F(Y) = 261.63 · 2^Y HZ</div>
     </div>
     <div class="status">
       <a class="pill portal-link" href="Physics.html" title="Switch to Physics Console">PHYSICS</a>
       <a class="pill portal-link" href="Math.html" title="Switch to Pure Mathematics">MATH</a>
+      <span class="pill" id="btn-bsound" title="Jump to B-Sound Virtual DSP Section (B)">B-SOUND</span>
       <span class="pill" id="btn-audio" title="Click or press Space to toggle audio">AUDIO OFF</span>
       <span class="pill" id="btn-idx" title="Index (I)">IDX</span>
       <span class="pill" id="btn-help" title="Controls (?)">?</span>
@@ -201,13 +210,69 @@
       <h2>HAL 9000 // INPUT MATRIX</h2>
       <div class="krow"><span class="k">CLICK / SPACE</span><span class="d">Start audio · Play / Pause</span></div>
       <div class="krow"><span class="k">DRAG ON GRAPH</span><span class="d">Scrub X cursor live</span></div>
-      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Demo (1–16)</span></div>
+      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Demo (1–24)</span></div>
       <div class="krow"><span class="k">↑ / ↓  or  1–8</span><span class="d">Previous / Next / Jump Part</span></div>
+      <div class="krow"><span class="k">B</span><span class="d">Jump / Cycle B-Sound Virtual DSP (17–24)</span></div>
       <div class="krow"><span class="k">WHEEL</span><span class="d">Switch Demo (Shift: Switch Part)</span></div>
       <div class="krow"><span class="k">M</span><span class="d">Mute / Unmute Synth</span></div>
       <div class="krow"><span class="k">A</span><span class="d">Toggle Auto-Advance Parts</span></div>
       <div class="krow"><span class="k">I / TAB</span><span class="d">Demo Catalogue Index</span></div>
       <div class="krow"><span class="k">? / H / ESC</span><span class="d">Toggle / Close Overlay</span></div>
+    </div>
+    <div class="card">
+      <h2>PRO DSP MARKERS // 12 SYNTHESIS &amp; FILTER PRIMITIVES (ALL 24 DEMOS)</h2>
+      <div class="mrow">
+        <span class="mk">○ SINE</span>
+        <span class="mf">w(φ) = sin(φ)   [sub f &lt; 95 Hz: 0.90·sin(φ)+0.10·sin(2φ) · Math-Synth f &lt; 115 Hz: tanh(1.35·sin φ)]<span class="ms">Oscillator · shimDing · shimPulseSquash · shimFloat · shimDance · shimKick · shimGrandPiano · shimTimpani</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">△ TRI</span>
+        <span class="mf">w(φ) = (2/π) · arcsin(sin(φ))<span class="ms">Oscillator · shimWaddle · shimGuitar · shimSaxFlute · shimPedalBass · shimPianoHammer · Snare shell · Boing</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">◿ SAW</span>
+        <span class="mf">w(φ) = 0.62 · Σ_{k=1..4} ((−1)^(k−1) / k) · sin(k·φ)<span class="ms">Band-limited Saw · shimViolin · shimCello · shimSwarmatron core</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">⊓ PLS</span>
+        <span class="mf">w(φ) = 0.78 · tanh(3.4 · sin(φ))   [band-limited pulse / square]<span class="ms">Pulse / Square · shimIndustrialBass sq · shimCyberLead sq · shimIndustrialSnare 220 Hz ring</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">◇ FM</span>
+        <span class="mf">B-Sound: sin(φ + 1.8·sin(2.76·φ)) [Eq. 12] · Math-Synth f &gt; 950 Hz: 0.72·tanh(2.5·sin φ) + 0.28·sin(2.73·φ)<span class="ms">2-Op FM · shimPulseBell (GM 98, r = 2.76, I = 1.8) &amp; Math-Synth high metallic shimmer</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">⊗ AM</span>
+        <span class="mf">w(φ) = saw₄(φ) · (0.55 + 0.45 · sin(2π f_m t))   [Orchestra Eq. 19 Tremolo / Ring Mod]<span class="ms">Amplitude Mod · shimFrogCroak (32 Hz cuíca friction rasp, 125/155 Hz)</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">✕ NSE</span>
+        <span class="mf">w[n] = H_f(ξ[n]),   ξ[n] = xorshift32() ∈ [−1, 1]   (deterministic white noise)<span class="ms">Stochastic Noise · shimSnare wire · shimIndustrialSnare clank · percussion transients</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">□ SAT</span>
+        <span class="mf">B-Sound: C(x) = ((3+k)x·20°)/(π+k|x|), k = 25 [Eq. 14] · Math-Synth 115–950 Hz: tanh(2.15·sin φ)<span class="ms">WaveShaper Saturation · shimIndustrialKick · shimIndustrialBass · shimCyberLead · Math-Synth odd-harm</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">⤓ LPF</span>
+        <span class="mf">y[n] = y[n−1] + α·(x[n] − y[n−1]),  H_LP(z) [Orchestra Eq. 13]<span class="ms">Resonant Low-Pass · shimCello arco (520 Hz) · shimWaddle bass (180 Hz) · shimTimpani mallet (260 Hz)</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">⤒ HPF</span>
+        <span class="mf">y[n] = x[n] − LP(x[n]),  H_HP(z) [Orchestra Eq. 13]<span class="ms">High-Pass Edge · shimHiHat (7.5 kHz) · shimGlitchZap (1.8 kHz)</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">⟐ BPF</span>
+        <span class="mf">H_BP(z) = (α − α·z⁻²) / (1 + α − 2c·z⁻¹ + (1−α)z⁻²) [Eq. 13]<span class="ms">Formant Band-Pass · shimPedalSwoosh (450→280 Hz) · shimSaxFlute breath (1.8f) · shimViolin rosin (3.2 kHz)</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">≈ LFO</span>
+        <span class="mf">φ_mod(t) = φ(t) + d · sin(2π f_LFO t)   [Orchestra Eq. 17 Chorus / Vibrato]<span class="ms">Pitch / Ribbon LFO · shimViolin (5.8 Hz delayed vibrato) · shimSwarmatron ribbon drift</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">METERS</span>
+        <span class="mf">dBFS = 20·log₁₀(|x|) · RMS = √(Σx²/N) · LIM: |x| &gt; 0.85 [Eq. 20] · MIDI n = round(60 + 12y) · ↗/↘ df/dt<span class="ms">ISO 16 Pitch Grid (A4 = 440 Hz, C2–C6) · Stereo Balance L──●──R (Eq. 8) · WCET 632 µs @ Q = 32</span></span>
+      </div>
     </div>
   </aside>
 

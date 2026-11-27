@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Formal Models &amp; Math Synth · B-System EDU</title>
   <meta name="description"
-    content="B-System EDU interactive portals: Math.html (12 pure 3D WebGL1 special functions, Calabi-Yau, Yang-Mills &amp; complex analysis models), Music.html (HAL 9000 2D analytical function synthesizer with 16 multi-part demos), and Physics.html (41 WebGL1 vector CRT formal physics &amp; computer-engineering simulations).">
+    content="B-System EDU interactive portals: Math.html (13 pure 3D WebGL1 special functions, Calabi-Yau, Yang-Mills &amp; complex analysis models), Music.html (HAL 9000 2D analytical function synthesizer with 24 multi-part demos including the B-Sound Virtual DSP section), and Physics.html (42 WebGL1 vector CRT formal physics &amp; computer-engineering simulations).">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -782,9 +782,10 @@
             Yang–Mills &amp; 4D Hopf Fibrations, Lie manifolds, and 3D Complex Analysis.
           </p>
           <p class="en">
-            <strong>Music.html</strong> synthesizes sixteen multi-part analytical demos (56 parts) at 48 kHz continuous phase
-            integration, while <strong>Physics.html</strong> renders forty-one WebGL1 vector CRT models across electrodynamics,
-            8085/Z80/4004 CPU logic, Audio DSP, quantum interference, and Schwarzschild black holes.
+            <strong>Music.html</strong> synthesizes twenty-four multi-part analytical demos (134 parts) at native sample rate
+            — 16 Math-Synth studies (including the 16-part album-harmonic <em>Analytical Etudes</em>) plus an 8-demo (66-part) <strong>B-Sound Virtual DSP</strong> section modelling all 23 B-System
+            procedural sound shims and 4 full 1:1 compositions — while <strong>Physics.html</strong> renders forty-two WebGL1 vector CRT
+            models across electrodynamics, 8085/Z80/4004 CPU logic, Audio DSP, quantum interference, and black holes.
           </p>
         </div>
 
@@ -816,13 +817,13 @@
               <div class="portal-kicker">Portal I · Lead Main · Analytical Audio</div>
               <h3>Music.html</h3>
               <p>
-                Sixteen multi-part analytical function demos in a minimal HAL 9000 CRT console.
-                Every curve drives continuous 48 kHz phase-integrated synthesis with live cursor
-                scrubbing, exact part formulas, and hidden input legend.
+                Twenty-four multi-part analytical function demos in a minimal HAL 9000 CRT console:
+                16 Math-Synth curves plus a dedicated 8-demo B-Sound Virtual DSP section covering
+                B-System's procedural shims (FM, triangle, saw, noise, WaveShaper) and 4 full compositions.
               </p>
-              <div class="metric-row"><span>Engine</span><span>synth-engine.js (Web Audio)</span></div>
-              <div class="metric-row"><span>Repertoire</span><span>16 Demos · 56 Parts</span></div>
-              <div class="metric-row"><span>Controls</span><span>Drag X · ←/→ · ↑/↓ · I · ?</span></div>
+              <div class="metric-row"><span>Engine</span><span>synth-engine.js (Web Audio DSP)</span></div>
+              <div class="metric-row"><span>Repertoire</span><span>24 Demos · 134 Parts (66 B-Sound)</span></div>
+              <div class="metric-row"><span>Controls</span><span>Drag X · ←/→ · ↑/↓ · B · I · ?</span></div>
             </div>
             <div class="portal-foot">
               <span>HAL 9000 Math Synth</span>
@@ -1025,8 +1026,8 @@
       <div class="wrap">
         <div class="band-head">
           <span class="band-index">02 / Music</span>
-          <h2>Music.html — 16 Digitized Math-Synth Demos</h2>
-          <p class="band-eyebrow">Piecewise · Bitmask Rhythms · Diatonic Canons · Analytical Etudes</p>
+          <h2>Music.html — 24 Math-Synth &amp; B-Sound Virtual DSP Demos</h2>
+          <p class="band-eyebrow">Piecewise · Bitmask Rhythms · Analytical Etudes · B-System B-Sound Virtual DSP Processor</p>
         </div>
         <figure class="plate">
           <table class="cmp">
@@ -1062,17 +1063,34 @@
               </tr>
               <tr>
                 <td data-label="Demos">13–16</td>
-                <td data-label="Suite">Sage · Sapphire · Neon · Analytical Etudes</td>
-                <td class="num" data-label="Parts"><span class="badge badge-gold">10 Parts</span></td>
-                <td data-label="Core">Piecewise funk/arp leads, vibrato plucks, nested FM
-                  <code>2.8 sin(5 sin(4 sin(3 sin(2 sin x))))</code>
+                <td data-label="Suite">Sage · Sapphire · Neon · Analytical Etudes (16 Parts)</td>
+                <td class="num" data-label="Parts"><span class="badge badge-gold">22 Parts</span></td>
+                <td data-label="Core">Piecewise funk/arp leads, vibrato plucks, and 16-part consonant
+                  <em>Analytical Etudes</em> (4 album-inspired pure-math suites using all 12 DSP primitives)
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Demos">17–20</td>
+                <td data-label="Suite">B-Sound Shims (Kinematic · Percussion · Orchestra · Industrial)</td>
+                <td class="num" data-label="Parts"><span class="badge badge-teal">32 Parts</span></td>
+                <td data-label="Core">All 23 B-System Virtual DSP shims (8 parts each): <code>shimWaddle</code>,
+                  <code>shimPulseSquash</code>, 2-Op FM <code>shimPulseBell</code> (2.76×, I=1.8),
+                  <code>shimViolin</code>, <code>shimSwarmatron</code> &amp; WaveShaper saturation
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Demos">21–24</td>
+                <td data-label="Suite">B-Sound Compositions (Tracks 1–4, 1:1 Tempo)</td>
+                <td class="num" data-label="Parts"><span class="badge badge-teal">34 Parts</span></td>
+                <td data-label="Core">4 full 8-part 1:1 B-System tracks: <em>Carol of the Bells</em> (168 BPM 3/4),
+                  <em>Green Caterpillar</em> (98 BPM Jazz), <em>House of the Rising Sun</em> (6/8), <em>TRON Init</em> (93 BPM)
                 </td>
               </tr>
             </tbody>
           </table>
           <figcaption>
-            <span><b>Music.html</b> — 16 Demos / 56 Parts · 48 kHz Continuous Phase Integration</span>
-            <span><a href="Music.html">Open Music.html →</a></span>
+            <span><b>Music.html</b> — 24 Demos / 134 Parts · Live DSP Markers &amp; 1:1 B-Sound Virtual DSP</span>
+            <span><a href="Music.html#bsound">Open B-Sound Section →</a> · <a href="Music.html">Open Music.html →</a></span>
           </figcaption>
         </figure>
       </div>
@@ -1258,7 +1276,7 @@
       <div>
         <h4>Physics &amp; Music</h4>
         <ul>
-          <li><a href="Music.html">01 · Harmonic Fan · 16 · Etudes</a></li>
+          <li><a href="Music.html">01–16 · Math-Synth · 17–24 · B-Sound DSP</a></li>
           <li><a href="Physics.html">XVII–XVIII · Schwarzschild Black Hole</a></li>
           <li><a href="Physics.html">XXVII–XXXII · Electrodynamics Zoo</a></li>
           <li><a href="Physics.html">XXXVII–XLI · 8085 / Z80 / Intel 4004</a></li>
