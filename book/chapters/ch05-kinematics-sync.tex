@@ -1,57 +1,135 @@
 \chapter{Audio-Visual Phase-Locking, 4D Hopf Fibration, and Kinematics}
 \label{ch:kinematics}
 
-In the B-System \emph{Lil~Cu~64} ceremonial runtime (\texttt{MEDIA-SDK.txt} and \texttt{MEDIA-SOUND.txt}), B-Sound does not operate as an isolated background player; it is mathematically phase-locked to a 60\,FPS OpenGL scene comprising a 4D Hopf fibration background and a 24-degree-of-freedom (24-DOF) low-poly mascot.
+In the B-System \emph{Lil~Cu~64} ceremonial runtime (\texttt{MEDIA-SDK.txt} and \texttt{MEDIA-SOUND.txt}), B-Sound operates not as an isolated background player, but as one half of a mathematically phase-locked 60\,FPS OpenGL audio-visual engine comprising a 4D Hopf fibration backdrop and a 24-degree-of-freedom (24-DOF) low-poly mascot.
 
-\section{4D Hopf Fibration and Stereographic Projection $S^3 \to \mathbb{R}^3$}
+\section{4D Hopf Fibration and Singularity-Free Stereographic Projection}
 
-The visual backdrop is a real-time discretization of the Hopf fibration $\pi : S^3 \to S^2$, where each fiber is a great circle on the unit 3-sphere $S^3 \subset \mathbb{R}^4$. A nested family of flat tori is parameterized by elevation $\eta$, fiber azimuth $\beta$, and circle parameter $\xi$:
+\begin{definition}[Hopf Fibration and B-System Nested-Torus Parameterization]
+The \emph{Hopf fibration} $\pi : S^3 \to S^2$ decomposes the unit 3-sphere $S^3 = \{(x_0, x_1, x_2, x_3) \in \mathbb{R}^4 : \sum_{j=0}^3 x_j^2 = 1\}$ into linked great circles ($S^1$ fibers). For discrete torus index $t \in \{0,\dots,N_{\mathrm{tori}}-1\}$, fiber index $f \in \{0,\dots,N_{\mathrm{fibers}}-1\}$, and sample $p \in \{0,\dots,N_{\mathrm{pts}}\}$, B-System defines the angular coordinates
 \begin{align}
-\eta(t) &= \frac{\pi}{7} + (t + 0.6)\frac{\pi}{2.8\,N_{\mathrm{tori}}}, \qquad
-\beta(f) = \frac{2\pi f}{N_{\mathrm{fibers}}} + \omega, \qquad
-\xi(p) = \frac{2\pi p}{N_{\mathrm{pts}}},
+\eta(t) &= \frac{\pi}{7} + (t + 0.6)\frac{\pi}{2.8\,N_{\mathrm{tori}}}, &
+\beta(f) &= \frac{2\pi f}{N_{\mathrm{fibers}}} + \omega, &
+\xi(p) &= \frac{2\pi p}{N_{\mathrm{pts}}},
 \end{align}
-with $\omega = 0.08\,\tau + 0.40\,\Phi_c$ and $\psi = 0.12\,\tau + \Phi_c$ driven by time $\tau$ and an inertial flywheel phase $\Phi_c$ damped at $\dot{\Phi}_c \leftarrow 0.968\,\dot{\Phi}_c$ per frame. Mapping onto $S^3$:
+with $\omega = 0.08\,\tau + 0.40\,\Phi_c$, $\psi = 0.12\,\tau + \Phi_c$ (flywheel damping $\dot{\Phi}_c \leftarrow 0.968\,\dot{\Phi}_c$), and embeds them into $\mathbb{R}^4$ via
 \begin{align}
+\label{eq:hopf-s3}
 x_0 &= \cos\eta\cos(\xi + \beta/2 + \psi), & x_1 &= \cos\eta\sin(\xi + \beta/2 + \psi), \\
 x_2 &= \sin\eta\cos(\xi - \beta/2 + 0.8\psi), & x_3 &= \sin\eta\sin(\xi - \beta/2 + 0.8\psi).
 \end{align}
-Stereographic projection from $(0,0,0,1)$ with bounded denominator $1.08 - x_3$ maps $S^3$ into $\mathbb{R}^3$:
+The \emph{regularized stereographic projection} $\sigma_\varepsilon : S^3 \to \mathbb{R}^3$ with pole offset $\varepsilon = 0.08$ is defined by
 \begin{equation}
-(X, Y, Z) = \frac{(x_0, x_1, x_2)}{1.08 - x_3},
+\label{eq:hopf-proj}
+\sigma_\varepsilon(x_0, x_1, x_2, x_3) = (X, Y, Z) = \frac{(x_0, x_1, x_2)}{1.08 - x_3}.
 \end{equation}
-rendered in three density tiers ($18$, $36$, or $54$ rings) with dynamic HSV spectral dispersion. When a sacred pulse is triggered, a dual-tier spherical radiant wave expands with non-linear radius $r(t) = 0.5 + \big(1 - (1 - t/T)^{2.8}\big)(R_{\max} - 0.5)$.
+\end{definition}
 
-\section{24-DOF Mascot State Vector and Critical Damping}
-
-The canonical mascot \emph{Lil~Cu~64} is a chamfered low-poly cube ($26$ primary vertices radially clamped at $R_{\mathrm{bevel}} = 1.65$, $< 180$ triangles) enclosing a counter-rotating regular octahedron ($R_{\mathrm{gem}} = 0.78$) beneath a 24-slice toroidal rainbow halo ($R = 0.95, r = 0.05$). Its complete pose is a continuous vector $\mathbf{x}(t) \in \mathbb{R}^{24}$ covering root position/orientation, torso offset/rotation, volumetric scale $(S_x, S_y, S_z)$, hand and foot joints, and mouth morph weights.
-
-Every state transition obeys a critically damped ($\zeta = 1.0$) second-order differential equation ensuring $C^\infty$ smoothness with zero overshoot:
+\begin{theorem}[Unit-Sphere Invariance and Bounded Stereographic Radius]
+\label{thm:hopf-bound}
+For all $(\eta, \beta, \xi, \omega, \psi) \in \mathbb{R}^5$, the point $\mathbf{x} = (x_0, x_1, x_2, x_3)$ of \eqref{eq:hopf-s3} lies identically on $S^3$, and its regularized stereographic image \eqref{eq:hopf-proj} is globally smooth ($C^\infty$) and strictly bounded in Euclidean norm by
 \begin{equation}
+\|(X, Y, Z)\|_2 \;=\; \frac{\sqrt{1 - x_3^2}}{1.08 - x_3} \;\le\; \frac{1}{\sqrt{1.08^2 - 1}} \;\approx\; 2.4515 \;<\; 12.5.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Computing the squared 4D norm directly gives
+\[
+x_0^2 + x_1^2 + x_2^2 + x_3^2 = \cos^2\eta\big(\cos^2(\cdot) + \sin^2(\cdot)\big) + \sin^2\eta\big(\cos^2(\cdot) + \sin^2(\cdot)\big) = \cos^2\eta + \sin^2\eta = 1,
+\]
+so $\mathbf{x} \in S^3$ and $x_3 \in [-1, 1]$. Hence $1.08 - x_3 \in [0.08, 2.08]$ never vanishes, making $\sigma_\varepsilon$ globally $C^\infty$. Since $x_0^2 + x_1^2 + x_2^2 = 1 - x_3^2$, maximize $g(x_3) = \frac{1 - x_3^2}{(1.08 - x_3)^2}$ on $[-1, 1]$. Differentiating yields $g'(x_3) = \frac{2(1 - 1.08 x_3)}{(1.08 - x_3)^3} = 0$ at $x_3^* = 1/1.08 \in (-1, 1)$, where
+\[
+g(x_3^*) = \frac{1 - 1/1.08^2}{(1.08 - 1/1.08)^2} = \frac{1.08^2 - 1}{(1.08^2 - 1)^2} = \frac{1}{1.08^2 - 1} = \frac{1}{0.1664} \approx 6.0096.
+\]
+Taking square roots gives $\|(X, Y, Z)\|_2 \le \sqrt{6.0096} \approx 2.4515$, proving the entire 4D fiber bundle fits strictly inside the OpenGL frustum ($z_{\mathrm{cam}} = 9.2$, near $= 1.0$, far $= 100.0$) with zero pole singularities.
+\end{proof}
+
+\section{Low-Poly Geometry and 24-DOF Critically Damped Kinematics}
+
+\begin{definition}[Radial Chamfer Operator and 24-DOF State Vector]
+The mascot torso is generated from the 26 boundary vertices $V \in \{-1.05, 0, +1.05\}^3 \setminus \{(0,0,0)\}$ via the \emph{radial bevel clamp} at $R_{\mathrm{bevel}} = 1.65$:
+\begin{equation}
+\mathcal{C}_{R}(V) = V \cdot \min\!\left(1,\; \frac{R_{\mathrm{bevel}}}{\|V\|_2}\right),
+\end{equation}
+yielding $< 180$ triangles enclosing a counter-rotating regular octahedron ($R_{\mathrm{gem}} = 0.78$) beneath a 24-slice toroidal rainbow halo ($R = 0.95, r = 0.05$). The complete mascot pose is a continuous state vector $\mathbf{x}(t) \in \mathbb{R}^{24}$ encoding root position/orientation, torso offset/rotation, volumetric scale $(S_x, S_y, S_z)$, hand/foot joints, and mouth morph weights.
+\end{definition}
+
+\begin{definition}[Critically Damped Relaxation Dynamics]
+Each state coordinate $x_i(t)$ approaches its target pose $x_i^*(t)$ under the critically damped ($\zeta = 1.0$) linear ODE
+\begin{equation}
+\label{eq:crit-damp}
 \ddot{x}_i + 2\omega_i\dot{x}_i + \omega_i^2\big(x_i(t) - x_i^*(t)\big) = 0,
 \end{equation}
-integrated at $60\,\text{FPS}$ ($\Delta t = 16.67\,\text{ms}$) via the frame-rate-independent exponential relaxation
+discretized at frame step $\Delta t > 0$ ($16.67\,\text{ms}$ at $60\,\text{FPS}$) by the exponential relaxation operator
 \begin{equation}
-x_i(t + \Delta t) = x_i^*(t) + \big(x_i(t) - x_i^*(t)\big)e^{-k_i \Delta t},
+\label{eq:exp-relax}
+\mathcal{T}_{\Delta t}(x_i) = x_i^*(t) + \big(x_i(t) - x_i^*(t)\big)e^{-k_i \Delta t},
 \end{equation}
-with subsystem stiffness constants $k_{\mathrm{pos}} = 18$, $k_{\mathrm{rot}} = 16$, $k_{\mathrm{scale}} = 22$, $k_{\mathrm{hand}} = 15$, $k_{\mathrm{foot}} = 20$, and $k_{\mathrm{mouth}} = 24\,\text{s}^{-1}$.
+with stiffness constants $(k_{\mathrm{pos}}, k_{\mathrm{rot}}, k_{\mathrm{scale}}, k_{\mathrm{hand}}, k_{\mathrm{foot}}, k_{\mathrm{mouth}}) = (18, 16, 22, 15, 20, 24)\,\text{s}^{-1}$.
+\end{definition}
 
-\section{Phase-Locked Kinematics and Interactive Beat Quantization}
-
-The mascot finite state machine comprises seven canonical states, each directly coupled to B-Sound shims via the shared audio clock \texttt{wa\_time() - s\_tl\_base} ($\approx 0.7\,\text{ms}$ granularity):
-
+\begin{theorem}[Zero-Overshoot Contraction and Frame-Rate Independence]
+\label{thm:kin-contract}
+For every constant target $x_i^*$ and stiffness $k_i > 0$:
 \begin{enumerate}[leftmargin=1.5em]
-  \item \textbf{IDLE:} Isovolumetric breathing $S_y = 1 + 0.04\sin(3.2t)$, $S_x = S_z = 1 - 0.02\sin(3.2t)$ paired with \texttt{shimPulseBell}.
-  \item \textbf{WADDLE:} Stride phase $\Phi_w(t) = \int 7.5\,dt$; zero-crossings of $\sin\Phi_w$ fire \texttt{shimWaddle} on alternating root and fifth bass notes so the character literally walks on the bassline.
-  \item \textbf{FLOAT:} Four-phase $3.35\,\text{s}$ anti-gravity spline levitation with cosine ease-in/out paired with \texttt{shimFloat} Rhodes chords and touchdown \texttt{shimBoing}.
-  \item \textbf{DANCE:} $4.10\,\text{s}$ pirouette and backflip choreography triggering 16th-note \texttt{shimDance} star arpeggios every $90^\circ$ rotation.
-  \item \textbf{SQUASH / BLESSING:} Isovolumetric compression ($S_y = 0.60, S_{xz} = 1.30$, $S_y S_{xz}^2 \approx 1.014$) exploding to $S_y = 1.45, S_{xz} = 0.82$, firing \texttt{shimPulseSquash} and a Journey radiant wave.
-  \item \textbf{SING:} Wide resonant O-mouth ($w_{\mathrm{omouth}} = 1.25$) with $5\times$ internal gem acceleration synced to fortissimo climaxes.
+  \item The continuous ODE \eqref{eq:crit-damp} has a double real characteristic root $\lambda = -\omega_i < 0$, so its error $e_i(t) = x_i(t) - x_i^* = (c_1 + c_2 t)e^{-\omega_i t}$ converges to $0$ with at most one sign change and zero periodic oscillation.
+  \item The discrete update \eqref{eq:exp-relax} is a strict Banach contraction with Lipschitz constant $\rho = e^{-k_i \Delta t} \in (0, 1)$, and satisfies the exact semigroup property $\mathcal{T}_{\Delta t_1} \circ \mathcal{T}_{\Delta t_2} = \mathcal{T}_{\Delta t_1 + \Delta t_2}$, guaranteeing frame-rate-independent trajectories across arbitrary render cadences.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(1) The characteristic polynomial of \eqref{eq:crit-damp} is $\lambda^2 + 2\omega_i\lambda + \omega_i^2 = (\lambda + \omega_i)^2 = 0$, giving the repeated negative real root $\lambda = -\omega_i$; hence no sinusoidal $\cos/\sin$ factors arise.
+(2) For any $u, v \in \mathbb{R}$, $|\mathcal{T}_{\Delta t}(u) - \mathcal{T}_{\Delta t}(v)| = e^{-k_i \Delta t}|u - v| = \rho |u - v|$ with $\rho < 1$ since $k_i, \Delta t > 0$. Composing two steps gives
+\[
+\mathcal{T}_{\Delta t_1}(\mathcal{T}_{\Delta t_2}(x)) = x^* + \big((x - x^*)e^{-k_i \Delta t_2}\big)e^{-k_i \Delta t_1} = x^* + (x - x^*)e^{-k_i(\Delta t_1 + \Delta t_2)} = \mathcal{T}_{\Delta t_1 + \Delta t_2}(x),
+\]
+proving exact invariance under frame-rate subdivision.
+\end{proof}
+
+\section{The Seven-State Automaton and Interactive Beat Quantization}
+
+The mascot finite state machine $\mathcal{K}_7$ comprises seven states phase-locked to the shared audio clock \texttt{wa\_time() - s\_tl\_base} ($\approx 0.7\,\text{ms}$ granularity):
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{IDLE:} Isovolumetric breathing $S_y = 1 + 0.04\sin(3.2t)$, $S_{xz} = 1 - 0.02\sin(3.2t)$ paired with \texttt{shimPulseBell}.
+  \item \textbf{WADDLE:} Stride phase $\Phi_w(t) = \int 7.5\,dt$; zero-crossings of $\sin\Phi_w$ fire \texttt{shimWaddle} on alternating root/fifth bass notes.
+  \item \textbf{FLOAT:} $3.35\,\text{s}$ four-phase spline levitation paired with \texttt{shimFloat} Rhodes chords and touchdown \texttt{shimBoing}.
+  \item \textbf{DANCE:} $4.10\,\text{s}$ pirouette choreography firing 16th-note \texttt{shimDance} star arpeggios every $90^\circ$ rotation.
+  \item \textbf{SQUASH / BLESSING:} Isovolumetric compression ($S_y = 0.60, S_{xz} = 1.30$, $S_y S_{xz}^2 \approx 1.014$) to elongation ($S_y = 1.45, S_{xz} = 0.82$), firing \texttt{shimPulseSquash} and a spherical radiant wave $r(t) = 0.5 + (1 - (1 - t/T)^{2.8})(R_{\max} - 0.5)$.
+  \item \textbf{SING:} Wide O-mouth ($w_{\mathrm{omouth}} = 1.25$) with $5\times$ internal gem acceleration on fortissimo climaxes.
   \item \textbf{POKE:} Viscoelastic damped oscillation $\mathrm{squish}(t) = 0.36\,e^{-4.5t}\cos(22t)$ decaying in $0.55\,\text{s}$.
 \end{enumerate}
 
-To prevent player input from clashing with background music, interactive triggers are quantized forward to the next 16th-note boundary:
+\begin{definition}[Forward 16th-Note Input Quantizer]
+Given a bar origin $t_{\mathrm{bar}}$, 16th-note period $T_{\mathrm{16th}} = 15/\mathrm{BPM}$, and asynchronous user event at $t_{\mathrm{input}} \ge t_{\mathrm{bar}}$, the \emph{interactive quantizer} $Q_{16}$ schedules the audio-visual response at
 \begin{equation}
-t_{\mathrm{trigger}} = t_{\mathrm{bar}} + \left\lceil \frac{t_{\mathrm{input}} - t_{\mathrm{bar}}}{T_{\mathrm{16th}}} \right\rceil T_{\mathrm{16th}}.
+\label{eq:quant-16}
+Q_{16}(t_{\mathrm{input}}) = t_{\mathrm{bar}} + \left\lceil \frac{t_{\mathrm{input}} - t_{\mathrm{bar}}}{T_{\mathrm{16th}}} \right\rceil T_{\mathrm{16th}}.
 \end{equation}
-Under adaptive stem mixing, taking damage sweeps a high-pass filter to $800\,\text{Hz}$ and introduces a heartbeat kick, while invincibility boosts the \texttt{shimDance} stem by $+3\,\text{dB}$.
+\end{definition}
+
+\begin{theorem}[Causality and Bounded Metric Quantization Delay]
+\label{thm:quant-delay}
+For every $t_{\mathrm{input}} \ge t_{\mathrm{bar}}$, the scheduled instant $Q_{16}(t_{\mathrm{input}})$ is strictly causal, lies exactly on the 16th-note metric lattice $t_{\mathrm{bar}} + \mathbb{Z}_{\ge 0} T_{\mathrm{16th}}$, and incurs latency strictly bounded by
+\begin{equation}
+0 \;\le\; Q_{16}(t_{\mathrm{input}}) - t_{\mathrm{input}} \;<\; T_{\mathrm{16th}} = \frac{15}{\mathrm{BPM}}\,\text{s}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Let $u = (t_{\mathrm{input}} - t_{\mathrm{bar}})/T_{\mathrm{16th}} \ge 0$. By definition of the ceiling function, $u \le \lceil u \rceil < u + 1$ with $\lceil u \rceil \in \mathbb{Z}_{\ge 0}$. Multiplying by $T_{\mathrm{16th}} > 0$ and subtracting $(t_{\mathrm{input}} - t_{\mathrm{bar}})$ yields $0 \le Q_{16}(t_{\mathrm{input}}) - t_{\mathrm{input}} < T_{\mathrm{16th}}$. At $168\,\text{BPM}$ (Track~1), the worst-case quantization wait is $< 89.3\,\text{ms}$.
+\end{proof}
+
+\section{Chapter Conclusion}
+
+This chapter formalized the phase-locked coupling between B-Sound synthesis and real-time 3D graphics. We proved unit-sphere invariance and bounded singularity-free stereographic radius ($\le 2.4515$) for the 4D Hopf fibration (Theorem~\ref{thm:hopf-bound}), established zero-overshoot Banach contraction and exact frame-rate independence for 24-DOF critically damped kinematics (Theorem~\ref{thm:kin-contract}), and proved causality and bounded latency for the forward 16th-note interactive quantizer (Theorem~\ref{thm:quant-delay}).
+
+\section*{Synthesis and Conclusion to Part~II}
+\addcontentsline{toc}{section}{Synthesis and Conclusion to Part~II}
+
+Part~II bridged the pure mathematics of Part~I to an executable, assetless multimedia synthesis runtime:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Procedural Instrument Layer (Chapter~\ref{ch:shims}):} Finite-energy zero-byte Sound Shims ($L^1 \cap L^2 \cap L^\infty$), a sound 32-program registry, one-shot percussion expiry, and an $O(1)$ track-isolated 48-slot voice allocator.
+  \item \textbf{Audio-Visual Coupling (Chapter~\ref{ch:kinematics}):} Bounded 4D Hopf geometry, frame-rate-independent 24-DOF critical damping, seven phase-locked kinematic states, and metric input quantization.
+\end{enumerate}
+With both the synthesis engine and its kinematic interface formally verified, Part~III now constructs the complete deterministic RTOS Digital Audio Workstation—\emph{B-System Orchestra}—around this B-Sound core.

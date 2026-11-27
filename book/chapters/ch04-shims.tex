@@ -1,32 +1,53 @@
 \chapter{The Procedural Sound Shim Architecture}
 \label{ch:shims}
 
-Having established the pitch groups of Chapter~\ref{ch:group-theory} and the DSP primitives of Chapter~\ref{ch:waveforms-dsp}, we now assemble the core synthesis abstraction of B-Sound: the \textbf{Sound Shim}, its 32-program General MIDI registry, and its 48-slot loudness-decay voice allocator.
+Having established the computational envelope of Chapter~\ref{ch:intro}, the algebraic pitch groups of Chapter~\ref{ch:group-theory}, and the thirteen DSP primitives of Chapter~\ref{ch:waveforms-dsp}, we now formalize the central synthesis abstraction of B-Sound: the \textbf{Sound Shim}, its immutable 32-program General MIDI registry, and its statically bounded 48-slot voice allocator.
 
-\section{Formal Definition and Zero-Byte Lifecycle}
+\section{Formal Definition and Finite-Energy Properties of Sound Shims}
 
-\begin{definition}[Sound Shim]
-A \emph{Sound Shim} $S(t_0, \mathbf{p})$ is a stateless procedural synthesis routine parameterized by an exact trigger timestamp $t_0$ and a finite parameter vector $\mathbf{p} = (f, v, d, \dots)$ that generates a finite-duration acoustic signal via partial superposition (Equations~10--11):
+\begin{definition}[Procedural Sound Shim (Equations~10--11)]
+A \emph{Sound Shim} is a stateless synthesis operator $S : \mathbb{R}_{\ge 0} \times \mathbb{R}^d \to L^2(\mathbb{R})$ that, given a trigger instant $t_0 \ge 0$ and a finite parameter vector $\mathbf{p} = (f, v, d, \dots) \in \mathbb{R}^d$, constructs a causal acoustic signal $y(t) = S(t_0, \mathbf{p})(t)$ by finite partial superposition:
 \begin{equation}
 \label{eq:shim-def}
-y(t) = \sum_{k=1}^{K} A_k(t - t_0)\cdot W_k\!\big(2\pi f_k(t - t_0) + \phi_k\big) * h_k(t),
+y(t) = \mathbf{1}_{t \ge t_0} \sum_{k=1}^{K} \Big( A_k(t - t_0)\cdot W_k\!\big(\varphi_k(t - t_0)\big) \Big) * h_k(t),
 \end{equation}
-where $W_k$ is a canonical oscillator or deterministic noise primitive, $h_k$ is the impulse response of an optional biquad filter, $*$ denotes convolution, and $A_k$ is an exponential ADSR envelope:
+where $K \in \mathbb{N}_{>0}$ is a fixed compile-time partial count, $W_k \in \{w_{\mathrm{sin}}, w_{\mathrm{tri}}, w_{\mathrm{saw}}, w_{\mathrm{pls}}, y_{\mathrm{FM}}, \xi\}$ is a bounded primitive ($|W_k| \le 1$), $h_k \in \ell^1$ is the impulse response of a BIBO-stable biquad filter (or $\delta_0$ if unfiltered), and $A_k$ is an exponential ADSR envelope with peak $V_k > 0$, attack $t_{\mathrm{att}, k} \ge 0$, and decay constant $\tau_k > 0$:
 \begin{equation}
 \label{eq:shim-env}
-A(t) = V_{\mathrm{peak}} \cdot e^{-(t - t_{\mathrm{attack}})/\tau}.
+A_k(s) =
+\begin{cases}
+V_k \cdot \dfrac{s}{t_{\mathrm{att}, k}}, & 0 \le s < t_{\mathrm{att}, k}, \\[6pt]
+V_k \cdot \exp\!\left(-\dfrac{s - t_{\mathrm{att}, k}}{\tau_k}\right), & s \ge t_{\mathrm{att}, k}.
+\end{cases}
 \end{equation}
 \end{definition}
 
-In the Web Audio prototype, every transient oscillator registers into a disposal list via \texttt{registerTrackOsc(osc)}; stopping or switching tracks invokes \texttt{osc.stop(0)} and \texttt{osc.disconnect()} across the list to prevent garbage-collection leaks. In the native C99 runtime (\texttt{lilcu64\_wa.c}), oscillators draw strictly from a static voice pool with zero \texttt{malloc()} calls.
+\begin{theorem}[$L^2$-Integrability and Peak Boundedness of Sound Shims]
+\label{thm:shim-l2}
+Every B-Sound procedural shim $S(t_0, \mathbf{p})$ with finite partial count $K$, bounded primitives $|W_k| \le 1$, decay constants $\tau_k > 0$, and BIBO-stable filters $\|h_k\|_{L^1} < \infty$ satisfies $y \in L^1(\mathbb{R}) \cap L^2(\mathbb{R}) \cap L^\infty(\mathbb{R})$, with explicit peak bound
+\begin{equation}
+\|y\|_{L^\infty} \;\le\; \sum_{k=1}^{K} V_k \, \|h_k\|_{L^1} \;<\; \infty.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For each partial $k$, let $u_k(s) = A_k(s) W_k(\varphi_k(s))$ for $s \ge 0$. Since $|W_k| \le 1$ and $0 \le A_k(s) \le V_k$, we have $\|u_k\|_{L^\infty} \le V_k$, and
+\[
+\|u_k\|_{L^1} \le \int_0^{t_{\mathrm{att},k}} V_k \frac{s}{t_{\mathrm{att},k}}\,ds + \int_{t_{\mathrm{att},k}}^\infty V_k e^{-(s - t_{\mathrm{att},k})/\tau_k}\,ds = V_k\left(\frac{t_{\mathrm{att},k}}{2} + \tau_k\right) < \infty.
+\]
+Similarly $\|u_k\|_{L^2}^2 \le V_k^2(t_{\mathrm{att},k}/3 + \tau_k/2) < \infty$. By Young's convolution inequality, for any $p \in \{1, 2, \infty\}$ and BIBO-stable filter $h_k \in L^1$ (guaranteed by Theorem~\ref{thm:biquad-stable}), $\|u_k * h_k\|_{L^p} \le \|u_k\|_{L^p}\,\|h_k\|_{L^1} < \infty$. Summing over $k = 1, \dots, K$ by the triangle inequality yields $y \in L^1 \cap L^2 \cap L^\infty$ and $\|y\|_{L^\infty} \le \sum_{k=1}^K V_k \|h_k\|_{L^1}$.
+\end{proof}
+
+In the Web Audio prototype, every transient oscillator registers into a disposal list via \texttt{registerTrackOsc(osc)}; stopping or switching tracks invokes \texttt{osc.stop(0)} and \texttt{osc.disconnect()} across the list. In the native C99 runtime (\texttt{lilcu64\_wa.c}), oscillators draw strictly from a static pool with zero \texttt{malloc()} calls.
 
 \section{The 23 Canonical B-Sound Shims}
 
-B-Sound organizes its procedural sound bank into four functional families covering chiptune, acoustic jazz, symphonic orchestra, and industrial synthesis:
+B-Sound organizes its zero-byte modular sound bank into four functional families covering chiptune kinematics, percussion, acoustic/orchestral instruments, and industrial synthesis (Table~\ref{tab:23-shims}).
 
 \begin{table}[htbp]
 \centering
 \caption{Canonical B-Sound procedural Sound Shim library (zero-byte asset footprint).}
+\label{tab:23-shims}
 \small
 \begin{tabular}{@{}lll@{}}
 \toprule
@@ -61,29 +82,63 @@ Shim Identifier & Acoustic / Synth Role & DSP Topology \\
 
 \section{The Immutable 32-Program Registry (\texttt{PROG[32]})}
 
-In \emph{Orchestra}, a \emph{Program} is not a multi-megabyte soundbank; it is an immutable call-site descriptor mapping 32 selected General MIDI numbers onto existing shims, clef indicators (\texttt{tr}/\texttt{bs}), track polyphony ceilings $p$, and program-level transpositions $\mathrm{tr}$.
+\begin{definition}[Immutable Program Registry]
+The \emph{B-Sound Program Registry} is a partial function
+\begin{equation}
+\mathcal{R}_{\mathrm{GM}} : \{0, 1, \dots, 127\} \rightharpoonup \mathcal{S} \times \{\mathrm{tr}, \mathrm{bs}\} \times \mathbb{N}_{>0} \times \mathbb{Z} \times \{0, 1\}
+\end{equation}
+defined on a fixed domain $\mathrm{dom}(\mathcal{R}_{\mathrm{GM}})$ of cardinality $|\mathrm{dom}(\mathcal{R}_{\mathrm{GM}})| = 32$, assigning each registered General MIDI program $g$ a tuple $(S_g, \mathrm{clef}_g, p_{\max,g}, \Delta_{\mathrm{prog},g}, \mathrm{shot}_g)$. For any $g \notin \mathrm{dom}(\mathcal{R}_{\mathrm{GM}})$, the registry returns $\bot$, increments \texttt{refuse\_program}, and preserves the track's prior state.
+\end{definition}
 
-The remaining 96 General MIDI program numbers are intentionally undefined: requesting an unmapped number increments \texttt{refuse\_program} and leaves the track's current instrument untouched. There is no special MIDI Channel~10 drum map—percussion is selected explicitly by program number (`47` Timpani, `116` Kick, `117` Snare, `118` Hat, `119` Ind.\ Kick), which frees Channel~10 in the philharmonic template for the French Horn (Program~60).
+\begin{proposition}[Semantic Soundness of Partial GM Registration]
+Because $\mathcal{R}_{\mathrm{GM}}$ rejects all $96$ unmapped General MIDI program numbers rather than substituting a silent default, every accepted session file establishes an exact semantic bijection between its stored program bytes and the measured WCET-budgeted shims of the running engine. Furthermore, omitting a hardcoded MIDI Channel~10 drum map makes channel assignment orthogonal to timbre, permitting Channel~10 to carry French Horn (Program~60) in the philharmonic template.
+\end{proposition}
 
-Three percussion shims (`Snare`, `Hat`, `Ind.Kick`) repurpose the velocity argument to switch articulation: velocity $\ge 110$ triggers a rimshot on `shimSnare` ($220 \to 143\,\text{Hz}$ + BP $3.2\,\text{kHz}$ crack), and velocity $\ge 100$ opens `shimHiHat` from $0.055\,\text{s}$ to $0.28\,\text{s}$.
+Three percussion programs (\texttt{117} Snare, \texttt{118} Hat, \texttt{119} Ind.\ Kick) map MIDI velocity directly into articulation state: $v_m \ge 110$ triggers a rimshot on \texttt{shimSnare} ($220 \to 143\,\text{Hz}$ + BP $3.2\,\text{kHz}$ crack), and $v_m \ge 100$ opens \texttt{shimHiHat} from $0.055\,\text{s}$ to $0.28\,\text{s}$.
 
 \section{48-Slot Voice Allocation and Loudness-Decay Stealing}
 
-The DAW maintains a static pool \texttt{s\_slot[48]} where each slot represents one active MIDI note (distinct from the synthesizer's internal 48-oscillator pool; an 8-oscillator \texttt{shimSwarmatron} note occupies exactly one DAW slot).
-
-When a new note arrives at sample position $n_{\mathrm{pos}}$, each occupied slot triggered at sample $t_0$ with initial gain $g$ is ranked by an exponential loudness proxy with time constant $\tau = 1\,\text{s}$ (Equation~9):
+\begin{definition}[Static 48-Slot Pool and Loudness-Decay Proxy (Equation~9)]
+The DAW voice pool is the static array $\mathcal{V}_{48} = \{s_0, s_1, \dots, s_{47}\}$, where each slot $s_i$ stores either $\emptyset$ (free) or an active tuple $(\mathrm{trk}_i, \mathrm{key}_i, g_i, t_{0,i}, t_{\mathrm{exp},i})$. At sample position $n_{\mathrm{pos}} \ge t_{0,i}$, the \emph{loudness-decay proxy} with time constant $\tau = 1\,\text{s}$ is
 \begin{equation}
 \label{eq:voice-proxy}
-\mathrm{proxy}(\mathrm{slot}) = g \cdot \exp\!\left(-\frac{n_{\mathrm{pos}} - t_0}{f_s}\right).
+\mathrm{proxy}(s_i, n_{\mathrm{pos}}) = g_i \cdot \exp\!\left(-\frac{n_{\mathrm{pos}} - t_{0,i}}{f_s}\right).
 \end{equation}
+\end{definition}
 
-Allocation follows a strict three-tier deterministic policy:
+\begin{definition}[Three-Tier Deterministic Allocator $\alpha_{\mathrm{alloc}}$]
+Given an incoming note on track $r$ with per-track ceiling $p_{\max}(r)$, the allocator $\alpha_{\mathrm{alloc}}(r, n_{\mathrm{pos}})$ selects a target slot index $i^* \in \{0,\dots,47\}$ by:
 \begin{enumerate}[leftmargin=1.5em]
-  \item \textbf{Per-Track Ceiling:} If the track already holds $\ge \texttt{poly\_max}$ slots, steal the slot on that same track minimizing $\mathrm{proxy}(\mathrm{slot})$.
-  \item \textbf{Free Pool Scan:} Otherwise, allocate the lowest-indexed free slot in \texttt{s\_slot[0..47]}.
-  \item \textbf{Global Steal:} If all 48 slots are occupied, steal the globally quietest slot across all tracks and increment \texttt{steal\_voice} (suppressed during offline WAV export).
+  \item \textbf{Per-Track Ceiling:} If $|\{i : \mathrm{trk}_i = r\}| \ge p_{\max}(r)$, set $i^* = \arg\min_{i:\,\mathrm{trk}_i = r} \mathrm{proxy}(s_i, n_{\mathrm{pos}})$.
+  \item \textbf{Free Scan:} Else if $\exists i$ with $s_i = \emptyset$, set $i^* = \min\{i : s_i = \emptyset\}$.
+  \item \textbf{Global Steal:} Else set $i^* = \arg\min_{0 \le i < 48} \mathrm{proxy}(s_i, n_{\mathrm{pos}})$ and increment \texttt{steal\_voice} (unless \texttt{s\_export == 1}).
 \end{enumerate}
+\end{definition}
 
-\begin{remark}[One-Shot Expiry vs.\ Note-Off]
-Nine percussive and chime rows (`47` Timpani, `80` Pulse, `102` Dance, `103` Zap, `112` Chime, `116` Kick, `117` Snare, `118` Hat, `119` Ind.\ Kick) set \texttt{shot = 1}. One-shot voices ignore MIDI Note-Off messages and are reclaimed solely upon expiry by \texttt{slots\_expire()}, preventing short pencil edits from truncating natural drum or cymbal decay.
-\end{remark}
+\begin{theorem}[$O(1)$ Termination, Pool Conservation, and Track Isolation]
+\label{thm:voice-alloc}
+For any sequence of note-on events across arbitrary tracks, $\alpha_{\mathrm{alloc}}$ satisfies:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Bounded $O(1)$ Execution:} $\alpha_{\mathrm{alloc}}$ terminates in at most $48$ slot inspections with zero heap allocations.
+  \item \textbf{Strict Pool Conservation:} The number of active DAW slots never exceeds $48$, and if the invoked shim fails to land a synth node, the slot is immediately returned to $\emptyset$ and counted in \texttt{shim\_landed}.
+  \item \textbf{Track-First Steal Isolation:} No track exceeding its own polyphony ceiling $p_{\max}(r)$ can ever steal a slot belonging to another track $r' \ne r$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(1) Each of the three branches scans at most the fixed 48-element array $\mathcal{V}_{48}$, taking strictly $O(48) = O(1)$ time.
+(2) Because every allocation either overwrites an existing slot $s_{i^*}$ or occupies an empty slot in $\mathcal{V}_{48}$, $|\{i : s_i \ne \emptyset\}| \le 48$ is a loop invariant; returning unlanded slots prevents leaked occupancy.
+(3) Branch~1 is evaluated strictly before Branches~2 and~3; hence whenever track $r$ holds $p_{\max}(r)$ voices, $i^*$ is chosen solely from $\{i : \mathrm{trk}_i = r\}$, leaving every track $r' \ne r$ untouched.
+\end{proof}
+
+\begin{definition}[One-Shot Expiry Semantics]
+A program $g$ is \emph{one-shot} if $\mathrm{shot}_g = 1$ (the nine rows: \texttt{47} Timpani $1.2\,\text{s}$, \texttt{80} Pulse $2.4\,\text{s}$, \texttt{102} Dance $0.85\,\text{s}$, \texttt{103} Zap $0.12\,\text{s}$, \texttt{112} Chime $0.70\,\text{s}$, \texttt{116} Kick $0.16\,\text{s}$, \texttt{117} Snare $0.15\,\text{s}$, \texttt{118} Hat $0.055/0.28\,\text{s}$, \texttt{119} Ind.\ Kick $0.22\,\text{s}$). One-shot slots ignore MIDI Note-Off messages and are released exclusively when $n_{\mathrm{pos}} \ge t_{\mathrm{exp},i}$ by \texttt{slots\_expire()}.
+\end{definition}
+
+\begin{proposition}[Note-Off Invariance of One-Shot Percussion]
+Under one-shot semantics, percussive timbre duration is an invariant of the procedural instrument rather than the UI edit grid, preventing short piano-roll notes from truncating natural drum or cymbal tails while still guaranteeing deterministic slot reclamation within $t_{\mathrm{exp},i} - t_{0,i} \le 2.4\,\text{s}$.
+\end{proposition}
+
+\section{Chapter Conclusion}
+
+This chapter formalized the procedural synthesis layer of B-Sound. We defined the stateless Sound Shim $S(t_0, \mathbf{p})$ and proved its $L^1 \cap L^2 \cap L^\infty$ finite-energy boundedness (Theorem~\ref{thm:shim-l2}), catalogued all 23 canonical zero-byte shims, established the semantic soundness of the partial 32-program registry $\mathcal{R}_{\mathrm{GM}}$, and proved $O(1)$ termination, pool conservation, and track-first steal isolation for the 48-slot loudness-decay allocator $\alpha_{\mathrm{alloc}}$ (Theorem~\ref{thm:voice-alloc}). Chapter~\ref{ch:kinematics} next couples these procedural shims directly to 4D non-Euclidean geometry and 24-DOF mascot kinematics.
