@@ -81,11 +81,52 @@
   }
   .f-head {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    font-size: 10px; letter-spacing: 0.2em; color: var(--dim); margin-bottom: 6px;
+    font-size: 10px; letter-spacing: 0.2em; color: var(--dim); margin-bottom: 5px;
     border-bottom: 1px solid rgba(230,225,214,0.08); padding-bottom: 5px;
   }
   .f-head .f-part { color: var(--amber); }
   .f-head .f-telem { color: var(--cyan); font-variant-numeric: tabular-nums; }
+  .f-dsp-row {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 16px;
+    font-size: 10px; letter-spacing: 0.14em; margin-bottom: 6px;
+    border-bottom: 1px solid rgba(230,225,214,0.08); padding-bottom: 5px;
+  }
+  .f-dsp-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+  .f-dsp-title { color: var(--cyan); font-weight: 500; letter-spacing: 0.18em; white-space: nowrap; }
+  .f-dsp-title.bsound { color: var(--amber); }
+  .f-dsp-voices { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .f-vchip {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: rgba(230, 225, 214, 0.72); opacity: 0.34;
+    transition: opacity 0.08s linear; white-space: nowrap;
+  }
+  .f-vchip.live { opacity: 1; color: #ffffff; }
+  .f-vchip svg { width: 10px; height: 10px; display: block; overflow: visible; flex-shrink: 0; }
+  .f-meter {
+    display: inline-flex; align-items: center; gap: 10px; margin-left: auto;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .f-bars { display: flex; flex-direction: column; gap: 3px; width: 48px; }
+  .f-bar { height: 3.5px; background: rgba(230,225,214,0.10); overflow: hidden; }
+  .f-bar span { display: block; height: 100%; width: 0%; background: var(--cyan); }
+  .f-bar.r span { background: var(--amber); }
+  .f-bar span.hot { background: #ff6b57; }
+  .f-mval { color: rgba(230, 225, 214, 0.82); font-size: 9.5px; letter-spacing: 0.08em; }
+  .f-mval strong { font-weight: 400; display: inline-block; min-width: 34px; text-align: right; }
+  .f-mval.f-mrms { color: rgba(127, 212, 204, 0.84); }
+  .f-mlim {
+    font-size: 9.5px; letter-spacing: 0.14em; color: rgba(230, 225, 214, 0.25);
+    padding: 1px 4px; border: 1px solid rgba(230, 225, 214, 0.12);
+  }
+  .f-mlim.hit { color: #ff6b57; border-color: rgba(255, 107, 87, 0.65); }
+  .f-mbal {
+    position: relative; display: inline-block; width: 24px; height: 1px;
+    background: rgba(230, 225, 214, 0.28); vertical-align: middle;
+  }
+  .f-mbal-dot {
+    position: absolute; top: 50%; left: 50%; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--amber); transform: translate(-50%, -50%);
+  }
   #f-body {
     font-family: var(--mono); font-size: clamp(10.5px, 1.1vw, 12.5px);
     line-height: 1.52; color: var(--paper); white-space: pre-wrap; word-break: break-word;
@@ -201,6 +242,22 @@
     <div class="f-head">
       <span class="f-part" id="f-part">PART 1/4</span>
       <span class="f-telem" id="f-telem">X = -8.00  ·  261.6 HZ</span>
+    </div>
+    <div class="f-dsp-row" id="f-dsp-row">
+      <div class="f-dsp-left">
+        <span class="f-dsp-title" id="f-dsp-title">DSP VOICES</span>
+        <div class="f-dsp-voices" id="f-dsp-voices"></div>
+      </div>
+      <div class="f-meter" id="f-meter">
+        <div class="f-bars" aria-label="Stereo L/R Level">
+          <div class="f-bar l"><span id="m-bar-l"></span></div>
+          <div class="f-bar r"><span id="m-bar-r"></span></div>
+        </div>
+        <span class="f-mval">PK <strong id="m-pk">-∞</strong></span>
+        <span class="f-mval f-mrms">RMS <strong id="m-rms">-∞</strong></span>
+        <span class="f-mlim" id="m-lim">LIM</span>
+        <span class="f-mbal" title="Stereo Balance L—R"><span class="f-mbal-dot" id="m-bal"></span></span>
+      </div>
     </div>
     <div id="f-body"></div>
   </section>

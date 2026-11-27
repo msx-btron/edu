@@ -543,81 +543,85 @@ const DEMOS = [
     },
   },
 
-  // 16 — Analytical Etudes (17 parts: Broken Radio -> Hans Zimmer Symphony -> Aphex Twin Bucephalus Bouncing Ball)
+  // 16 — Analytical Etudes (18 parts: Broken Radio -> Hans Zimmer Symphony -> Aphex Twin -> Broken Radio Reborn)
   {
     id: "16", name: "ANALYTICAL ETUDES", src: "RADIO → SYMPHONY", speed: 1.75, reverb: 0.34,
     parts: [
       // Phase I: Original "Broken Radio / Searching" Analytical Etudes (1–4)
       {
         m: 1, modes: ["fm"],
-        f: "Etude 01/17 [Broken Radio I] — Original Nested-Sine Signal Search\ny = 2.8 · sin(5 · sin(4 · sin(3 · sin(2 · sin(x)))))   [unquantized chaotic FM carrier]",
+        f: "Etude 01/18 [Broken Radio I] — Original Nested-Sine Signal Search\ny = 2.8 · sin(5 · sin(4 · sin(3 · sin(2 · sin(x)))))   [unquantized chaotic FM carrier]",
       },
       {
         m: 2, modes: ["tri", "fm", "hpf", "lpf"],
-        f: "Etude 02/17 [Shortwave Beacon · Am9] — Melodic Radio Arpeggio & Carrier Floor\nConsonant Am→F→C→G beacon motif (TRI) + pure-fifth FM chimes + HPF pulse + LPF bass",
+        f: "Etude 02/18 [Shortwave Beacon · Am9] — Melodic Radio Arpeggio & Carrier Floor\nConsonant Am→F→C→G beacon motif (TRI) + pure-fifth FM chimes + HPF pulse + LPF bass",
       },
       {
         m: 3, modes: ["pls", "tri", "lpf", "sine"],
-        f: "Etude 03/17 [Chiptune Pulse · Em] — Playful 16th-Note Square Arpeggios (Em · C · G · D)\nCrisp staccato PLS arps + warm TRI harmony + bouncy LPF bass + high SINE counter-bell",
+        f: "Etude 03/18 [Chiptune Pulse · Em] — Playful 16th-Note Square Arpeggios (Em · C · G · D)\nCrisp staccato PLS arps + warm TRI harmony + bouncy LPF bass + high SINE counter-bell",
       },
       {
         m: 4, modes: ["sine", "pls", "lpf", "nse"],
-        f: "Etude 04/17 [Minimalist Pulse · Am Pent] — Steve Reich Variable-Subdivision Groove\nVariable-duty subdivisions (1, 2, 3/beat) locked to A-minor pentatonic {A, C, D, E, G} + brush",
+        f: "Etude 04/18 [Minimalist Pulse · Am Pent] — Steve Reich Variable-Subdivision Groove\nVariable-duty subdivisions (1, 2, 3/beat) locked to A-minor pentatonic {A, C, D, E, G} + brush",
       },
       // Phase II: Signal Lock & Hans Zimmer Minimalist Ostinatos (5–8)
       {
         m: 5, modes: ["sine", "lpf", "tri", "fm", "rvb"],
-        f: "Etude 05/17 [Cathedral Dawn · Am9] — Harmonic Overtone Bloom (A1 → E5)\nPure A1 organ pedal unfolding into ascending Am9 arpeggio (A2–E3–A3–B3–C4–E4–A4–B4–E5) + RVB",
+        f: "Etude 05/18 [Cathedral Dawn · Am9] — Harmonic Overtone Bloom (A1 → E5)\nPure A1 organ pedal unfolding into ascending Am9 arpeggio (A2–E3–A3–B3–C4–E4–A4–B4–E5) + RVB",
       },
       {
         m: 6, modes: ["sine", "lfo", "lpf", "tri", "rvb"],
-        f: "Etude 06/17 [Time · Ostinato] — Inception 4-Chord Piano Pulse (Am · Em · G · D)\nPiecewise e^(−6·frac(2x)) piano pulses + deep LPF cello pedal + warm LFO string fifths",
+        f: "Etude 06/18 [Time · Ostinato] — Inception 4-Chord Piano Pulse (Am · Em · G · D)\nPiecewise e^(−6·frac(2x)) piano pulses + deep LPF cello pedal + warm LFO string fifths",
       },
       {
         m: 7, modes: ["sine", "tri", "fm", "lpf", "lfo", "rvb"],
-        f: "Etude 07/17 [Cornfield Chase] — Full 3/4 Interstellar Organ & Celesta Cascade\n6-step rolling arpeggio (A4–E5 → B4–E5 → C5–E5 → D5–C5–B4) + F–G–Am–Em cathedral organ",
+        f: "Etude 07/18 [Cornfield Chase] — Full 3/4 Interstellar Organ & Celesta Cascade\n6-step rolling arpeggio (A4–E5 → B4–E5 → C5–E5 → D5–C5–B4) + F–G–Am–Em cathedral organ",
       },
       {
         m: 8, modes: ["sat", "lpf", "lfo", "sine", "rvb"],
-        f: "Etude 08/17 [Dune / BR2049] — Low Brass Swell (BRAAM) & Exponential Sub-Heartbeat\nWaveShaper A1+E2 brass swell + damped e^(−8·frac) timpani pulse + cavernous RVB hall",
+        f: "Etude 08/18 [Dune / BR2049] — Low Brass Swell (BRAAM) & Exponential Sub-Heartbeat\nWaveShaper A1+E2 brass swell + damped e^(−8·frac) timpani pulse + cavernous RVB hall",
       },
       // Phase III: Piecewise Pure-Function Orchestration (9–12)
       {
         m: 9, modes: ["sine", "tri", "lfo", "lpf", "rvb"],
-        f: "Etude 09/17 [S.T.A.Y.] — Music-Box Harmonics & Rising Cello/Violin Fifths\nHigh celesta ostinato (A5–E5–C5–E5) + slow rising LFO strings over warm LPF pedal",
+        f: "Etude 09/18 [S.T.A.Y.] — Music-Box Harmonics & Rising Cello/Violin Fifths\nHigh celesta ostinato (A5–E5–C5–E5) + slow rising LFO strings over warm LPF pedal",
       },
       {
         m: 10, modes: ["tri", "bpf", "lfo", "lpf", "rvb"],
-        f: "Etude 10/17 [Gladiator · Dorian] — Logistic-Sigmoid Vocal Cantabile (D Dorian)\ny₁ = y_a + (y_b−y_a)/(1+e^(−14τ))  [human voice/cello portamento] + 1.8f BPF breath",
+        f: "Etude 10/18 [Gladiator · Dorian] — Logistic-Sigmoid Vocal Cantabile (D Dorian)\ny₁ = y_a + (y_b−y_a)/(1+e^(−14τ))  [human voice/cello portamento] + 1.8f BPF breath",
       },
       {
         m: 11, modes: ["fm", "sine", "pls", "lpf", "rvb"],
-        f: "Etude 11/17 [No Time For Caution] — 3:4 Cathedral Organ Polyrhythm (Am · F · Dm · E7)\nInterlocking 3-against-4 pure-function arpeggios + cathedral FM organ & timpani pulse",
+        f: "Etude 11/18 [No Time For Caution] — 3:4 Cathedral Organ Polyrhythm (Am · F · Dm · E7)\nInterlocking 3-against-4 pure-function arpeggios + cathedral FM organ & timpani pulse",
       },
       {
         m: 12, modes: ["lfo", "tri", "lpf", "sine", "rvb"],
-        f: "Etude 12/17 [Sangreal · Canon] — Consonant D-Minor String Canon & Harp Arpeggio\nD4–F4–A4–G4–F4–E4–D4 violin theme answered in pure thirds/octaves over Dm–Bb–C–Am + harp",
+        f: "Etude 12/18 [Sangreal · Canon] — Consonant D-Minor String Canon & Harp Arpeggio\nD4–F4–A4–G4–F4–E4–D4 violin theme answered in pure thirds/octaves over Dm–Bb–C–Am + harp",
       },
-      // Phase IV: Grand Symphonic Synthesis & Aphex Twin Physics (13–17)
+      // Phase IV: Grand Symphonic Synthesis, Aphex Twin & Broken Radio Reborn (13–18)
       {
         m: 13, modes: ["sat", "lpf", "lfo", "nse", "hpf"],
-        f: "Etude 13/17 [Mombasa · Chase] — Ostinato Strings, Syncopated Sub-Kick & Brass Octaves\nDriving 16th string pulse + WaveShaper sub-kick + heroic LFO octave brass + NSE/HPF",
+        f: "Etude 13/18 [Mombasa · Chase] — Ostinato Strings, Syncopated Sub-Kick & Brass Octaves\nDriving 16th string pulse + WaveShaper sub-kick + heroic LFO octave brass + NSE/HPF",
       },
       {
         m: 14, modes: ["hpf", "fm", "sine", "lpf", "lfo", "rvb"],
-        f: "Etude 14/17 [Mountains · Pendulum] — Relativistic Clock Tick & Growing Cathedral Chord\nCrisp HPF pendulum tick + swelling 5-voice Am → Fmaj7 → C → G6 organ & RVB hall wash",
+        f: "Etude 14/18 [Mountains · Pendulum] — Relativistic Clock Tick & Growing Cathedral Chord\nCrisp HPF pendulum tick + swelling 5-voice Am → Fmaj7 → C → G6 organ & RVB hall wash",
       },
       {
         m: 15, modes: ["sat", "lfo", "sine", "tri", "lpf", "rvb"],
-        f: "Etude 15/17 [Flight · Fanfare] — Heroic D-Major Fifths & Triumphant Octave Brass\nNoble D2–A2–D3 fifths + soaring F#4→G4→A4→D5→E5→F#5 melody over pulsing piano",
+        f: "Etude 15/18 [Flight · Fanfare] — Heroic D-Major Fifths & Triumphant Octave Brass\nNoble D2–A2–D3 fifths + soaring F#4→G4→A4→D5→E5→F#5 melody over pulsing piano",
       },
       {
         m: 16, modes: ["sine", "tri", "lfo", "fm", "lpf", "sat", "hpf", "rvb"],
-        f: "Etude 16/17 [Grand Symphony] — 8-Voice Hans Zimmer Cathedral Climax (Am · F · C · G · Am)\nFull orchestra: Piano + Flute + Violin LFO + FM Bells + Cello LPF + Brass SAT + RVB Hall",
+        f: "Etude 16/18 [Grand Symphony] — 8-Voice Hans Zimmer Cathedral Climax (Am · F · C · G · Am)\nFull orchestra: Piano + Flute + Violin LFO + FM Bells + Cello LPF + Brass SAT + RVB Hall",
       },
       {
         m: 17, modes: ["sine", "tri", "lpf", "hpf", "rvb"],
-        f: "Etude 17/17 [Aphex Twin · Bucephalus Bouncing Ball] — Harmonic Gravity Cascade (F#m9 · Dmaj9)\nn = ⌊ln(1 − τ/T) / ln(0.78)⌋ · Accelerating pentatonic bounce arps (SINE/TRI) + LPF bass + SAW pad",
+        f: "Etude 17/18 [Aphex Twin · Bucephalus Bouncing Ball] — Harmonic Gravity Cascade (F#m9 · Dmaj9)\nn = ⌊ln(1 − τ/T) / ln(0.78)⌋ · Accelerating pentatonic bounce arps (SINE/TRI) + LPF bass + RVB pad",
+      },
+      {
+        m: 18, modes: ["fm", "tri", "sine", "lpf", "rvb"],
+        f: "Etude 18/18 [Hyperbolic & Exp Mosaic · Am9] — Braided Macro-Wave Sculpted from 1/x & Exp Pieces\nCascading 1/(t+c) FM hyperbolas & counter-arch e^(±kt) TRI pieces tracing grand waves over constant Am9·F·C·G lines",
       },
     ],
     eval(x, pi) {
@@ -864,35 +868,80 @@ const DEMOS = [
       }
 
       // Part 17: Aphex Twin — Bucephalus Bouncing Ball (Musical F#m9 / Dmaj9 Geometric Gravity Cascade)
-      const T_cyc = 8.05;
-      const r = 0.78;
-      const cyc = mod(u, 8.0);
-      const halfIdx = fl(u / 8.0); // 0 -> F#m9, 1 -> Dmaj9
-      const n = clamp(fl(Math.log(Math.max(1e-4, 1 - cyc / T_cyc)) / Math.log(r)), 0, 22);
-      const t_n = T_cyc * (1 - Math.pow(r, n));
-      const d_n = T_cyc * Math.pow(r, n) * (1 - r);
-      const p = clamp((cyc - t_n) / Math.max(1e-4, d_n), 0, 1);
+      if (m === 17) {
+        const T_cyc = 8.05;
+        const r = 0.78;
+        const cyc = mod(u, 8.0);
+        const halfIdx = fl(u / 8.0); // 0 -> F#m9, 1 -> Dmaj9
+        const n = clamp(fl(Math.log(Math.max(1e-4, 1 - cyc / T_cyc)) / Math.log(r)), 0, 22);
+        const t_n = T_cyc * (1 - Math.pow(r, n));
+        const d_n = T_cyc * Math.pow(r, n) * (1 - r);
+        const p = clamp((cyc - t_n) / Math.max(1e-4, d_n), 0, 1);
 
-      // Consonant chord-tone pools: F#m9 {F#4, A4, C#5, E5, G#5} & Dmaj9 {D4, F#4, A4, C#5, E5}
-      const scale = halfIdx === 0
-        ? [369.99, 440.00, 554.37, 659.25, 830.61]
-        : [293.66, 369.99, 440.00, 554.37, 659.25];
-      // Descending energy level maps bounce index n onto consonant chord tones (high -> root)
-      const deg = clamp(4 - fl(n / 3), 0, 4);
-      const noteF = scale[mod(deg + (mod(n, 2) === 0 ? 0 : 1), 5)];
-      // 1) Pure crystalline bouncing-ball strike (tight percussive marimba envelope, accelerating with r = 0.78!)
-      const gate = Math.min(0.76, Math.max(0.28, 0.78 - n * 0.02));
-      const ballNote = p < gate ? hz(noteF) + 0.025 * exp(-10 * p) : NaN;
-      // 2) Harmonic fifth / octave shadow following the shrinking bounce energy
-      const shadowF = scale[clamp(deg, 0, 4)] * 0.5;
-      const ballShadow = p < gate * 0.85 ? hz(shadowF) : NaN;
-      // 3) Deep warm Selected Ambient Works bass progression (F#1 -> A1 -> D2 -> E2)
-      const bass = hz([46.25, 55.0, 73.42, 82.41][clamp(fl(u / 4), 0, 3)]);
-      // 4) Subtle crisp hi-hat click on every 2nd bounce impact
-      const bTick = (p < 0.09 && mod(n, 2) === 0) ? 2.82 : NaN;
-      // 5) Serene floating ambient RVB pad (C#5 / E5)
-      const pad = hz(halfIdx === 0 ? 554.37 : 659.25) - 0.03 * frac(u / 8);
-      return [ballNote, ballShadow, bass, bTick, pad];
+        // Consonant chord-tone pools: F#m9 {F#4, A4, C#5, E5, G#5} & Dmaj9 {D4, F#4, A4, C#5, E5}
+        const scale = halfIdx === 0
+          ? [369.99, 440.00, 554.37, 659.25, 830.61]
+          : [293.66, 369.99, 440.00, 554.37, 659.25];
+        // Descending energy level maps bounce index n onto consonant chord tones (high -> root)
+        const deg = clamp(4 - fl(n / 3), 0, 4);
+        const noteF = scale[mod(deg + (mod(n, 2) === 0 ? 0 : 1), 5)];
+        // 1) Pure crystalline bouncing-ball strike (tight percussive marimba envelope, accelerating with r = 0.78!)
+        const gate = Math.min(0.76, Math.max(0.28, 0.78 - n * 0.02));
+        const ballNote = p < gate ? hz(noteF) + 0.025 * exp(-10 * p) : NaN;
+        // 2) Harmonic fifth / octave shadow following the shrinking bounce energy
+        const shadowF = scale[clamp(deg, 0, 4)] * 0.5;
+        const ballShadow = p < gate * 0.85 ? hz(shadowF) : NaN;
+        // 3) Deep warm Selected Ambient Works bass progression (F#1 -> A1 -> D2 -> E2)
+        const bass = hz([46.25, 55.0, 73.42, 82.41][clamp(fl(u / 4), 0, 3)]);
+        // 4) Subtle crisp hi-hat click on every 2nd bounce impact
+        const bTick = (p < 0.09 && mod(n, 2) === 0) ? 2.82 : NaN;
+        // 5) Serene floating ambient RVB pad (C#5 / E5)
+        const pad = hz(halfIdx === 0 ? 554.37 : 659.25) - 0.03 * frac(u / 8);
+        return [ballNote, ballShadow, bass, bTick, pad];
+      }
+
+      // Part 18: Braided Macro-Wave Mosaic of Short 1/x & exp(±kt) Pieces over Warm Constant Lines (Am9 · Fmaj7 · C · G)
+      const bar = clamp(fl(u / 4), 0, 3);
+      const seg = clamp(fl(u * 2), 0, 31);     // 32 eighth-note slots across x ∈ [-8, 8]
+      const t = frac(u * 2);                   // local slot parameter t ∈ [0, 1)
+      // Flowing 2- and 3-piece phrase clusters tracing two grand arches (with natural phrase breaths)
+      const fmMask =  [1,1,0,1, 1,1,0,0,  1,1,1,0, 1,1,0,0,  1,1,0,1, 1,1,1,0,  1,1,0,1, 1,0,1,0];
+      const expMask = [0,1,1,0, 0,1,1,1,  0,0,1,1, 0,1,1,0,  0,1,1,0, 0,1,1,1,  0,1,1,0, 1,1,0,1];
+      // 1) FM 1/(t+c) Hyperbola Series tracing a sweeping two-peak macro arch across consonant octaves
+      const fmRoots = [
+        329.63, 440.00, 0, 523.25, 659.25, 880.00, 0, 0,       // Arch 1 rise: E4→A4→C5→E5→A5
+        698.46, 523.25, 440.00, 0, 523.25, 698.46, 0, 0,       // Arch 1 glide: F5→C5→A4→C5→F5
+        523.25, 659.25, 0, 783.99, 1046.5, 783.99, 659.25, 0,  // Arch 2 climax: C5→E5→G5→C6→G5→E5
+        587.33, 493.88, 0, 587.33, 783.99, 0, 659.25, 0,       // Arch 2 resolve: D5→B4→D5→G5→E5
+      ];
+      const fmGate = mod(seg, 3) === 0 ? 0.48 : (mod(seg, 2) === 0 ? 0.40 : 0.34);
+      const fmPiece = (fmMask[seg] && t < fmGate)
+        ? clamp(hz(fmRoots[seg]) + 0.34 / (t + 0.30) - 0.48, -2.8, 2.8)
+        : NaN;
+      // 2) TRI exp(±kt) Counter-Arch Series weaving underneath & through the FM hyperbolas
+      const expRoots = [
+        0, 220.00, 261.63, 0, 0, 329.63, 440.00, 329.63,       // Counter-wave 1: A3→C4→E4→A4→E4
+        0, 0, 261.63, 349.23, 0, 261.63, 220.00, 0,            // Dip & breath: C4→F4→C4→A3
+        0, 261.63, 329.63, 0, 0, 392.00, 523.25, 392.00,       // Counter-wave 2: C4→E4→G4→C5→G4
+        0, 293.66, 392.00, 0, 493.88, 392.00, 0, 329.63,       // Resolve: D4→G4→B4→G4→E4
+      ];
+      const expGate = mod(seg, 3) === 1 ? 0.46 : 0.36;
+      const lt = clamp(t / expGate, 0, 1);
+      // Rising exp arcs on upward slopes, falling exp arcs on downward slopes to mimic the macro curve!
+      const rising = (seg < 6) || (seg >= 15 && seg < 22) || (seg >= 25 && seg < 29);
+      const expCurve = rising
+        ? 0.64 * (exp(2.3 * lt) - 1) / (exp(2.3) - 1)
+        : 0.68 * exp(-4.6 * lt);
+      const expPiece = (expMask[seg] && t < expGate)
+        ? clamp(hz(expRoots[seg]) + expCurve, -2.8, 2.8)
+        : NaN;
+      // 3) SINE Constant Harmonic Mid-Line (steady warm chord guide tones: E4 -> C4 -> G4 -> D4)
+      const constMid = hz([329.63, 261.63, 392.00, 293.66][bar]);
+      // 4) LPF Constant Deep Bass Line (steady grounded roots: A1 -> F2 -> C2 -> G2)
+      const constBass = hz([55.00, 87.31, 65.41, 98.00][bar]);
+      // 5) RVB Constant Upper Halo Line (serene high chord tone: A4 -> A4 -> E5 -> B4)
+      const constTop = hz([440.00, 440.00, 659.25, 493.88][bar]);
+      return [fmPiece, expPiece, constMid, constBass, constTop];
     },
   },
 
@@ -2402,9 +2451,37 @@ const elBSound = document.getElementById("btn-bsound");
 const elFPart = document.getElementById("f-part");
 const elFTelem = document.getElementById("f-telem");
 const elFBody = document.getElementById("f-body");
+const elDspTitle = document.getElementById("f-dsp-title");
+const elDspVoices = document.getElementById("f-dsp-voices");
+const elMBarL = document.getElementById("m-bar-l");
+const elMBarR = document.getElementById("m-bar-r");
+const elMPk = document.getElementById("m-pk");
+const elMRms = document.getElementById("m-rms");
+const elMLim = document.getElementById("m-lim");
+const elMBal = document.getElementById("m-bal");
 const elProg = document.getElementById("prog");
 const elLegend = document.getElementById("legend");
 const elIndex = document.getElementById("index");
+
+let dspChipsKey = "";
+let dspChipEls = [];
+
+function dspMarkerSvg(mode, col) {
+  const s = `stroke="${col}" stroke-width="1.45" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+  if (mode === "tri") return `<svg viewBox="-5 -5 10 10"><polygon points="0,-4.2 3.9,3.2 -3.9,3.2" ${s}/></svg>`;
+  if (mode === "saw") return `<svg viewBox="-5 -5 10 10"><polygon points="-3.8,3.2 3.8,-3.6 3.8,3.2" ${s}/></svg>`;
+  if (mode === "pls") return `<svg viewBox="-5 -5 10 10"><polyline points="-4,2.8 -2,2.8 -2,-3.2 2,-3.2 2,2.8 4,2.8" ${s}/></svg>`;
+  if (mode === "fm")  return `<svg viewBox="-5 -5 10 10"><polygon points="0,-4.2 4,0 0,4.2 -4,0" ${s}/></svg>`;
+  if (mode === "am")  return `<svg viewBox="-5 -5 10 10"><circle cx="0" cy="0" r="3.8" ${s}/><line x1="-2.5" y1="-2.5" x2="2.5" y2="2.5" ${s}/><line x1="2.5" y1="-2.5" x2="-2.5" y2="2.5" ${s}/></svg>`;
+  if (mode === "sat") return `<svg viewBox="-5 -5 10 10"><rect x="-3.3" y="-3.3" width="6.6" height="6.6" ${s}/></svg>`;
+  if (mode === "lpf") return `<svg viewBox="-5 -5 10 10"><polyline points="-4,-2.4 0.6,-2.4 4,3.2" ${s}/></svg>`;
+  if (mode === "hpf") return `<svg viewBox="-5 -5 10 10"><polyline points="-4,3.2 -0.6,-2.4 4,-2.4" ${s}/></svg>`;
+  if (mode === "bpf") return `<svg viewBox="-5 -5 10 10"><polyline points="-4,3 0,-3.8 4,3" ${s}/></svg>`;
+  if (mode === "lfo") return `<svg viewBox="-5 -5 10 10"><path d="M-4,0 Q-2,-4 0,0 T4,0" ${s}/></svg>`;
+  if (mode === "rvb") return `<svg viewBox="-5 -5 10 10"><circle cx="0" cy="0" r="3.9" ${s}/><circle cx="0" cy="0" r="1.7" ${s}/></svg>`;
+  if (mode === "noise" || mode === "nse") return `<svg viewBox="-5 -5 10 10"><line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5" ${s}/><line x1="3.5" y1="-3.5" x2="-3.5" y2="3.5" ${s}/><line x1="0" y1="-4.1" x2="0" y2="4.1" ${s}/></svg>`;
+  return `<svg viewBox="-5 -5 10 10"><circle cx="0" cy="0" r="3.6" ${s}/></svg>`;
+}
 
 let needChromeUpdate = true;
 let lastFrame = performance.now();
@@ -2696,100 +2773,6 @@ function draw() {
   ctx.moveTo(hx, box.y); ctx.lineTo(hx, box.y + box.h);
   ctx.stroke();
 
-  // Helper: 12 industry-standard geometric HAL CRT markers (IEC 60617 / Eurorack / Pro Audio)
-  function drawDspMarker(cx, cy, r, mode, col, fillCore) {
-    ctx.strokeStyle = col;
-    ctx.fillStyle = fillCore ? "#ffffff" : col;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    if (mode === "tri") {
-      ctx.moveTo(cx, cy - r * 1.15);
-      ctx.lineTo(cx + r * 1.05, cy + r * 0.85);
-      ctx.lineTo(cx - r * 1.05, cy + r * 0.85);
-      ctx.closePath();
-    } else if (mode === "saw") {
-      ctx.moveTo(cx - r, cy + r * 0.85);
-      ctx.lineTo(cx + r, cy - r * 0.95);
-      ctx.lineTo(cx + r, cy + r * 0.85);
-      ctx.closePath();
-    } else if (mode === "pls") {
-      // Square / Pulse step icon ⊓
-      ctx.moveTo(cx - r * 1.05, cy + r * 0.75);
-      ctx.lineTo(cx - r * 0.55, cy + r * 0.75);
-      ctx.lineTo(cx - r * 0.55, cy - r * 0.85);
-      ctx.lineTo(cx + r * 0.55, cy - r * 0.85);
-      ctx.lineTo(cx + r * 0.55, cy + r * 0.75);
-      ctx.lineTo(cx + r * 1.05, cy + r * 0.75);
-      ctx.stroke();
-      return;
-    } else if (mode === "fm") {
-      ctx.moveTo(cx, cy - r * 1.15);
-      ctx.lineTo(cx + r * 1.1, cy);
-      ctx.lineTo(cx, cy + r * 1.15);
-      ctx.lineTo(cx - r * 1.1, cy);
-      ctx.closePath();
-    } else if (mode === "am") {
-      // Ring / AM modulator icon ⊗
-      ctx.arc(cx, cy, r * 1.05, 0, PI * 2);
-      if (fillCore) ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(cx - r * 0.68, cy - r * 0.68); ctx.lineTo(cx + r * 0.68, cy + r * 0.68);
-      ctx.moveTo(cx + r * 0.68, cy - r * 0.68); ctx.lineTo(cx - r * 0.68, cy + r * 0.68);
-      ctx.stroke();
-      return;
-    } else if (mode === "sat") {
-      ctx.rect(cx - r * 0.9, cy - r * 0.9, r * 1.8, r * 1.8);
-    } else if (mode === "lpf") {
-      // Low-pass filter slope icon ⤓
-      ctx.moveTo(cx - r * 1.05, cy - r * 0.65);
-      ctx.lineTo(cx + r * 0.15, cy - r * 0.65);
-      ctx.lineTo(cx + r * 1.05, cy + r * 0.85);
-      ctx.stroke();
-      return;
-    } else if (mode === "hpf") {
-      // High-pass filter slope icon ⤒
-      ctx.moveTo(cx - r * 1.05, cy + r * 0.85);
-      ctx.lineTo(cx - r * 0.15, cy - r * 0.65);
-      ctx.lineTo(cx + r * 1.05, cy - r * 0.65);
-      ctx.stroke();
-      return;
-    } else if (mode === "bpf") {
-      // Band-pass formant peak icon ⟐
-      ctx.moveTo(cx - r * 1.1, cy + r * 0.80);
-      ctx.lineTo(cx, cy - r * 1.05);
-      ctx.lineTo(cx + r * 1.1, cy + r * 0.80);
-      ctx.stroke();
-      return;
-    } else if (mode === "lfo") {
-      // Vibrato / LFO double wave icon ≈
-      ctx.moveTo(cx - r * 1.05, cy);
-      ctx.quadraticCurveTo(cx - r * 0.5, cy - r * 1.1, cx, cy);
-      ctx.quadraticCurveTo(cx + r * 0.5, cy + r * 1.1, cx + r * 1.05, cy);
-      ctx.stroke();
-      return;
-    } else if (mode === "rvb") {
-      // Concentric Hall Reverb / Echo wave icon ◎
-      ctx.arc(cx, cy, r * 1.05, 0, PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.48, 0, PI * 2);
-      if (fillCore) ctx.fill();
-      ctx.stroke();
-      return;
-    } else if (mode === "noise" || mode === "nse") {
-      ctx.moveTo(cx - r * 0.95, cy - r * 0.95); ctx.lineTo(cx + r * 0.95, cy + r * 0.95);
-      ctx.moveTo(cx + r * 0.95, cy - r * 0.95); ctx.lineTo(cx - r * 0.95, cy + r * 0.95);
-      ctx.moveTo(cx, cy - r * 1.1); ctx.lineTo(cx, cy + r * 1.1);
-      ctx.stroke();
-      return;
-    } else {
-      ctx.arc(cx, cy, r, 0, PI * 2);
-    }
-    if (fillCore) ctx.fill();
-    ctx.stroke();
-  }
-
   const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   function midiLabel(y) {
     const n = Math.round(60 + 12 * y);
@@ -2840,97 +2823,49 @@ function draw() {
     activeHz.push(F0 * Math.pow(2, y));
   }
 
-  // Top-left Live DSP Channel Marker HUD bar (active on ALL 24 demos)
-  if (nv > 0) {
-    ctx.font = '10px "IBM Plex Mono", monospace';
-    ctx.textAlign = "left";
-    const hudTitle = demo.bsound ? "B-SOUND DSP" : "DSP VOICES";
-    const hudX = box.x + 6;
-    const hudY = box.y + 6;
-    const hudH = 22;
-    let totalW = 92;
-    const vTags = [];
-    for (let v = 0; v < nv; v++) {
-      const tag = modeForVoice(v, curVals[v]);
-      const lbl = tag === "noise" ? "NSE" : tag.toUpperCase();
-      vTags.push({ tag, lbl });
-      totalW += 18 + lbl.length * 6.5;
+  // Integrated Bottom Panel DSP Channel Legend & Broadcast Metering (no overlap over C7 octave)
+  if (elDspVoices) {
+    const chipsKey = `${demo.id}:${partIdx}:${nv}`;
+    if (chipsKey !== dspChipsKey) {
+      dspChipsKey = chipsKey;
+      if (elDspTitle) {
+        elDspTitle.textContent = demo.bsound ? "B-SOUND DSP" : "DSP VOICES";
+        elDspTitle.classList.toggle("bsound", !!demo.bsound);
+      }
+      elDspVoices.innerHTML = "";
+      dspChipEls = [];
+      for (let v = 0; v < nv; v++) {
+        const tag = modeForVoice(v, curVals[v]);
+        const lbl = tag === "noise" ? "NSE" : tag.toUpperCase();
+        const col = V_COLS[v % V_COLS.length];
+        const chip = document.createElement("span");
+        chip.className = "f-vchip";
+        chip.innerHTML = `${dspMarkerSvg(tag, col)}<span>${lbl}</span>`;
+        elDspVoices.appendChild(chip);
+        dspChipEls.push(chip);
+      }
     }
-    const maxLeftW = Math.max(180, box.w - 252);
-    const hudW = Math.min(maxLeftW, totalW + 8);
-    ctx.fillStyle = "rgba(9, 11, 16, 0.82)";
-    ctx.fillRect(hudX, hudY, hudW, hudH);
-    ctx.strokeStyle = demo.bsound ? "rgba(232, 164, 84, 0.34)" : "rgba(127, 212, 204, 0.26)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(hudX, hudY, hudW, hudH);
-
-    let lx = hudX + 8;
-    const ly = hudY + 14;
-    ctx.fillStyle = demo.bsound ? "rgba(232, 164, 84, 0.90)" : "rgba(127, 212, 204, 0.86)";
-    ctx.fillText(hudTitle, lx, ly);
-    lx += 82;
-    for (let v = 0; v < nv; v++) {
-      const { tag, lbl } = vTags[v];
-      if (lx + 18 + lbl.length * 6.5 > hudX + hudW - 4) break;
+    for (let v = 0; v < dspChipEls.length; v++) {
       const isLive = Number.isFinite(curVals[v]) && curVals[v] >= Y_MIN - 0.5 && curVals[v] <= Y_MAX + 0.5;
-      const col = V_COLS[v % V_COLS.length];
-      ctx.globalAlpha = isLive ? 1.0 : 0.34;
-      drawDspMarker(lx + 4, ly - 3.5, 3.6, tag, col, isLive);
-      ctx.fillStyle = isLive ? "#ffffff" : "rgba(230, 225, 214, 0.72)";
-      ctx.fillText(lbl, lx + 12, ly);
-      lx += 18 + lbl.length * 6.5;
+      dspChipEls[v].classList.toggle("live", isLive);
     }
-    ctx.globalAlpha = 1;
   }
 
-  // Top-right Pro-Tools Broadcast Metering HUD (PK/RMS dBFS, L/R bars, LIM Eq. 20, Stereo Balance)
-  if (box.w > 460) {
-    const mW = 234, mH = 22;
-    const mX = box.x + box.w - mW - 6;
-    const mY = box.y + 6;
-    ctx.fillStyle = "rgba(9, 11, 16, 0.82)";
-    ctx.fillRect(mX, mY, mW, mH);
-    ctx.strokeStyle = "rgba(127, 212, 204, 0.26)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(mX, mY, mW, mH);
-
+  if (elMBarL) {
     const pk = Math.max(meterPeakL, meterPeakR);
     const rms = Math.sqrt(0.5 * (meterRmsL * meterRmsL + meterRmsR * meterRmsR));
     const pkDb = pk > 1e-4 ? Math.max(-60, 20 * Math.log10(pk)) : -60;
     const rmsDb = rms > 1e-4 ? Math.max(-60, 20 * Math.log10(rms)) : -60;
-    const pkStr = pk > 1e-4 ? pkDb.toFixed(1) : "-∞";
-    const rmsStr = rms > 1e-4 ? rmsDb.toFixed(1) : "-∞";
-
-    // Stereo L/R micro bargraph
-    const bX = mX + 7, bW = 46;
     const fL = clamp((20 * Math.log10(Math.max(1e-4, meterPeakL)) + 48) / 48, 0, 1);
     const fR = clamp((20 * Math.log10(Math.max(1e-4, meterPeakR)) + 48) / 48, 0, 1);
-    ctx.fillStyle = "rgba(230,225,214,0.10)";
-    ctx.fillRect(bX, mY + 5, bW, 4);
-    ctx.fillRect(bX, mY + 13, bW, 4);
-    ctx.fillStyle = fL > 0.85 ? "#ff6b57" : "#7fd4cc";
-    ctx.fillRect(bX, mY + 5, bW * fL, 4);
-    ctx.fillStyle = fR > 0.85 ? "#ff6b57" : "#e8a454";
-    ctx.fillRect(bX, mY + 13, bW * fR, 4);
-
-    // dBFS Peak & RMS readout + LIM indicator
-    ctx.font = '9.5px "IBM Plex Mono", monospace';
-    ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(230, 225, 214, 0.84)";
-    ctx.fillText(`PK ${pkStr}`, mX + 59, mY + 14);
-    ctx.fillStyle = "rgba(127, 212, 204, 0.80)";
-    ctx.fillText(`RMS ${rmsStr}`, mX + 114, mY + 14);
-
-    // Soft-Limiter Eq. 20 engagement marker
-    ctx.fillStyle = meterLimHit > 0.15 ? "#ff6b57" : "rgba(230, 225, 214, 0.25)";
-    ctx.fillText("LIM", mX + 178, mY + 14);
-
-    // Stereo balance dot L──●──R
-    const pX = mX + 204, pW = 22, pY = mY + 11;
-    ctx.strokeStyle = "rgba(230, 225, 214, 0.28)";
-    ctx.beginPath(); ctx.moveTo(pX, pY); ctx.lineTo(pX + pW, pY); ctx.stroke();
-    ctx.fillStyle = "#e8a454";
-    ctx.beginPath(); ctx.arc(pX + pW * 0.5 + clamp(meterBal, -1, 1) * (pW * 0.45), pY, 2.3, 0, PI * 2); ctx.fill();
+    elMBarL.style.width = `${(fL * 100).toFixed(1)}%`;
+    elMBarR.style.width = `${(fR * 100).toFixed(1)}%`;
+    elMBarL.classList.toggle("hot", fL > 0.85);
+    elMBarR.classList.toggle("hot", fR > 0.85);
+    elMPk.textContent = pk > 1e-4 ? pkDb.toFixed(1) : "-∞";
+    elMRms.textContent = rms > 1e-4 ? rmsDb.toFixed(1) : "-∞";
+    elMLim.classList.toggle("hit", meterLimHit > 0.15);
+    elMBal.style.left = `${(50 + clamp(meterBal, -1, 1) * 45).toFixed(1)}%`;
   }
 
   // Update hairline progress bar & live telemetry
