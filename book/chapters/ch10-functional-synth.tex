@@ -1,0 +1,130 @@
+\chapter{The Functional Synthesizer, Educational Repertoire, and DSP Telemetry}
+\label{ch:functional-synth}
+
+While Chapters~\ref{ch:daw-arch}--\ref{ch:containers} specified \emph{Orchestra} as a linear-tick stage DAW, B-System also ships a companion \textbf{Functional Synthesizer} (\texttt{edu/Music.html} and \texttt{edu/synth-engine.js}) that exposes the B-Sound Virtual DSP directly as a live mathematical oscilloscope. Instead of hiding synthesis behind piano-roll rectangles, every voice is evaluated as an explicit mathematical function $y_v(x)$ on a Cartesian pitch plane, annotated in real time with industry-standard DSP primitive labels and broadcast-grade metering.
+
+\section{The Functional Pitch-Curve Synthesizer Model}
+
+\begin{definition}[Functional Pitch-Curve Synthesizer]
+A \emph{functional pitch-curve synthesizer} is a five-tuple $\mathcal{F} = (X, Y, \mathcal{E}, \Phi^{-1}, \mathcal{M})$, where:
+\begin{enumerate}[leftmargin=1.5em]
+  \item $X = [-8, +8]$ is the normalized horizontal time-cursor domain scanned at demo speed $v_x > 0$ ($\Delta x = v_x / f_s$ per sample);
+  \item $Y = [-3, +3]$ is the visible vertical octave domain anchored at middle $\mathrm{C}_4$ ($F_0 = 261.6256\,\text{Hz}$), with active synthesis acceptance band $(-4.5, +4.5)$;
+  \item $\mathcal{E} : X \times \{0, \dots, P-1\} \to (\mathbb{R} \cup \{\mathrm{NaN}\})^{N_v}$ evaluates $N_v \le 10$ parallel voice curves $y_v(x)$ for part index $p$, where $\mathrm{NaN}$ denotes a musical rest;
+  \item $\Phi^{-1}(y) = F_0 \cdot 2^y$ maps each finite curve ordinate to instantaneous frequency in Hz (Equation~\ref{eq:log2-iso});
+  \item $\mathcal{M} : \{0,\dots,N_v-1\} \to \Sigma_{\mathrm{DSP}}$ assigns each voice a synthesis primitive label from the 13-symbol DSP alphabet $\Sigma_{\mathrm{DSP}}$.
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[Click-Free Continuity of Functional Rest Transitions and Scrubbing]
+\label{thm:func-synth-click}
+Let each voice envelope $E_v[n] \in [0, 1]$ evolve under the one-pole exponential smoother
+\begin{equation}
+E_v[n] = E_v[n-1] + \big(\mathbf{1}_{\mathrm{active}}(v, n) - E_v[n-1]\big)\cdot\Big(1 - e^{-1/(0.0028\,f_s)}\Big),
+\end{equation}
+with continuous phase integration $\varphi_v[n] = \varphi_v[n-1] + 2\pi \Phi^{-1}(y_v(x[n]))/f_s \pmod{2\pi}$. Then every transition between a finite curve $y_v(x)$ and a rest $\mathrm{NaN}$, as well as arbitrary interactive pointer scrubbing $x(t)$, produces a bounded-slew output free of step-click discontinuities, settling within $5\tau = 14\,\text{ms}$.
+\end{theorem}
+
+\begin{proof}
+Because $1 - e^{-1/(0.0028 f_s)} \in (0, 1)$, $E_v[n]$ is a convex combination of $E_v[n-1]$ and $\{0, 1\}$ with time constant $\tau = 2.8\,\text{ms}$. Across any $\mathrm{NaN}$ boundary, the sample-to-sample amplitude jump satisfies $|\Delta E_v| \le 1 - e^{-1/(0.0028 f_s)} \approx 0.0074$ at $f_s = 48000\,\text{Hz}$, suppressing broadband click energy while preserving crisp percussive attacks. By Theorem~\ref{thm:waveforms}, continuous phase integration preserves $C^0$ waveform continuity during live frequency glides and scrubbing.
+\end{proof}
+
+\section{The 13 Pro-Audio DSP Labels and Unified Telemetry Console}
+
+To bridge mathematical equations with professional audio engineering practice, every demo in the Functional Synthesizer renders a live \textbf{DSP Voice Strip} and \textbf{Broadcast Metering Strip} integrated directly into the bottom console panel (\texttt{\#formula-screen}) so the upper $\mathrm{C}_7$ pitch space remains unobstructed.
+
+\begin{definition}[The 13-Symbol DSP Primitive Alphabet $\Sigma_{\mathrm{DSP}}$]
+Every voice $v$ displays a color-coded IEC~60617 / Eurorack geometric vector marker drawn from the closed 13-element alphabet $\Sigma_{\mathrm{DSP}}$ (Table~\ref{tab:dsp-labels}), whose chip opacity toggles live between $1.0$ (sounding) and $0.34$ (rest). Moving playhead emitters on the graph remain clean circular halos annotated with live MIDI pitch $n = \mathrm{round}(60 + 12y)$ and instantaneous pitch-bend arrows ($\nearrow$ if $\Delta y > 0.035$, $\searrow$ if $\Delta y < -0.035$).
+\end{definition}
+
+\begin{table}[htbp]
+\centering
+\caption{The 13 industry-standard DSP primitive labels of B-Sound and \texttt{Music.html}.}
+\label{tab:dsp-labels}
+\scriptsize
+\begin{tabular}{@{}llll@{}}
+\toprule
+Tag & Category & Governing Formula & Representative B-Sound Shims \\
+\midrule
+\texttt{SINE} & Oscillator & $\sin(\varphi)$ (sub $<95\,\text{Hz}$: $+0.10\sin 2\varphi$) & \texttt{shimDing}, \texttt{shimKick}, \texttt{shimGrandPiano} \\
+\texttt{TRI} & Oscillator & $(2/\pi)\arcsin(\sin\varphi)$ & \texttt{shimWaddle}, \texttt{shimGuitar}, \texttt{shimPedalBass} \\
+\texttt{SAW} & Oscillator & $0.62\sum_{k=1}^{4}((-1)^{k-1}/k)\sin(k\varphi)$ & \texttt{shimViolin}, \texttt{shimCello}, \texttt{shimSwarmatron} \\
+\texttt{PLS} & Oscillator & $0.78\tanh(3.4\sin\varphi)$ & \texttt{shimIndustrialBass}, \texttt{shimCyberLead} \\
+\texttt{FM} & Modulation & $\sin(\varphi + 1.8\sin(2.76\varphi))$ (Eq.~12) & \texttt{shimPulseBell} (GM~98), metallic highs \\
+\texttt{AM} & Modulation & $w_{\mathrm{saw}}(\varphi)\cdot(0.55 + 0.45\sin(2\pi f_m t))$ (Eq.~19) & \texttt{shimFrogCroak} ($32\,\text{Hz}$ cu\'ica rasp) \\
+\texttt{NSE} & Stochastic & $H_f(\xi[n])$, $\xi[n] = \texttt{xorshift32}() \in [-1,1]$ & \texttt{shimSnare} wire, \texttt{shimIndustrialSnare} \\
+\texttt{SAT} & Non-Linear & $C_{25}(x) = ((3+k)x\cdot 20^\circ)/(\pi + k|x|)$ (Eq.~14) & \texttt{shimIndustrialKick}, \texttt{shimIndustrialBass} \\
+\texttt{LPF} & Filter & $H_{\mathrm{LP}}(z)$ (Eq.~13, resonant low-pass) & \texttt{shimCello} ($520\,\text{Hz}$), \texttt{shimWaddle} ($180\,\text{Hz}$) \\
+\texttt{HPF} & Filter & $H_{\mathrm{HP}}(z)$ (Eq.~13, high-pass edge) & \texttt{shimHiHat} ($7.5\,\text{kHz}$), \texttt{shimGlitchZap} \\
+\texttt{BPF} & Filter & $H_{\mathrm{BP}}(z)$ (Eq.~13, formant band-pass) & \texttt{shimPedalSwoosh}, \texttt{shimSaxFlute} breath \\
+\texttt{LFO} & Modulation & $\varphi(t) + d\sin(2\pi f_{\mathrm{LFO}} t)$ (Eq.~17) & \texttt{shimViolin} ($5.8\,\text{Hz}$ vibrato), \texttt{Swarmatron} \\
+\texttt{RVB} & Space & $\sum_{c=1}^{4} b_c[n - D_c]$, $g = 0.78$ (Eq.~15) & Hall decay tail in \emph{TRON Init} \& \emph{Etudes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{definition}[Broadcast Metering Telemetry]
+Per audio buffer of length $N = 1024$ frames, the telemetry engine computes:
+\begin{align}
+\mathrm{PK}_{\mathrm{dBFS}} &= \max\!\big(-60,\; 20\log_{10}\max(P_L, P_R)\big), \\
+\mathrm{RMS}_{\mathrm{dBFS}} &= \max\!\Big(-60,\; 20\log_{10}\sqrt{\tfrac{1}{2}(\mathrm{RMS}_L^2 + \mathrm{RMS}_R^2)}\Big), \\
+\mathrm{LIM} &= \mathbf{1}\big[\max(|x_L|, |x_R|) > 0.85\big], \qquad
+\mathrm{bal} = \frac{\mathrm{RMS}_R - \mathrm{RMS}_L}{\mathrm{RMS}_R + \mathrm{RMS}_L} \in [-1, 1],
+\end{align}
+with ballistic peak decay $0.84$ per block and stereo balance indicator rendered alongside dual L/R micro-bargraphs calibrated from $-48\,\text{dBFS}$ to $0\,\text{dBFS}$ (highlighting hot peaks above $85\%$ in warning red).
+\end{definition}
+
+\section{The 24-Demo (136-Part) Educational Repertoire}
+
+The educational console organizes 136 executable mathematical compositions into five progressive suites (Table~\ref{tab:edu-repertoire}), culminating in 1:1 B-Sound shim training banks and the four canonical album tracks.
+
+\begin{table}[htbp]
+\centering
+\caption{Complete 24-demo (136-part) educational curriculum of \texttt{Music.html}.}
+\label{tab:edu-repertoire}
+\scriptsize
+\begin{tabular}{@{}llrl@{}}
+\toprule
+Demos & Suite & Parts & Pedagogical \& Mathematical Focus \\
+\midrule
+01--04 & Harmonic \& Polyphonic & 16 & Harmonic fans, chord matrices, polyphonic counterpoint, timbre \\
+05--09 & Bitmask \& Acid Grooves & 20 & Bitmask percussion, acid filters, syncopated polyrhythms, chiptune \\
+10--12 & Ambient \& Canon & 12 & Modal ambient drones, phase-shifting canons, algorithmic spaces \\
+13--16 & Piecewise \& Analytical & 24 & Sage, Sapphire, Neon Pluck, and 18-part \emph{Analytical Etudes} \\
+17--20 & B-Sound Shim Banks & 32 & All 23 shims + Boing: Kinematic, Percussion, Orchestra, Industrial \\
+21--24 & B-Sound Album Tracks & 34 & 1:1 scores: \emph{Bells} (8), \emph{Caterpillar} (8), \emph{Rising} (8), \emph{TRON} (10) \\
+\midrule
+\textbf{01--24} & \textbf{Complete Repertoire} & \textbf{136} & \textbf{70 Math-Synth Parts + 66 B-Sound Virtual DSP Parts} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{The 18-Part \emph{Analytical Etudes} (Demo 16)}
+
+Demo~16 serves as the pedagogical bridge between raw analytical functions and classical/electronic composition across four phases:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Phase I (Parts 1--4 — From Chaos to Pulse):} Opens with the raw unquantized nested-sine carrier $y = 2.8\sin(5\sin(4\sin(3\sin(2\sin x))))$ (\texttt{Broken Radio I}), then tames it into consonant shortwave beacons ($\mathrm{Am9}$), 16th-note chiptune arpeggios ($\mathrm{Em}$), and Steve Reich variable-subdivision pentatonic grooves.
+  \item \textbf{Phase II (Parts 5--8 — Minimalist Ostinatos):} Harmonic overtone bloom ($\mathrm{A}_1 \to \mathrm{E}_5$), damped exponential piano pulses (\emph{Time}), 3/4 organ/celesta cascades (\emph{Cornfield Chase}), and WaveShaper sub-brass swells (\emph{Dune}).
+  \item \textbf{Phase III (Parts 9--12 — Piecewise Orchestration):} Music-box fifths (\emph{S.T.A.Y.}), logistic-sigmoid vocal portamento $y_a + (y_b - y_a)/(1 + e^{-14\tau})$ (\emph{Gladiator}), 3:4 organ polyrhythms (\emph{No Time For Caution}), and a D-minor string canon (\emph{Sangreal}).
+  \item \textbf{Phase IV (Parts 13--18 — Climax, Physics, and Mosaic):} Driving ostinato chase (\emph{Mombasa}), relativistic pendulum (\emph{Mountains}), heroic D-major fanfare (\emph{Flight}), 8-voice cathedral climax (\emph{Grand Symphony}), Aphex Twin's geometric gravity cascade $n = \lfloor \ln(1 - \tau/T)/\ln(0.78)\rfloor$ quantized onto $\mathrm{F}\sharp\mathrm{m9}/\mathrm{Dmaj9}$ (\emph{Bucephalus Bouncing Ball}, Part~17), and a braided macro-wave mosaic of short hyperbolic $1/(t+0.30)$ and exponential $e^{\pm kt}$ pieces floating over warm constant $\mathrm{Am9}\cdot\mathrm{F}\cdot\mathrm{C}\cdot\mathrm{G}$ harmonic lines (Part~18).
+\end{enumerate}
+
+\begin{proposition}[Hands-Free Curriculum Traversal vs.\ Local Part Cycling]
+In \texttt{[AUTO]} mode, when the cursor reaches $x \ge +8$ on the final part of demo $d$, both the Web Audio sample clock and the visual fallback clock advance automatically to $(d+1) \bmod 24$, part $0$, resetting voice envelopes and hall buffers so a listener can audit all 136 parts continuously without intervention. By contrast, manual \texttt{ArrowDown} (\texttt{selectPart}) computes $(p + 1) \bmod P_d$, cycling strictly within the current demo—matching the interaction contract of \texttt{Physics.html}.
+\end{proposition}
+
+\section{Chapter Conclusion}
+
+This chapter formalized the B-System Functional Synthesizer as an interactive educational counterpart to \emph{Orchestra}. We proved click-free rest and scrubbing continuity (Theorem~\ref{thm:func-synth-click}), defined the 13-symbol Pro-Audio DSP alphabet $\Sigma_{\mathrm{DSP}}$ and broadcast metering equations integrated into the unified bottom panel, and documented the complete 24-demo (136-part) educational curriculum bridging pure analytical functions to the B-Sound Virtual DSP.
+
+\section*{Synthesis and Conclusion to Part~III}
+\addcontentsline{toc}{section}{Synthesis and Conclusion to Part~III}
+
+Part~III established the complete architecture of a deterministic RTOS Digital Audio Workstation and its educational functional workbench:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Layered DAW \& Integer Time (Chapter~\ref{ch:daw-arch}):} Three-layer downward isolation, seqlock \texttt{OrchView} publication, seven windows, and exact integer tick--sample round-trip arithmetic at $960\,\mathrm{PPQ}$.
+  \item \textbf{Static Graph \& WCET Admission (Chapter~\ref{ch:rtos-graph}):} Nine-element C99 pipeline with $632\,\mu\text{s} \le T$ admission control, 64-block bounded catch-up pacer, and strict disambiguation of compute budgets from measured queue latency.
+  \item \textbf{Inserts, Hall \& Containers (Chapters~\ref{ch:inserts-hall}--\ref{ch:containers}):} Closed 8-algorithm insert catalogue, shared Schroeder hall memory, pre-read validated $73408$-byte sessions, SMF~1.0 round-trip exchange, and state-preserving offline WAV rendering.
+  \item \textbf{Functional Synthesizer \& Edu Repertoire (Chapter~\ref{ch:functional-synth}):} Direct curve-to-phase synthesis, 13 DSP primitive labels, live broadcast metering, and 136 hands-free educational studies.
+\end{enumerate}
+Part~IV now examines the engine-generated four-track album and positions B-Sound within the broader landscape of hardware emulators and commercial DAWs.

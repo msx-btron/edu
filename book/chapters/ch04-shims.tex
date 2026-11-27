@@ -1,7 +1,7 @@
 \chapter{The Procedural Sound Shim Architecture}
 \label{ch:shims}
 
-Having established the computational envelope of Chapter~\ref{ch:intro}, the algebraic pitch groups of Chapter~\ref{ch:group-theory}, and the thirteen DSP primitives of Chapter~\ref{ch:waveforms-dsp}, we now formalize the central synthesis abstraction of B-Sound: the \textbf{Sound Shim}, its immutable 32-program General MIDI registry, and its statically bounded 48-slot voice allocator.
+Having established the computational envelope of Chapter~\ref{ch:intro}, the algebraic pitch groups of Chapter~\ref{ch:group-theory}, and the thirteen DSP primitives of Chapter~\ref{ch:waveforms-dsp}, we now formalize the central synthesis abstraction of B-Sound: the \textbf{Sound Shim}, full mathematical specifications for all 23 canonical shims, the immutable 32-program General MIDI registry, and the statically bounded 48-slot voice allocator.
 
 \section{Formal Definition and Finite-Energy Properties of Sound Shims}
 
@@ -11,7 +11,7 @@ A \emph{Sound Shim} is a stateless synthesis operator $S : \mathbb{R}_{\ge 0} \t
 \label{eq:shim-def}
 y(t) = \mathbf{1}_{t \ge t_0} \sum_{k=1}^{K} \Big( A_k(t - t_0)\cdot W_k\!\big(\varphi_k(t - t_0)\big) \Big) * h_k(t),
 \end{equation}
-where $K \in \mathbb{N}_{>0}$ is a fixed compile-time partial count, $W_k \in \{w_{\mathrm{sin}}, w_{\mathrm{tri}}, w_{\mathrm{saw}}, w_{\mathrm{pls}}, y_{\mathrm{FM}}, \xi\}$ is a bounded primitive ($|W_k| \le 1$), $h_k \in \ell^1$ is the impulse response of a BIBO-stable biquad filter (or $\delta_0$ if unfiltered), and $A_k$ is an exponential ADSR envelope with peak $V_k > 0$, attack $t_{\mathrm{att}, k} \ge 0$, and decay constant $\tau_k > 0$:
+where $K \in \mathbb{N}_{>0}$ is a fixed compile-time partial count, $W_k \in \{w_{\mathrm{sin}}, w_{\mathrm{tri}}, w_{\mathrm{saw}}, w_{\mathrm{pls}}, y_{\mathrm{FM}}, \xi\}$ is a bounded primitive ($|W_k| \le 1$), $h_k \in L^1(\mathbb{R})$ is the impulse response of a BIBO-stable biquad filter (or $\delta_0$ if unfiltered), and $A_k$ is an exponential ADSR envelope with peak $V_k > 0$, attack $t_{\mathrm{att}, k} \ge 0$, and decay constant $\tau_k > 0$:
 \begin{equation}
 \label{eq:shim-env}
 A_k(s) =
@@ -22,6 +22,8 @@ V_k \cdot \exp\!\left(-\dfrac{s - t_{\mathrm{att}, k}}{\tau_k}\right), & s \ge t
 \end{equation}
 \end{definition}
 
+Throughout the shim specifications below, let $s = t - t_0 \in [0, d]$ denote local elapsed time, let $\mathrm{expRamp}(a, b, s, T) = a\,(b/a)^{s/T}$ denote an exponential trajectory from $a$ to $b$ over duration $T$, and let $\mathrm{linRamp}(a, b, s, T) = a + (b - a)(s/T)$ denote a linear ramp.
+
 \begin{theorem}[$L^2$-Integrability and Peak Boundedness of Sound Shims]
 \label{thm:shim-l2}
 Every B-Sound procedural shim $S(t_0, \mathbf{p})$ with finite partial count $K$, bounded primitives $|W_k| \le 1$, decay constants $\tau_k > 0$, and BIBO-stable filters $\|h_k\|_{L^1} < \infty$ satisfies $y \in L^1(\mathbb{R}) \cap L^2(\mathbb{R}) \cap L^\infty(\mathbb{R})$, with explicit peak bound
@@ -31,54 +33,203 @@ Every B-Sound procedural shim $S(t_0, \mathbf{p})$ with finite partial count $K$
 \end{theorem}
 
 \begin{proof}
-For each partial $k$, let $u_k(s) = A_k(s) W_k(\varphi_k(s))$ for $s \ge 0$. Since $|W_k| \le 1$ and $0 \le A_k(s) \le V_k$, we have $\|u_k\|_{L^\infty} \le V_k$, and
-\[
-\|u_k\|_{L^1} \le \int_0^{t_{\mathrm{att},k}} V_k \frac{s}{t_{\mathrm{att},k}}\,ds + \int_{t_{\mathrm{att},k}}^\infty V_k e^{-(s - t_{\mathrm{att},k})/\tau_k}\,ds = V_k\left(\frac{t_{\mathrm{att},k}}{2} + \tau_k\right) < \infty.
-\]
-Similarly $\|u_k\|_{L^2}^2 \le V_k^2(t_{\mathrm{att},k}/3 + \tau_k/2) < \infty$. By Young's convolution inequality, for any $p \in \{1, 2, \infty\}$ and BIBO-stable filter $h_k \in L^1$ (guaranteed by Theorem~\ref{thm:biquad-stable}), $\|u_k * h_k\|_{L^p} \le \|u_k\|_{L^p}\,\|h_k\|_{L^1} < \infty$. Summing over $k = 1, \dots, K$ by the triangle inequality yields $y \in L^1 \cap L^2 \cap L^\infty$ and $\|y\|_{L^\infty} \le \sum_{k=1}^K V_k \|h_k\|_{L^1}$.
+For each partial $k$, let $u_k(s) = A_k(s) W_k(\varphi_k(s))$ for $s \ge 0$. Since $|W_k| \le 1$ and $0 \le A_k(s) \le V_k$, we have $\|u_k\|_{L^\infty} \le V_k$, $\|u_k\|_{L^1} \le V_k(t_{\mathrm{att},k}/2 + \tau_k) < \infty$, and $\|u_k\|_{L^2}^2 \le V_k^2(t_{\mathrm{att},k}/3 + \tau_k/2) < \infty$. By Young's convolution inequality, for $p \in \{1, 2, \infty\}$ and BIBO-stable $h_k \in L^1$ (Theorem~\ref{thm:biquad-stable}), $\|u_k * h_k\|_{L^p} \le \|u_k\|_{L^p}\|h_k\|_{L^1} < \infty$. Summing over $k = 1,\dots,K$ yields the claim.
 \end{proof}
 
-In the Web Audio prototype, every transient oscillator registers into a disposal list via \texttt{registerTrackOsc(osc)}; stopping or switching tracks invokes \texttt{osc.stop(0)} and \texttt{osc.disconnect()} across the list. In the native C99 runtime (\texttt{lilcu64\_wa.c}), oscillators draw strictly from a static pool with zero \texttt{malloc()} calls.
+\section{Taxonomy of the 23 Canonical B-Sound Shims}
 
-\section{The 23 Canonical B-Sound Shims}
-
-B-Sound organizes its zero-byte modular sound bank into four functional families covering chiptune kinematics, percussion, acoustic/orchestral instruments, and industrial synthesis (Table~\ref{tab:23-shims}).
+B-Sound organizes its zero-byte sound bank into four families (Table~\ref{tab:23-shims}): Kinematic Mascot Shims (1A--5 + Boing), Percussion DSP Shims (6--8, 12--13, 23), Acoustic \& Orchestral Shims (9--11, 18--22), and Industrial \& Swarm Shims (14--17). Sections~\ref{sec:fam-kin}--\ref{sec:fam-ind} present the complete mathematical model for every shim in the bank.
 
 \begin{table}[htbp]
 \centering
-\caption{Canonical B-Sound procedural Sound Shim library (zero-byte asset footprint).}
+\caption{Overview of the 23 canonical B-Sound shims plus \texttt{sfxLilCubeBoing}.}
 \label{tab:23-shims}
-\small
-\begin{tabular}{@{}lll@{}}
+\scriptsize
+\begin{tabular}{@{}llll@{}}
 \toprule
-Shim Identifier & Acoustic / Synth Role & DSP Topology \\
+ID & Shim Identifier & Acoustic / Synth Role & Primary DSP Primitives \\
 \midrule
-\texttt{shimPulseSquash} & Dual-phase singing triad & 6-harmonic additive sine + pitch scoop ($0.97 \to 1.0$) \\
-\texttt{shimFrogCroak} & Cu\'ica / nocturnal frog & Dual saw/tri + $2.2f$ formant BP + $32\,\text{Hz}$ AM rasp \\
-\texttt{shimPulseBell} & FM spiritual bell & 2-Op FM sine ($f_m/f_c = 2.76$, $I = 1.8$) \\
-\texttt{shimWaddle} & Acoustic walking bass & Dual triangle + $180\,\text{Hz}$ 2-pole LPF body \\
-\texttt{shimFloat} & Fender Rhodes E-piano & Polyphonic additive sine + resonant tines \\
-\texttt{shimDance} & Star / coin arpeggio & Rapid 16th-note sine cascade + exponential decay \\
-\texttt{shimDing} & Crystalline chime & Pure high sine ($\mathrm{A}_6/\mathrm{E}_7$) + $0.70\,\text{s}$ tail \\
-\texttt{shimKick} & Jazz / retro bass drum & Exponential sine sweep ($120 \to 45\,\text{Hz}$, $160\,\text{ms}$) \\
-\texttt{shimSnare} & Dual-component snare & Triangle shell ($175\,\text{Hz}$) + BP $2.4\,\text{kHz}$ wire noise \\
-\texttt{shimHiHat} & Metallic cymbal chick & HP $7.5\,\text{kHz}$ white noise ($55\,\text{ms}$ closed / $280\,\text{ms}$ open) \\
-\texttt{shimGuitar} & Hollowbody jazz guitar & Dual triangle + LP $2.8\,\text{kHz}$ comb resonance \\
-\texttt{shimGrandPiano} & Concert grand piano & Tri-harmonic detuned strings + felt hammer transient \\
-\texttt{shimPianoHammer} & Felt hammer strike & Low triangle click ($120 \to 40\,\text{Hz}$, helper shim) \\
-\texttt{shimPedalSwoosh} & Damper pedal lift & Formant BP ($450 \to 280\,\text{Hz}$) air friction (helper) \\
-\texttt{shimPedalBass} & Sforzando sub-bass & $\mathrm{A}_0$ ($27.5\,\text{Hz}$) / $\mathrm{A}_1$ ($55\,\text{Hz}$) piano thunder \\
-\texttt{shimSaxFlute} & Breathy woodwind & Triangle lead + $1.8f$ / $2\,\text{kHz}$ BP breath noise ($0.025$) \\
-\texttt{shimViolin} & Bowed violin / viola & 3-node rosin noise + dual saw + LPF \\
-\texttt{shimCello} & Arco / pizzicato cello & Deep LPF saw ($520\,\text{Hz}$, $Q_{\mathrm{dB}} = 20\log_{10} 2.2$) \\
-\texttt{shimTimpani} & Concert kettle drum & Membrane $(1,1)$ pitch glide + LP $260\,\text{Hz}$ \\
-\texttt{shimIndustrialBass} & Overdriven cyber bass & WaveShaper ($k=25$) + dual saw + LP $2.6\,\text{kHz}$ sweep \\
-\texttt{shimIndustrialKick} & Sub-drop industrial kick & Fixed $160 \to 42\,\text{Hz}$ saturated punch ($220\,\text{ms}$) \\
-\texttt{shimCyberLead} & Detuned industrial brass & Unison saw/pulse + resonant LPF ($400$--$3800\,\text{Hz}$) \\
-\texttt{shimSwarmatron} & 8-voice ribbon cluster & 8 micro-detuned oscillators in 1 voice slot \\
+1A & \texttt{shimPulseSquash} & Singing harmonic triad & 6 sine partials + scoop \\
+1A$'$ & \texttt{shimFrogCroak} & Cu\'ica / nocturnal frog & Saw+Tri + BP formant + $32\,\text{Hz}$ AM \\
+1B & \texttt{shimPulseBell} & Spiritual / FM bell & 8-partial sine / 2-Op FM ($r=2.76, I=1.8$) \\
+2 & \texttt{shimWaddle} & Crystal step / walking bass & Triangle drop ($0.82f_0$) + $180\,\text{Hz}$ LP \\
+3 & \texttt{shimFloat} & Glass harp / Rhodes chord & 4 staggered sines + $0.985f \to f$ scoop \\
+4 & \texttt{shimDance} & Star / coin arpeggio & 5-step sine cascade \\
+5 & \texttt{shimDing} & Crystalline ride chime & Pure sine + exponential tail \\
+--- & \texttt{sfxLilCubeBoing} & Touchdown spring boing & Dual-ramp triangle bounce \\
+6 & \texttt{shimKick} & Jazz / retro bass drum & Sine sweep $2.2f_0 \to 0.75f_0$ \\
+7 & \texttt{shimSnare} & Dual-component snare & Tri shell + BP wire noise (rimshot mode) \\
+8 & \texttt{shimHiHat} & Metallic cymbal chick & HP $7.5\,\text{kHz}$ noise + metallic sine ping \\
+9 & \texttt{shimGuitar} & Hollowbody jazz guitar & Tri (+ slide) + LP $2800 \to 1400\,\text{Hz}$ \\
+10 & \texttt{shimGrandPiano} & Concert grand piano & 3 inharmonic partials $\{1, 2.002, 3.006\}$ \\
+11 & \texttt{shimPedalBass} & Sforzando sub-bass & Tri sub with $f_0 \to 0.98f_0$ sag \\
+12 & \texttt{shimIndustrialKick} & Distorted cyber kick & Sine $160 \to 42\,\text{Hz}$ + $C_{25}$ click \\
+13 & \texttt{shimIndustrialSnare} & Overdriven cyber clank & BP noise $\to C_{30}$ + $\{220, 352\}\,\text{Hz}$ ring \\
+14 & \texttt{shimIndustrialBass} & 16th-note overdrive bass & Saw+Sq ($1.005$) $\to$ LP sweep $\to C_{20}$ \\
+15 & \texttt{shimSwarmatron} & 8-voice ribbon cluster & 8 detuned saws $\to$ LP sweep (1 DAW slot) \\
+16 & \texttt{shimGlitchZap} & Terminal data burst & Saw $2.5f_0 \to 80\,\text{Hz}$ $\to$ HP $1.8\,\text{kHz}$ \\
+17 & \texttt{shimCyberLead} & Overdriven sync lead & Saw+Sq ($1.004$) $\to$ LP sweep $\to C_{25}$ \\
+18 & \texttt{shimSaxFlute} & Breathy jazz woodwind & Tri $\to$ LP $2.4\,\text{kHz}$ + $1.8f_0$ BP breath \\
+19 & \texttt{shimPianoHammer} & Felt hammer impact & Tri $120 \to 40\,\text{Hz}$ ($35\,\text{ms}$, helper) \\
+20 & \texttt{shimPedalSwoosh} & Damper pedal lift & BP noise $450 \to 280\,\text{Hz}$ (helper) \\
+21 & \texttt{shimViolin} & Bowed solo/section violin & Rosin BP + 2 saws + $5.8\,\text{Hz}$ LFO + formants \\
+22 & \texttt{shimCello} & Arco / pizzicato cello & Saw+Tri $\to$ LP $520/1200\,\text{Hz}$ ($Q=2.2$) \\
+23 & \texttt{shimTimpani} & Concert kettle drum & Head $1.55f_0 \to f_0$ + $1.48f_0$ mode + mallet LP \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Family I: Kinematic Mascot Shims (1A--5 and Boing)}
+\label{sec:fam-kin}
+
+\begin{definition}[Shim 1A — \texttt{shimPulseSquash}$(t_0, v_{\mathrm{mul}}, \rho)$]
+A 6-partial additive singing C-major chord ($\mathrm{C}_4, \mathrm{C}_5, \mathrm{E}_5, \mathrm{G}_5, \mathrm{C}_6, \mathrm{E}_6$) with upward $3\%$ scoop:
+\begin{equation}
+y(s) = \sum_{k=1}^{6} A_k(s)\sin\!\big(\varphi_k(s)\big), \qquad
+f_k(s) = \begin{cases} \mathrm{expRamp}(0.97\rho F_k,\, \rho F_k,\, s,\, 0.10), & s < 0.10, \\ \rho F_k, & s \ge 0.10, \end{cases}
+\end{equation}
+with $(F_k, V_k, d_k) \in \{(261.63, 0.055, 2.2),\,(523.25, 0.070, 2.4),\,(659.25, 0.048, 2.0),\,(783.99, 0.052, 2.1),\,(1046.50, 0.040, 1.7),\,(1318.51, 0.025, 1.4)\}$. Each partial ramps linearly from $10^{-4}$ to $v_{\mathrm{mul}} V_k$ in $0.09\,\text{s}$ and decays exponentially to $10^{-4}$ at $s = d_k$.
+\end{definition}
+
+\begin{definition}[Shim 1A-Alt — \texttt{shimFrogCroak}$(t_0, \rho, v_{\mathrm{mul}}, \mathrm{dbl})$]
+A call-and-response cu\'ica / frog rasp emitting Stroke~1 at $\Delta t_1 = 0\,\text{s}$ ($f_b = 125\,\text{Hz}, d = 0.19\,\text{s}, \alpha = 1.0$) and, if $\mathrm{dbl} = 1$, Stroke~2 at $\Delta t_2 = 0.25\,\text{s}$ ($f_b = 155\,\text{Hz}, d = 0.095\,\text{s}, \alpha = 0.85$). Each stroke sums a sawtooth throat oscillator ($f_1 = \rho f_b$) and triangle mouth overtone ($f_2 = 2.45\rho f_b$) through a bandpass cavity filter $H_{\mathrm{BP}}(f_c = 2.2\rho f_b, Q = 3.8)$:
+\begin{align}
+f_1(s) &= \begin{cases} \mathrm{expRamp}(0.88 f_1, 1.25 f_1, s, 0.75d), & s < 0.75d, \\ \mathrm{linRamp}(1.25 f_1, 0.95 f_1, s - 0.75d, 0.25d), & 0.75d \le s \le d, \end{cases} \\
+f_2(s) &= \mathrm{expRamp}(0.90 f_2, 1.20 f_2, \min(s, 0.75d), 0.75d).
+\end{align}
+The output gain is modulated by a $32.26\,\text{Hz}$ ($\Delta p = 0.031\,\text{s}$) triangular AM rasp train of $N_p = \lfloor d / 0.031 \rfloor$ pulses with peak $P_p = 0.24\,v_{\mathrm{mul}}\alpha(1 - 0.07p)$, rising $0.2 P_p \to P_p$ in $9\,\text{ms}$ and falling to $0.15 P_p$ at $25\,\text{ms}$, followed by a $40\,\text{ms}$ exponential release.
+\end{definition}
+
+\begin{definition}[Shim 1B — \texttt{shimPulseBell}$(t_0, v_{\mathrm{mul}}, \rho)$]
+B-Sound specifies two dual realizations of \texttt{shimPulseBell}:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Web Audio Additive Swell:} An 8-partial sine overtone series $(F_k, V_k, d_k) \in \{(130.81, 0.065, 3.5),$ $(196.00, 0.050, 3.2),$ $(261.63, 0.070, 3.4),$ $(392.00, 0.055, 3.0),$ $(523.25, 0.060, 2.8),$ $(659.25, 0.040, 2.5),$ $(783.99, 0.035, 2.3),$ $(1046.50, 0.025, 1.9)\}$ with scoop $0.985\rho F_k \xrightarrow{\exp} \rho F_k$ in $0.14\,\text{s}$ and $0.12\,\text{s}$ linear attack.
+  \item \textbf{C99 Orchestra 2-Op FM (GM Program~98):} $y(s) = v_{\mathrm{mul}} e^{-s/1.8}\sin\!\big(2\pi f_c s + 1.8\sin(2\pi \cdot 2.76 f_c s)\big)$ (Theorem~\ref{thm:jacobi-anger}).
+\end{enumerate}
+\end{definition}
+
+\begin{definition}[Shim 2 — \texttt{shimWaddle}$(t_0, f_0, v_{\mathrm{mul}}, d)$]
+A bipedal step and upright walking bass ($f_0 = 430\,\text{Hz}, d = 0.08\,\text{s}$ default):
+\begin{equation}
+y(s) = \mathrm{expRamp}(0.12 v_{\mathrm{mul}}, 0.001, s, d) \cdot \big(w_{\mathrm{tri}}(\varphi(s)) * h_{\mathrm{LP}, 180}\big), \quad
+f(s) = \mathrm{expRamp}(f_0, 0.82 f_0, s, d),
+\end{equation}
+where the $180\,\text{Hz}$ low-pass body filter is active in the C99 bass voice (\texttt{shimWaddleD}, GM Program~32).
+\end{definition}
+
+\begin{definition}[Shim 3 — \texttt{shimFloat}$(t_0, f_0, v_{\mathrm{mul}}, \mathcal{C}, \delta, d)$]
+A staggered Rhodes / glass-harp chord. For default $\mathcal{C} = \emptyset$ and $\rho = f_0/523.25$, four sine voices enter at $t_k \in \{0, 0.06, 0.12, 0.18\}\,\text{s}$ with $(F_k, V_k, d_k) \in \{(523.25\rho, 0.12, 0.55),$ $(659.25\rho, 0.10, 0.50),$ $(783.99\rho, 0.11, 0.65),$ $(1046.50\rho, 0.08, 0.75)\}$; each scoops $0.985 F_k \to F_k$ in $40\,\text{ms}$, attacks in $30\,\text{ms}$, and decays exponentially to $10^{-4}$.
+\end{definition}
+
+\begin{definition}[Shim 4 — \texttt{shimDance}$(t_0, \rho, v_{\mathrm{mul}}, \mathcal{N})$]
+A 5-note crystalline D-major cascade ($\mathrm{D}_5, \mathrm{F}\sharp_5, \mathrm{A}_5, \mathrm{D}_6, \mathrm{F}\sharp_6$) with default entries $(t_k, F_k, V_k, d_k) \in \{(0, 587.33\rho, 0.16, 0.20),$ $(0.085, 739.99\rho, 0.15, 0.22),$ $(0.170, 880.00\rho, 0.16, 0.25),$ $(0.255, 1174.66\rho, 0.18, 0.32),$ $(0.370, 1479.98\rho, 0.12, 0.45)\}$, pure sine oscillators with $20\,\text{ms}$ linear attack and exponential release to $10^{-4}$.
+\end{definition}
+
+\begin{definition}[Shim 5 — \texttt{shimDing}$(t_0, f_0, v_{\mathrm{mul}}, d)$ and \texttt{sfxLilCubeBoing}$(t_0)$]
+\texttt{shimDing} ($f_0 = 1760\,\text{Hz}, d = 0.70\,\text{s}$) is a pure sine chime with $12\,\text{ms}$ linear attack to $0.15 v_{\mathrm{mul}}$ and exponential decay to $10^{-4}$ at $s = d$. The auxiliary touchdown spring \texttt{sfxLilCubeBoing} drives a triangle oscillator over $d = 0.28\,\text{s}$ from $523.25 \xrightarrow{0.14\,\text{s}} 1174.66 \xrightarrow{0.14\,\text{s}} 783.99\,\text{Hz}$ with exponential amplitude $0.20 \to 0.005$.
+\end{definition}
+
+\section{Family II: Percussion DSP Shims (6--8, 12--13, 23)}
+\label{sec:fam-perc}
+
+\begin{definition}[Shim 6 — \texttt{shimKick}$(t_0, f_0, v_{\mathrm{mul}}, d)$]
+An acoustic/retro kick drum ($f_0 = 65\,\text{Hz}, d = 0.16\,\text{s}$):
+\begin{equation}
+y(s) = \mathrm{expRamp}(0.24 v_{\mathrm{mul}}, 0.001, s, d)\cdot \sin\!\big(\varphi(s)\big), \qquad
+f(s) = \mathrm{expRamp}(2.2 f_0,\, 0.75 f_0,\, s,\, d).
+\end{equation}
+\end{definition}
+
+\begin{definition}[Shim 7 — \texttt{shimSnare}$(t_0, v_{\mathrm{mul}}, \mathrm{rim})$]
+A dual-branch shell + snare-wire synthesizer ($\mathrm{rim} = 1$ when MIDI velocity $v_m \ge 110$):
+\begin{equation}
+y(s) = A_{\mathrm{sh}}(s)\,w_{\mathrm{tri}}(\varphi_{\mathrm{sh}}(s)) + A_{\mathrm{wr}}(s)\big(\xi * h_{\mathrm{BP}}(f_{\mathrm{bp}}, Q=2.0)\big)(s),
+\end{equation}
+where $f_{\mathrm{sh}}(s) = \mathrm{expRamp}(f_b, 0.65 f_b, s, 0.12)$ with $f_b = 220\,\text{Hz}$ (rimshot) or $175\,\text{Hz}$ (normal), $A_{\mathrm{sh}}: 0.18 v_{\mathrm{mul}} \to 0.001$ in $0.12\,\text{s}$; and wire branch $f_{\mathrm{bp}} = 3200\,\text{Hz}$ ($d_{\mathrm{wr}} = 0.09\,\text{s}$) for rimshot or $2400\,\text{Hz}$ ($d_{\mathrm{wr}} = 0.15\,\text{s}$) for normal, $A_{\mathrm{wr}}: 0.16 v_{\mathrm{mul}} \to 0.001$.
+\end{definition}
+
+\begin{definition}[Shim 8 — \texttt{shimHiHat}$(t_0, \mathrm{open}, v_{\mathrm{mul}})$]
+With $d = 0.28\,\text{s}$ ($\mathrm{open} = 1$, MIDI $v_m \ge 100$) or $d = 0.055\,\text{s}$ (closed):
+\begin{equation}
+y(s) = \mathrm{expRamp}(0.08 v_{\mathrm{mul}}, 5\!\times\!10^{-4}, s, d)(\xi * h_{\mathrm{HP},7500})(s)
+     + \mathrm{expRamp}(0.04 v_{\mathrm{mul}}, 5\!\times\!10^{-4}, s, d)\sin(2\pi f_m s),
+\end{equation}
+with metallic overtone ping $f_m = 6200\,\text{Hz}$ (open) or $8400\,\text{Hz}$ (closed).
+\end{definition}
+
+\begin{definition}[Shim 12 — \texttt{shimIndustrialKick}$(t_0, v_{\mathrm{mul}}, d)$]
+A fixed-pitch industrial sub-punch ($d = 0.22\,\text{s}$) summing a sine body ($160 \xrightarrow{\exp} 42\,\text{Hz}$, $0.32 v_{\mathrm{mul}} \to 0.001$ over $d$) with a saturated click transient: triangle $380 \xrightarrow{\exp} 55\,\text{Hz}$ ($50\,\text{ms}$) $\to$ $h_{\mathrm{LP}, 1800}$ $\to$ WaveShaper $C_{25}$ (Eq.~\ref{eq:waveshaper}), gain $0.24 v_{\mathrm{mul}} \to 0.001$ in $55\,\text{ms}$.
+\end{definition}
+
+\begin{definition}[Shim 13 — \texttt{shimIndustrialSnare}$(t_0, v_{\mathrm{mul}}, \mathrm{clank})$]
+Sums an overdriven noise burst $\xi \to h_{\mathrm{BP}}(f_{\mathrm{bp}}, Q = 2.2) \to C_{30}$ ($f_{\mathrm{bp}} = 3600\,\text{Hz}, d = 0.08\,\text{s}$ for clank; $2600\,\text{Hz}, d = 0.17\,\text{s}$ for backbeat; gain $0.24 v_{\mathrm{mul}} \to 0.001$) with a dissonant metallic trash-can pair $w_{\mathrm{pls}}(2\pi\cdot 220 s) + w_{\mathrm{tri}}(2\pi\cdot 352 s)$, each decaying $0.12 v_{\mathrm{mul}} \to 0.001$ over $0.11\,\text{s}$.
+\end{definition}
+
+\begin{definition}[Shim 23 — \texttt{shimTimpani}$(t_0, f_0, v_{\mathrm{mul}}, d)$]
+A 3-branch concert kettle drum ($f_0 = 82.41\,\text{Hz}, d = 1.2\,\text{s}$):
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Membrane Head:} Sine sweeping $1.55 f_0 \xrightarrow{\exp} f_0$ in $50\,\text{ms}$, gain $0.35 v_{\mathrm{mul}} \to 0.001$ over $d$.
+  \item \textbf{Copper Kettle Mode $(1,1)$:} Constant sine at $1.48 f_0$, gain $0.14 v_{\mathrm{mul}} \to 0.001$ over $0.4d$.
+  \item \textbf{Felt Mallet Impact:} Noise $\xi * h_{\mathrm{LP}, 260}$, gain $0.18 v_{\mathrm{mul}} \to 0.001$ in $45\,\text{ms}$.
+\end{enumerate}
+\end{definition}
+
+\section{Family III: Acoustic and Orchestral Shims (9--11, 18--22)}
+\label{sec:fam-orch}
+
+\begin{definition}[Shim 9 — \texttt{shimGuitar}$(t_0, \mathcal{N}, v_{\mathrm{mul}})$]
+Each note $(f_0, d, v, f_{\mathrm{slide}})$ drives a triangle oscillator (optional exponential pitch slide to $f_{\mathrm{slide}}$ over $0.7d$) through a time-varying low-pass filter sweeping $f_c(s) = \mathrm{expRamp}(2800, 1400, s, d)\,\text{Hz}$, with $15\,\text{ms}$ linear thumb-pick attack to $v\cdot v_{\mathrm{mul}}$ and exponential release to $10^{-4}$.
+\end{definition}
+
+\begin{definition}[Shim 10 — \texttt{shimGrandPiano}$(t_0, f_0, v_{\mathrm{mul}}, d, \mathrm{stacc})$]
+A 3-partial stiff-string model with natural inharmonicity ratios $r_h \in \{1.0, 2.002, 3.006\}$, waveforms $(w_{\mathrm{sin}}, w_{\mathrm{tri}}, w_{\mathrm{sin}})$, gains $V_h \in \{0.16, 0.08, 0.035\}$, effective duration $d_0 = \min(d, 0.18)$ if $\mathrm{stacc}=1$ else $d$, and upper-partial damping $d_h = d_0(1 - 0.25 h)$ ($h \in \{0,1,2\}$). Each partial has an $8\,\text{ms}$ wooden-hammer linear attack and exponential decay to $10^{-4}$.
+\end{definition}
+
+\begin{definition}[Shim 11 — \texttt{shimPedalBass}$(t_0, f_0, v_{\mathrm{mul}}, d)$]
+A sforzando sub-bass ($f_0 = 55\,\text{Hz}, d = 2.2\,\text{s}$): triangle oscillator with subtle $2\%$ string-tension sag $f(s) = \mathrm{expRamp}(f_0, 0.98 f_0, s, d)$ and exponential envelope $0.20 v_{\mathrm{mul}} \to 5\times 10^{-4}$.
+\end{definition}
+
+\begin{definition}[Shim 18 — \texttt{shimSaxFlute}$(t_0, \mathcal{N}, v_{\mathrm{mul}})$]
+Each note sums a triangle body branch (optional $0.75d$ slide) through $h_{\mathrm{LP}}(2400\,\text{Hz}, Q=2.0)$ ($25\,\text{ms}$ attack to $v\cdot v_{\mathrm{mul}}$) with a parallel breath-turbulence branch $\xi * h_{\mathrm{BP}}(1.8 f_0, Q = 5.0)$ decaying exponentially $0.025 v_{\mathrm{mul}} \to 5\times 10^{-4}$ over $d$.
+\end{definition}
+
+\begin{definition}[Shims 19 \& 20 — Helper Piano Mechanics]
+\texttt{shimPianoHammer}$(t_0, v_{\mathrm{mul}})$ generates a $35\,\text{ms}$ felt thump via triangle $120 \xrightarrow{\exp} 40\,\text{Hz}$ (gain $0.12 v_{\mathrm{mul}} \to 5\times 10^{-4}$). \texttt{shimPedalSwoosh}$(t_0, v_{\mathrm{mul}}, d=0.40)$ models damper lift via $\xi * h_{\mathrm{BP}}(f_c(s), Q=3.5)$ with $f_c(s) = \mathrm{expRamp}(450, 280, s, d)\,\text{Hz}$ and $80\,\text{ms}$ attack to $0.05 v_{\mathrm{mul}}$. Neither helper is mapped directly in \texttt{PROG[32]}.
+\end{definition}
+
+\begin{definition}[Shim 21 — \texttt{shimViolin}$(t_0, \mathcal{N}, v_{\mathrm{mul}}, \mathrm{solo})$]
+A five-stage bowed string model:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Rosin Transient:} $\xi * h_{\mathrm{BP}}(3200\,\text{Hz}, Q=3.0)$, $8\,\text{ms}$ attack to $0.045 v_{\mathrm{mul}}$, decay to $5\times 10^{-4}$ at $40\,\text{ms}$.
+  \item \textbf{Dual Dispersive Saws:} $w_{\mathrm{saw}}(\varphi_1) + w_{\mathrm{saw}}(\varphi_2)$ at $(f_0, 1.002 f_0)$ ($+3.46\,\text{cents}$ detune; optional $0.85d$ slide).
+  \item \textbf{Delayed Vibrato LFO:} $5.8\,\text{Hz}$ sine modulating both frequencies after delay $\min(0.08, 0.3d)\,\text{s}$, ramping to depth $0.012 f_0$ (solo) or $0.008 f_0$ (section) by $\min(0.24, 0.7d)\,\text{s}$.
+  \item \textbf{Body Formants:} Series cascade $h_{\mathrm{PEAK}}(520\,\text{Hz}, Q=2.2, +4\,\text{dB}) \to h_{\mathrm{PEAK}}(2800\,\text{Hz}, Q=1.8, +3\,\text{dB}) \to h_{\mathrm{LP}}(6200/5000\,\text{Hz})$. (In C99 \emph{Orchestra}, where \texttt{wa\_filter} lacks peaking, \texttt{shimViolin} uses a 3-node noise/2-saw/LP reduction and delegates body resonance to the track EQ insert.)
+  \item \textbf{Bowed Envelope:} Linear attack $\min(0.045, 0.25d)\,\text{s}$ to $v$, sustain $0.90v$ at $0.75d$, exponential release to $5\times 10^{-4}$.
+\end{enumerate}
+\end{definition}
+
+\begin{definition}[Shim 22 — \texttt{shimCello}$(t_0, \mathcal{N}, v_{\mathrm{mul}}, \mathrm{pizz})$]
+Sums unison sawtooth and triangle oscillators into $h_{\mathrm{LP}}(f_c, Q=2.2)$ with $f_c = 1200\,\text{Hz}$ (pizzicato) or $520\,\text{Hz}$ (arco). Pizzicato uses an $8\,\text{ms}$ pluck to $1.3v$ with exponential release; arco uses a $\min(0.08, 0.3d)\,\text{s}$ bow swell to $v$, sustain $0.95v$ at $0.7d$, and exponential release to $5\times 10^{-4}$.
+\end{definition}
+
+\section{Family IV: Industrial and Swarm Shims (14--17)}
+\label{sec:fam-ind}
+
+\begin{definition}[Shim 14 — \texttt{shimIndustrialBass}$(t_0, f_0, d, v_{\mathrm{mul}}, f_{\mathrm{slide}})$]
+Dual detuned oscillators (sawtooth at $f_0$, square at $1.005 f_0$; optional $0.8d$ slide) routed through a Moog-style resonant low-pass sweep $f_c(s) = \mathrm{expRamp}(2600, 420, s, d)\,\text{Hz}$ ($Q = 4.5$) into WaveShaper $C_{20}$, with $8\,\text{ms}$ linear attack to $0.22 v_{\mathrm{mul}}$ and exponential release to $5\times 10^{-4}$.
+\end{definition}
+
+\begin{definition}[Shim 15 — \texttt{shimSwarmatron}$(t_0, f_c, d, v_{\mathrm{mul}}, \Delta_c)$]
+An 8-oscillator ribbon sawtooth cluster ($\Delta_c = 24\,\text{cents}$ default) with symmetric initial detunings $\delta_j \in \{\pm 0.12, \pm 0.35, \pm 0.65, \pm 1.00\}\Delta_c$ undergoing piecewise-linear micro-drift $\delta_j \xrightarrow{0.5d} 1.5\delta_j \xrightarrow{0.5d} 0.8\delta_j$. All eight voices sum into a resonant low-pass filter ($Q = 2.5$) sweeping $950 \xrightarrow{0.6d} 1450 \xrightarrow{0.4d} 800\,\text{Hz}$ and master envelope ($0.40\,\text{s}$ attack to $0.18 v_{\mathrm{mul}}$, sustain to $d - 0.50\,\text{s}$, exponential release). Despite spawning 8 oscillators, \texttt{shimSwarmatron} occupies exactly one DAW voice slot.
+\end{definition}
+
+\begin{definition}[Shim 16 — \texttt{shimGlitchZap}$(t_0, f_0, v_{\mathrm{mul}}, d)$]
+A high-pass digital telemetry burst ($f_0 = 2400\,\text{Hz}, d = 0.08\,\text{s}$): sawtooth sweeping $2.5 f_0 \xrightarrow{\exp} 80\,\text{Hz}$ over $d$ through $h_{\mathrm{HP}, 1800}$, gain $0.18 v_{\mathrm{mul}} \to 0.001$.
+\end{definition}
+
+\begin{definition}[Shim 17 — \texttt{shimCyberLead}$(t_0, \mathcal{N}, v_{\mathrm{mul}})$]
+Dual detuned oscillators (sawtooth at $f_0$, square at $1.004 f_0$; optional $0.7d$ slide) routed through $h_{\mathrm{LP}}(f_c(s), Q = 4.0)$ sweeping $3800 \xrightarrow{\exp} 1600\,\text{Hz}$ into WaveShaper $C_{25}$, with $12\,\text{ms}$ linear attack and exponential release to $10^{-4}$. In \emph{Orchestra}, brass programs (\texttt{56} Trumpet, \texttt{57} Trombone, \texttt{58} Tuba, \texttt{60} Horn) reuse \texttt{shimCyberLead} with $k = 0$ and cutoffs $1800, 900, 400, 800\,\text{Hz}$.
+\end{definition}
 
 \section{The Immutable 32-Program Registry (\texttt{PROG[32]})}
 
@@ -93,8 +244,6 @@ defined on a fixed domain $\mathrm{dom}(\mathcal{R}_{\mathrm{GM}})$ of cardinali
 \begin{proposition}[Semantic Soundness of Partial GM Registration]
 Because $\mathcal{R}_{\mathrm{GM}}$ rejects all $96$ unmapped General MIDI program numbers rather than substituting a silent default, every accepted session file establishes an exact semantic bijection between its stored program bytes and the measured WCET-budgeted shims of the running engine. Furthermore, omitting a hardcoded MIDI Channel~10 drum map makes channel assignment orthogonal to timbre, permitting Channel~10 to carry French Horn (Program~60) in the philharmonic template.
 \end{proposition}
-
-Three percussion programs (\texttt{117} Snare, \texttt{118} Hat, \texttt{119} Ind.\ Kick) map MIDI velocity directly into articulation state: $v_m \ge 110$ triggers a rimshot on \texttt{shimSnare} ($220 \to 143\,\text{Hz}$ + BP $3.2\,\text{kHz}$ crack), and $v_m \ge 100$ opens \texttt{shimHiHat} from $0.055\,\text{s}$ to $0.28\,\text{s}$.
 
 \section{48-Slot Voice Allocation and Loudness-Decay Stealing}
 
@@ -139,6 +288,19 @@ A program $g$ is \emph{one-shot} if $\mathrm{shot}_g = 1$ (the nine rows: \textt
 Under one-shot semantics, percussive timbre duration is an invariant of the procedural instrument rather than the UI edit grid, preventing short piano-roll notes from truncating natural drum or cymbal tails while still guaranteeing deterministic slot reclamation within $t_{\mathrm{exp},i} - t_{0,i} \le 2.4\,\text{s}$.
 \end{proposition}
 
+\section{C99 Code-Review Alignment with \texttt{src/media/sdk/lilcu64\_score.c}}
+
+Cross-checking the mathematical models of Sections~\ref{sec:fam-kin}--\ref{sec:fam-ind} against the production C99 runtime in \texttt{src/media/sdk/lilcu64\_score.c} and \texttt{lilcu64\_wa.h} confirms exact 1:1 parameter parity with seven deliberate C99 systems adaptations:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Canonical Enumeration:} \texttt{lilcu64\_score.h} assigns IDs \texttt{1..23} (\texttt{LC\_SHIM\_SQUASH} through \texttt{LC\_SHIM\_TIMPANI}), capture-only IDs \texttt{24..25} (\texttt{LC\_CAP\_HAMMER}, \texttt{LC\_CAP\_SWOOSH}), and eight Commodore Amiga Paula 8-bit extensions \texttt{26..33} (\texttt{LC\_SHIM\_AMIGA\_KICK} through \texttt{LC\_SHIM\_AMIGA\_BELL}) using PAL period snapping $f_q = 3546895 / (32\cdot\mathrm{round}(3546895/(32f)))$ and a $4.4\,\text{kHz}$ 2-pole Butterworth LED low-pass filter (\texttt{WA\_FILT\_PAULA\_LED}).
+  \item \textbf{Track-Level Saturation Delegation:} Because \texttt{lilcu64\_wa} provides linear oscillator/filter/gain nodes without per-node wave-shaping, \texttt{shimIndustrialBass} (per-osc gain $0.11 v_{\mathrm{mul}}$) and \texttt{shimCyberLead} (per-osc gain $0.55 v\cdot v_{\mathrm{mul}}$) delegate Chebyshev saturation $C_k(x)$ to the track's \texttt{SAT} insert.
+  \item \textbf{Violin 3-Node Reduction:} \texttt{shimViolin} allocates rosin BP noise ($3200\,\text{Hz}, Q=3.0$) and dual detuned saws ($f_0, 1.002f_0$) through $5000\,\text{Hz}$ LP ($Q=0$), delegating $520\,\text{Hz}$ body peaking to the track EQ insert.
+  \item \textbf{Explicit Cello dB-$Q$ Conversion:} \texttt{shimCello} computes \texttt{cello\_qdb()} $= 20\log_{10}(2.2) \approx 6.848\,\text{dB}$ explicitly before calling \texttt{wa\_filter}.
+  \item \textbf{Duration-Keyed Float Dispatch:} In \texttt{lc\_shim\_note()}, \texttt{LC\_SHIM\_FLOAT} routes short events ($d < 0.50\,\text{s}$) to \texttt{tone\_dance()} and sustained chords ($d \ge 0.50\,\text{s}$) to \texttt{tone\_glass()}.
+  \item \textbf{Dispatcher Defaults:} \texttt{lc\_shim\_note()} invokes \texttt{shimSwarmatron} with $30\,\text{cents}$ spread (per-osc gain $0.16 v_{\mathrm{mul}}$) and \texttt{shimGlitchZap} with $0.12\,\text{s}$ fallback duration.
+  \item \textbf{Complete Pure C99 Implementation:} Appendix~\ref{app:c99-shims} provides the complete, preprocessor-free C99 reference implementation of every shim and the unified dispatcher.
+\end{enumerate}
+
 \section{Chapter Conclusion}
 
-This chapter formalized the procedural synthesis layer of B-Sound. We defined the stateless Sound Shim $S(t_0, \mathbf{p})$ and proved its $L^1 \cap L^2 \cap L^\infty$ finite-energy boundedness (Theorem~\ref{thm:shim-l2}), catalogued all 23 canonical zero-byte shims, established the semantic soundness of the partial 32-program registry $\mathcal{R}_{\mathrm{GM}}$, and proved $O(1)$ termination, pool conservation, and track-first steal isolation for the 48-slot loudness-decay allocator $\alpha_{\mathrm{alloc}}$ (Theorem~\ref{thm:voice-alloc}). Chapter~\ref{ch:kinematics} next couples these procedural shims directly to 4D non-Euclidean geometry and 24-DOF mascot kinematics.
+This chapter provided a complete mathematical specification of the B-Sound procedural synthesis layer. We proved $L^1 \cap L^2 \cap L^\infty$ finite-energy boundedness for arbitrary shims (Theorem~\ref{thm:shim-l2}), derived the exact oscillator topologies, filter sweeps, detune ratios, and envelope laws for all 23 canonical shims plus \texttt{sfxLilCubeBoing}, established the semantic soundness of the partial 32-program registry $\mathcal{R}_{\mathrm{GM}}$, and proved $O(1)$ termination, pool conservation, and track-first steal isolation for the 48-slot loudness-decay allocator $\alpha_{\mathrm{alloc}}$ (Theorem~\ref{thm:voice-alloc}). Chapter~\ref{ch:kinematics} next couples these procedural shims directly to 4D non-Euclidean geometry and 24-DOF mascot kinematics.

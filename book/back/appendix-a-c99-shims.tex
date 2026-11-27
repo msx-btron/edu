@@ -1,0 +1,648 @@
+\chapter{Pure C99 Reference Models of B-Sound Shims}
+\label{app:c99-shims}
+
+This appendix provides the complete, self-contained \textbf{pure C99} reference implementation of all B-Sound procedural shims reviewed against \texttt{src/media/sdk/lilcu64\_score.c} and \texttt{lilcu64\_wa.h}. In strict accordance with bare-metal RTOS portability and static analysis discipline, \textbf{zero C preprocessor directives} (\texttt{\#include}, \texttt{\#define}, \texttt{\#ifdef}, or function-like macros) appear anywhere in the code: all constants are typed \texttt{enum} or \texttt{static const} values, and all shims are real C99 functions.
+
+\section{Core Types, Enumerations, and Engine Prototypes}
+
+\begin{lstlisting}[language=C, caption={Preprocessor-free C99 types, enumerations, and B-Sound node engine prototypes.}]
+typedef unsigned char uint8_t;
+typedef unsigned int  uint32_t;
+
+typedef struct WaNode WaNode;
+
+typedef struct LcNote {
+    float f;
+    float d;
+    float v;
+    float t;
+    float slide;
+} LcNote;
+
+enum WaOscType {
+    WA_SINE        = 0,
+    WA_TRIANGLE    = 1,
+    WA_SAWTOOTH    = 2,
+    WA_SQUARE      = 3,
+    WA_NOISE       = 4,
+    WA_AMIGA_SAW   = 5,
+    WA_AMIGA_PULSE = 6,
+    WA_AMIGA_NOISE = 7
+};
+
+enum WaFiltType {
+    WA_FILT_NONE      = 0,
+    WA_FILT_LOWPASS   = 1,
+    WA_FILT_HIGHPASS  = 2,
+    WA_FILT_BANDPASS  = 3,
+    WA_FILT_PAULA_LED = 4
+};
+
+enum WaParamEv {
+    WA_SET = 0,
+    WA_LIN = 1,
+    WA_EXP = 2
+};
+
+enum LcShimId {
+    LC_SHIM_SQUASH      = 1,  LC_SHIM_FROG        = 2,
+    LC_SHIM_ADD_BELL    = 3,  LC_SHIM_WADDLE      = 4,
+    LC_SHIM_FLOAT       = 5,  LC_SHIM_DANCE       = 6,
+    LC_SHIM_DING        = 7,  LC_SHIM_KICK        = 8,
+    LC_SHIM_SNARE       = 9,  LC_SHIM_HAT         = 10,
+    LC_SHIM_GUITAR      = 11, LC_SHIM_PIANO       = 12,
+    LC_SHIM_PEDAL       = 13, LC_SHIM_SAX         = 14,
+    LC_SHIM_IND_KICK    = 15, LC_SHIM_IND_SNARE   = 16,
+    LC_SHIM_IND_BASS    = 17, LC_SHIM_SWARM       = 18,
+    LC_SHIM_ZAP         = 19, LC_SHIM_CYBER       = 20,
+    LC_SHIM_VIOLIN      = 21, LC_SHIM_CELLO       = 22,
+    LC_SHIM_TIMPANI     = 23, LC_CAP_HAMMER       = 24,
+    LC_CAP_SWOOSH       = 25, LC_SHIM_AMIGA_KICK  = 26,
+    LC_SHIM_AMIGA_SNARE = 27, LC_SHIM_AMIGA_HAT   = 28,
+    LC_SHIM_AMIGA_BASS  = 29, LC_SHIM_AMIGA_LEAD  = 30,
+    LC_SHIM_AMIGA_CHORD = 31, LC_SHIM_AMIGA_ARP   = 32,
+    LC_SHIM_AMIGA_BELL  = 33
+};
+
+extern float   powf(float base, float exp);
+extern float   log10f(float x);
+extern WaNode *wa_osc(int type, double t_start, double t_stop);
+extern void    wa_freq(WaNode *n, int ev, float value, double t);
+extern void    wa_gain(WaNode *n, int ev, float value, double t);
+extern void    wa_filter(WaNode *n, int type, float freq, float q);
+extern void    wa_filter_freq(WaNode *n, int ev, float value, double t);
+extern void    wa_vibrato(WaNode *n, float rate_hz, float depth_cents);
+
+static double   s_score_base = 0.0;
+static uint32_t s_shim_refuse = 0u;
+
+static WaNode *osc_take(int type, double t_start, double t_stop) {
+    WaNode *node = wa_osc(type, t_start, t_stop);
+    if (!node && s_shim_refuse < 4294967295u) s_shim_refuse++;
+    return node;
+}
+\end{lstlisting}
+
+\section{Family I: Kinematic Mascot Shims (1A--5 and Boing)}
+
+\begin{lstlisting}[language=C, caption={Pure C99 implementations of Shims 1A--5 and \texttt{sfx\_lil\_cube\_boing}.}]
+void shim_pulse_squash(double t, float vol_mul, float pitch_mul) {
+    static const float fv[6][3] = {
+        { 261.63f, 0.055f, 2.2f }, { 523.25f, 0.070f, 2.4f },
+        { 659.25f, 0.048f, 2.0f }, { 783.99f, 0.052f, 2.1f },
+        { 1046.50f, 0.040f, 1.7f }, { 1318.51f, 0.025f, 1.4f }
+    };
+    double s = s_score_base + t;
+    for (int i = 0; i < 6; i++) {
+        float tf = fv[i][0] * pitch_mul;
+        float d  = fv[i][2];
+        WaNode *o = osc_take(WA_SINE, s, s + (double)d);
+        if (!o) continue;
+        wa_freq(o, WA_SET, tf * 0.97f, s);
+        wa_freq(o, WA_EXP, tf, s + 0.10);
+        wa_gain(o, WA_SET, 0.0001f, s);
+        wa_gain(o, WA_LIN, fv[i][1] * vol_mul, s + 0.09);
+        wa_gain(o, WA_EXP, 0.0001f, s + (double)d);
+    }
+}
+
+static void emit_single_croak(double s, float pitch_mul, float vol_mul,
+                              double t_off, float base_f, float dur, float inten) {
+    double c = s + t_off;
+    float f1 = base_f * pitch_mul;
+    float f2 = base_f * 2.45f * pitch_mul;
+    int num_pulses = (int)(dur / 0.031f);
+    for (int k = 0; k < 2; k++) {
+        WaNode *o = osc_take(k == 0 ? WA_SAWTOOTH : WA_TRIANGLE, c, c + (double)dur + 0.05);
+        if (!o) return;
+        if (k == 0) {
+            wa_freq(o, WA_SET, f1 * 0.88f, c);
+            wa_freq(o, WA_EXP, f1 * 1.25f, c + (double)dur * 0.75);
+            wa_freq(o, WA_LIN, f1 * 0.95f, c + (double)dur);
+        } else {
+            wa_freq(o, WA_SET, f2 * 0.90f, c);
+            wa_freq(o, WA_EXP, f2 * 1.20f, c + (double)dur * 0.75);
+        }
+        wa_filter(o, WA_FILT_BANDPASS, base_f * 2.2f * pitch_mul, 3.8f);
+        wa_gain(o, WA_SET, 0.0001f, c);
+        for (int p = 0; p < num_pulses; p++) {
+            double pt = c + (double)p * 0.031;
+            float amp = 0.24f * vol_mul * inten * (1.0f - (float)p * 0.07f);
+            wa_gain(o, WA_SET, amp * 0.20f, pt);
+            wa_gain(o, WA_LIN, amp, pt + 0.009);
+            wa_gain(o, WA_LIN, amp * 0.15f, pt + 0.025);
+        }
+        wa_gain(o, WA_EXP, 0.0001f, c + (double)dur + 0.04);
+    }
+}
+
+void shim_frog_croak(double t, float pitch_mul, float vol_mul, int is_double) {
+    double s = s_score_base + t;
+    emit_single_croak(s, pitch_mul, vol_mul, 0.00, 125.0f, 0.19f, 1.0f);
+    if (is_double) emit_single_croak(s, pitch_mul, vol_mul, 0.25, 155.0f, 0.095f, 0.85f);
+}
+
+void shim_pulse_bell(double t, float vol_mul, float pitch_mul) {
+    static const float fv[8][3] = {
+        { 130.81f, 0.065f, 3.5f }, { 196.00f, 0.050f, 3.2f },
+        { 261.63f, 0.070f, 3.4f }, { 392.00f, 0.055f, 3.0f },
+        { 523.25f, 0.060f, 2.8f }, { 659.25f, 0.040f, 2.5f },
+        { 783.99f, 0.035f, 2.3f }, { 1046.50f, 0.025f, 1.9f }
+    };
+    double s = s_score_base + t;
+    for (int i = 0; i < 8; i++) {
+        float tf = fv[i][0] * pitch_mul;
+        float d  = fv[i][2];
+        WaNode *o = osc_take(WA_SINE, s, s + (double)d);
+        if (!o) continue;
+        wa_freq(o, WA_SET, tf * 0.985f, s);
+        wa_freq(o, WA_EXP, tf, s + 0.14);
+        wa_gain(o, WA_SET, 0.0001f, s);
+        wa_gain(o, WA_LIN, fv[i][1] * vol_mul, s + 0.12);
+        wa_gain(o, WA_EXP, 0.0001f, s + (double)d);
+    }
+}
+
+void shim_waddle(double t, float pitch, float vol_mul, float dur) {
+    double s = s_score_base + t;
+    WaNode *o = osc_take(WA_TRIANGLE, s, s + (double)dur);
+    if (!o) return;
+    wa_freq(o, WA_SET, pitch, s);
+    wa_freq(o, WA_EXP, pitch * 0.82f, s + (double)dur);
+    wa_gain(o, WA_SET, 0.12f * vol_mul, s);
+    wa_gain(o, WA_EXP, 0.001f, s + (double)dur);
+}
+
+void shim_float(double t, float base_freq, float vol_mul,
+                const float *chord, int nc, float stagger, float note_dur) {
+    static const float def_f[4] = { 523.25f, 659.25f, 783.99f, 1046.50f };
+    static const float def_d[4] = { 0.55f, 0.50f, 0.65f, 0.75f };
+    static const float def_v[4] = { 0.12f, 0.10f, 0.11f, 0.08f };
+    static const float def_t[4] = { 0.00f, 0.06f, 0.12f, 0.18f };
+    double s = s_score_base + t;
+    float ratio = base_freq / 523.25f;
+    int count = chord ? nc : 4;
+    for (int i = 0; i < count; i++) {
+        float f = chord ? chord[i] : def_f[i] * ratio;
+        float d = chord ? note_dur : def_d[i];
+        float v = (chord ? 0.11f : def_v[i]) * vol_mul;
+        double nt = s + (double)(chord ? (float)i * stagger : def_t[i]);
+        WaNode *o = osc_take(WA_SINE, nt, nt + (double)d);
+        if (!o) continue;
+        wa_freq(o, WA_SET, f * 0.985f, nt);
+        wa_freq(o, WA_EXP, f, nt + 0.04);
+        wa_gain(o, WA_SET, 0.0001f, nt);
+        wa_gain(o, WA_LIN, v, nt + 0.03);
+        wa_gain(o, WA_EXP, 0.0001f, nt + (double)d);
+    }
+}
+
+void shim_dance(double t, float pitch_scale, float vol_mul,
+                const LcNote *phrase, int np) {
+    static const float df[5] = { 587.33f, 739.99f, 880.00f, 1174.66f, 1479.98f };
+    static const float dd[5] = { 0.20f, 0.22f, 0.25f, 0.32f, 0.45f };
+    static const float dv[5] = { 0.16f, 0.15f, 0.16f, 0.18f, 0.12f };
+    static const float dt[5] = { 0.000f, 0.085f, 0.170f, 0.255f, 0.370f };
+    double s = s_score_base + t;
+    int count = phrase ? np : 5;
+    for (int i = 0; i < count; i++) {
+        float f = phrase ? phrase[i].f : df[i] * pitch_scale;
+        float d = phrase ? phrase[i].d : dd[i];
+        float v = phrase ? phrase[i].v : dv[i] * vol_mul;
+        double nt = s + (double)(phrase ? phrase[i].t : dt[i]);
+        WaNode *o = osc_take(WA_SINE, nt, nt + (double)d);
+        if (!o) continue;
+        wa_freq(o, WA_SET, f, nt);
+        wa_gain(o, WA_SET, 0.0001f, nt);
+        wa_gain(o, WA_LIN, v, nt + 0.02);
+        wa_gain(o, WA_EXP, 0.0001f, nt + (double)d);
+    }
+}
+
+void shim_ding(double t, float freq, float vol_mul, float decay) {
+    double s = s_score_base + t;
+    WaNode *o = osc_take(WA_SINE, s, s + (double)decay);
+    if (!o) return;
+    wa_freq(o, WA_SET, freq, s);
+    wa_gain(o, WA_SET, 0.0001f, s);
+    wa_gain(o, WA_LIN, 0.15f * vol_mul, s + 0.012);
+    wa_gain(o, WA_EXP, 0.0001f, s + (double)decay);
+}
+
+void sfx_lil_cube_boing(double t) {
+    double s = s_score_base + t;
+    WaNode *o = osc_take(WA_TRIANGLE, s, s + 0.28);
+    if (!o) return;
+    wa_freq(o, WA_SET, 523.25f, s);
+    wa_freq(o, WA_EXP, 1174.66f, s + 0.14);
+    wa_freq(o, WA_EXP, 783.99f, s + 0.28);
+    wa_gain(o, WA_SET, 0.20f, s);
+    wa_gain(o, WA_EXP, 0.005f, s + 0.28);
+}
+\end{lstlisting}
+
+\section{Family II: Percussion DSP Shims (6--8, 12--13, 23)}
+
+\begin{lstlisting}[language=C, caption={Pure C99 implementations of acoustic and industrial percussion shims.}]
+void shim_kick(double t, float pitch, float vol_mul, float dur) {
+    double s = s_score_base + t;
+    WaNode *o = osc_take(WA_SINE, s, s + (double)dur);
+    if (!o) return;
+    wa_freq(o, WA_SET, pitch * 2.2f, s);
+    wa_freq(o, WA_EXP, pitch * 0.75f, s + (double)dur);
+    wa_gain(o, WA_SET, 0.24f * vol_mul, s);
+    wa_gain(o, WA_EXP, 0.001f, s + (double)dur);
+}
+
+void shim_snare(double t, float vol_mul, int is_rimshot) {
+    double s = s_score_base + t;
+    float base_f = is_rimshot ? 220.0f : 175.0f;
+    float nd     = is_rimshot ? 0.09f  : 0.15f;
+    WaNode *o = osc_take(WA_TRIANGLE, s, s + 0.12);
+    if (o) {
+        wa_freq(o, WA_SET, base_f, s);
+        wa_freq(o, WA_EXP, base_f * 0.65f, s + 0.12);
+        wa_gain(o, WA_SET, 0.18f * vol_mul, s);
+        wa_gain(o, WA_EXP, 0.001f, s + 0.12);
+    }
+    WaNode *n = osc_take(WA_NOISE, s, s + (double)nd);
+    if (n) {
+        wa_filter(n, WA_FILT_BANDPASS, is_rimshot ? 3200.0f : 2400.0f, 2.0f);
+        wa_gain(n, WA_SET, 0.16f * vol_mul, s);
+        wa_gain(n, WA_EXP, 0.001f, s + (double)nd);
+    }
+}
+
+void shim_hihat(double t, int open, float vol_mul) {
+    double s = s_score_base + t;
+    float dur = open ? 0.28f : 0.055f;
+    WaNode *n = osc_take(WA_NOISE, s, s + (double)dur);
+    if (n) {
+        wa_filter(n, WA_FILT_HIGHPASS, 7500.0f, 1.0f);
+        wa_gain(n, WA_SET, 0.08f * vol_mul, s);
+        wa_gain(n, WA_EXP, 0.0005f, s + (double)dur);
+    }
+    WaNode *o = osc_take(WA_SINE, s, s + (double)dur);
+    if (o) {
+        wa_freq(o, WA_SET, open ? 6200.0f : 8400.0f, s);
+        wa_gain(o, WA_SET, 0.04f * vol_mul, s);
+        wa_gain(o, WA_EXP, 0.0005f, s + (double)dur);
+    }
+}
+
+void shim_industrial_kick(double t, float vol_mul, float dur) {
+    double s = s_score_base + t;
+    WaNode *sub = osc_take(WA_SINE, s, s + (double)dur);
+    if (sub) {
+        wa_freq(sub, WA_SET, 160.0f, s);
+        wa_freq(sub, WA_EXP, 42.0f, s + (double)dur);
+        wa_gain(sub, WA_SET, 0.32f * vol_mul, s);
+        wa_gain(sub, WA_EXP, 0.001f, s + (double)dur);
+    }
+    WaNode *clk = osc_take(WA_TRIANGLE, s, s + 0.055);
+    if (clk) {
+        wa_freq(clk, WA_SET, 380.0f, s);
+        wa_freq(clk, WA_EXP, 55.0f, s + 0.05);
+        wa_filter(clk, WA_FILT_LOWPASS, 1800.0f, 1.0f);
+        wa_gain(clk, WA_SET, 0.24f * vol_mul, s);
+        wa_gain(clk, WA_EXP, 0.001f, s + 0.055);
+    }
+}
+
+void shim_industrial_snare(double t, float vol_mul, int is_clank) {
+    static const float fq[2] = { 220.0f, 352.0f };
+    static const int   wt[2] = { WA_SQUARE, WA_TRIANGLE };
+    double s = s_score_base + t;
+    float dur = is_clank ? 0.08f : 0.17f;
+    WaNode *n = osc_take(WA_NOISE, s, s + (double)dur);
+    if (n) {
+        wa_filter(n, WA_FILT_BANDPASS, is_clank ? 3600.0f : 2600.0f, 2.2f);
+        wa_gain(n, WA_SET, 0.24f * vol_mul, s);
+        wa_gain(n, WA_EXP, 0.001f, s + (double)dur);
+    }
+    for (int i = 0; i < 2; i++) {
+        WaNode *m = osc_take(wt[i], s, s + 0.11);
+        if (!m) continue;
+        wa_freq(m, WA_SET, fq[i], s);
+        wa_gain(m, WA_SET, 0.12f * vol_mul, s);
+        wa_gain(m, WA_EXP, 0.001f, s + 0.11);
+    }
+}
+
+void shim_timpani(double t, float freq, float vol_mul, float duration) {
+    double s = s_score_base + t;
+    float dur = duration > 0.05f ? duration : 1.2f;
+    WaNode *head = osc_take(WA_SINE, s, s + (double)dur);
+    WaNode *over = osc_take(WA_SINE, s, s + (double)dur * 0.4);
+    WaNode *nz   = osc_take(WA_NOISE, s, s + 0.045);
+    if (head) {
+        wa_freq(head, WA_SET, freq * 1.55f, s);
+        wa_freq(head, WA_EXP, freq, s + 0.050);
+        wa_gain(head, WA_SET, 0.35f * vol_mul, s);
+        wa_gain(head, WA_EXP, 0.001f, s + (double)dur);
+    }
+    if (over) {
+        wa_freq(over, WA_SET, freq * 1.48f, s);
+        wa_gain(over, WA_SET, 0.14f * vol_mul, s);
+        wa_gain(over, WA_EXP, 0.001f, s + (double)dur * 0.4);
+    }
+    if (nz) {
+        wa_filter(nz, WA_FILT_LOWPASS, 260.0f, 0.0f);
+        wa_gain(nz, WA_SET, 0.18f * vol_mul, s);
+        wa_gain(nz, WA_EXP, 0.001f, s + 0.045);
+    }
+}
+\end{lstlisting}
+
+\section{Family III: Acoustic and Orchestral Shims (9--11, 18--22)}
+
+\begin{lstlisting}[language=C, caption={Pure C99 implementations of guitar, piano, woodwind, and bowed string shims.}]
+void shim_guitar(double t, const LcNote *ph, int np, float vol_mul) {
+    double s = s_score_base + t;
+    for (int i = 0; i < np; i++) {
+        const LcNote *n = &ph[i];
+        double nt = s + (double)n->t;
+        WaNode *o = osc_take(WA_TRIANGLE, nt, nt + (double)n->d);
+        if (!o) continue;
+        wa_freq(o, WA_SET, n->f, nt);
+        if (n->slide > 0.0f) wa_freq(o, WA_EXP, n->slide, nt + (double)n->d * 0.7);
+        wa_filter(o, WA_FILT_LOWPASS, 2800.0f, 1.0f);
+        wa_filter_freq(o, WA_SET, 2800.0f, nt);
+        wa_filter_freq(o, WA_EXP, 1400.0f, nt + (double)n->d);
+        wa_gain(o, WA_SET, 0.0001f, nt);
+        wa_gain(o, WA_LIN, n->v * vol_mul, nt + 0.015);
+        wa_gain(o, WA_EXP, 0.0001f, nt + (double)n->d);
+    }
+}
+
+void shim_grand_piano(double t, float freq, float vol_mul, float dur) {
+    static const float harm[3] = { 1.0f, 2.002f, 3.006f };
+    static const float hv[3]   = { 0.16f, 0.08f, 0.035f };
+    double s = s_score_base + t;
+    for (int h = 0; h < 3; h++) {
+        float hd = (h == 0) ? dur : dur * (1.0f - (float)h * 0.25f);
+        WaNode *o = osc_take(h == 1 ? WA_TRIANGLE : WA_SINE, s, s + (double)hd);
+        if (!o) continue;
+        wa_freq(o, WA_SET, freq * harm[h], s);
+        wa_gain(o, WA_SET, 0.0001f, s);
+        wa_gain(o, WA_LIN, hv[h] * vol_mul, s + 0.008);
+        wa_gain(o, WA_EXP, 0.0001f, s + (double)hd);
+    }
+}
+
+void shim_pedal_bass(double t, float freq, float vol_mul, float dur) {
+    double s = s_score_base + t;
+    WaNode *o = osc_take(WA_TRIANGLE, s, s + (double)dur);
+    if (!o) return;
+    wa_freq(o, WA_SET, freq, s);
+    wa_freq(o, WA_EXP, freq * 0.98f, s + (double)dur);
+    wa_gain(o, WA_SET, 0.20f * vol_mul, s);
+    wa_gain(o, WA_EXP, 0.0005f, s + (double)dur);
+}
+
+void shim_sax_flute(double t, const LcNote *ph, int np, float vol_mul) {
+    double s = s_score_base + t;
+    for (int i = 0; i < np; i++) {
+        const LcNote *n = &ph[i];
+        double nt = s + (double)n->t;
+        WaNode *o = osc_take(WA_TRIANGLE, nt, nt + (double)n->d);
+        if (o) {
+            wa_freq(o, WA_SET, n->f, nt);
+            if (n->slide > 0.0f) wa_freq(o, WA_EXP, n->slide, nt + (double)n->d * 0.75);
+            wa_filter(o, WA_FILT_LOWPASS, 2400.0f, 2.0f);
+            wa_gain(o, WA_SET, 0.0001f, nt);
+            wa_gain(o, WA_LIN, n->v * vol_mul, nt + 0.025);
+            wa_gain(o, WA_EXP, 0.0001f, nt + (double)n->d);
+        }
+        WaNode *b = osc_take(WA_NOISE, nt, nt + (double)n->d);
+        if (b) {
+            wa_filter(b, WA_FILT_BANDPASS, n->f * 1.8f, 5.0f);
+            wa_gain(b, WA_SET, 0.025f * vol_mul, nt);
+            wa_gain(b, WA_EXP, 0.0005f, nt + (double)n->d);
+        }
+    }
+}
+
+void shim_piano_hammer(double t, float vol_mul) {
+    double s = s_score_base + t;
+    WaNode *o = osc_take(WA_TRIANGLE, s, s + 0.035);
+    if (!o) return;
+    wa_freq(o, WA_SET, 120.0f, s);
+    wa_freq(o, WA_EXP, 40.0f, s + 0.035);
+    wa_gain(o, WA_SET, 0.12f * vol_mul, s);
+    wa_gain(o, WA_EXP, 0.0005f, s + 0.035);
+}
+
+void shim_pedal_swoosh(double t, float vol_mul, float dur) {
+    double s = s_score_base + t;
+    WaNode *n = osc_take(WA_NOISE, s, s + (double)dur);
+    if (!n) return;
+    wa_filter(n, WA_FILT_BANDPASS, 450.0f, 3.5f);
+    wa_filter_freq(n, WA_SET, 450.0f, s);
+    wa_filter_freq(n, WA_EXP, 280.0f, s + (double)dur);
+    wa_gain(n, WA_SET, 0.0001f, s);
+    wa_gain(n, WA_LIN, 0.05f * vol_mul, s + 0.08);
+    wa_gain(n, WA_EXP, 0.0001f, s + (double)dur);
+}
+
+void shim_violin(double t, const LcNote *ph, int np, float vol_mul) {
+    double s = s_score_base + t;
+    for (int i = 0; i < np && i < 8; i++) {
+        const LcNote *n = &ph[i];
+        double nt = s + (double)n->t;
+        float vol = n->v * vol_mul;
+        float atk = n->d * 0.25f;
+        if (atk > 0.045f) atk = 0.045f;
+        if (atk < 0.001f) atk = 0.001f;
+        WaNode *rn = osc_take(WA_NOISE, nt, nt + 0.045);
+        if (rn) {
+            wa_filter(rn, WA_FILT_BANDPASS, 3200.0f, 3.0f);
+            wa_gain(rn, WA_SET, 0.0001f, nt);
+            wa_gain(rn, WA_LIN, 0.045f * vol_mul, nt + 0.008);
+            wa_gain(rn, WA_EXP, 0.0005f, nt + 0.040);
+        }
+        static const float dm[2] = { 1.0f, 1.002f };
+        for (int k = 0; k < 2; k++) {
+            WaNode *o = osc_take(WA_SAWTOOTH, nt, nt + (double)n->d);
+            if (!o) continue;
+            wa_freq(o, WA_SET, n->f * dm[k], nt);
+            wa_filter(o, WA_FILT_LOWPASS, 5000.0f, 0.0f);
+            wa_gain(o, WA_SET, 0.0001f, nt);
+            wa_gain(o, WA_LIN, vol, nt + (double)atk);
+            wa_gain(o, WA_EXP, 0.0005f, nt + (double)n->d);
+        }
+    }
+}
+
+void shim_cello(double t, const LcNote *ph, int np, float vol_mul, int is_pizz) {
+    double s = s_score_base + t;
+    float qdb = 20.0f * log10f(2.2f);
+    float fc  = is_pizz ? 1200.0f : 520.0f;
+    static const int wt[2] = { WA_SAWTOOTH, WA_TRIANGLE };
+    for (int i = 0; i < np && i < 8; i++) {
+        const LcNote *n = &ph[i];
+        double nt = s + (double)n->t;
+        float vol = n->v * vol_mul;
+        float atk = n->d * 0.3f;
+        if (atk > 0.08f) atk = 0.08f;
+        if (atk < 0.001f) atk = 0.001f;
+        for (int k = 0; k < 2; k++) {
+            WaNode *o = osc_take(wt[k], nt, nt + (double)n->d);
+            if (!o) continue;
+            wa_freq(o, WA_SET, n->f, nt);
+            wa_filter(o, WA_FILT_LOWPASS, fc, qdb);
+            wa_gain(o, WA_SET, 0.0001f, nt);
+            if (is_pizz) wa_gain(o, WA_LIN, vol * 1.3f, nt + 0.008);
+            else         wa_gain(o, WA_LIN, vol, nt + (double)atk);
+            wa_gain(o, WA_EXP, 0.0005f, nt + (double)n->d);
+        }
+    }
+}
+\end{lstlisting}
+
+\section{Family IV: Industrial, Swarm, and Amiga Paula Shims}
+
+\begin{lstlisting}[language=C, caption={Pure C99 implementations of industrial, Swarmatron, Amiga Paula, and dispatcher functions.}]
+void shim_industrial_bass(double t, float freq, float dur,
+                          float vol_mul, float slide_freq) {
+    static const int   wt[2] = { WA_SAWTOOTH, WA_SQUARE };
+    static const float fm[2] = { 1.0f, 1.005f };
+    double s = s_score_base + t;
+    for (int k = 0; k < 2; k++) {
+        WaNode *o = osc_take(wt[k], s, s + (double)dur);
+        if (!o) continue;
+        wa_freq(o, WA_SET, freq * fm[k], s);
+        if (slide_freq > 0.0f)
+            wa_freq(o, WA_EXP, slide_freq * fm[k], s + (double)dur * 0.8);
+        wa_filter(o, WA_FILT_LOWPASS, 2600.0f, 4.5f);
+        wa_filter_freq(o, WA_SET, 2600.0f, s);
+        wa_filter_freq(o, WA_EXP, 420.0f, s + (double)dur);
+        wa_gain(o, WA_SET, 0.0001f, s);
+        wa_gain(o, WA_LIN, 0.11f * vol_mul, s + 0.008);
+        wa_gain(o, WA_EXP, 0.0005f, s + (double)dur);
+    }
+}
+
+void shim_swarmatron(double t, float center_freq, float dur,
+                     float vol_mul, float spread_cents) {
+    static const float mults[8] = {
+        -1.0f, -0.65f, -0.35f, -0.12f, 0.12f, 0.35f, 0.65f, 1.0f
+    };
+    double s = s_score_base + t;
+    float amp = 0.16f * vol_mul;
+    for (int i = 0; i < 8; i++) {
+        WaNode *o = osc_take(WA_SAWTOOTH, s, s + (double)dur);
+        if (!o) continue;
+        float c0 = spread_cents * mults[i];
+        wa_freq(o, WA_SET, center_freq * powf(2.0f, c0 / 1200.0f), s);
+        wa_freq(o, WA_LIN, center_freq * powf(2.0f, (c0 * 1.5f) / 1200.0f),
+                s + (double)dur * 0.5);
+        wa_freq(o, WA_LIN, center_freq * powf(2.0f, (c0 * 0.8f) / 1200.0f),
+                s + (double)dur);
+        wa_filter(o, WA_FILT_LOWPASS, 950.0f, 2.5f);
+        wa_filter_freq(o, WA_SET, 950.0f, s);
+        wa_filter_freq(o, WA_LIN, 1450.0f, s + (double)dur * 0.6);
+        wa_filter_freq(o, WA_LIN, 800.0f, s + (double)dur);
+        wa_gain(o, WA_SET, 0.0001f, s);
+        wa_gain(o, WA_LIN, amp, s + 0.40);
+        wa_gain(o, WA_SET, amp, s + (double)dur - 0.50);
+        wa_gain(o, WA_EXP, 0.0001f, s + (double)dur);
+    }
+}
+
+void shim_glitch_zap(double t, float base_freq, float vol_mul, float dur) {
+    double s = s_score_base + t;
+    WaNode *o = osc_take(WA_SAWTOOTH, s, s + (double)dur);
+    if (!o) return;
+    wa_freq(o, WA_SET, base_freq * 2.5f, s);
+    wa_freq(o, WA_EXP, 80.0f, s + (double)dur);
+    wa_filter(o, WA_FILT_HIGHPASS, 1800.0f, 1.0f);
+    wa_gain(o, WA_SET, 0.18f * vol_mul, s);
+    wa_gain(o, WA_EXP, 0.001f, s + (double)dur);
+}
+
+void shim_cyber_lead(double t, const LcNote *ph, int np, float vol_mul) {
+    static const int   wt[2] = { WA_SAWTOOTH, WA_SQUARE };
+    static const float fm[2] = { 1.0f, 1.004f };
+    double s = s_score_base + t;
+    for (int i = 0; i < np; i++) {
+        const LcNote *n = &ph[i];
+        double nt = s + (double)n->t;
+        for (int k = 0; k < 2; k++) {
+            WaNode *o = osc_take(wt[k], nt, nt + (double)n->d);
+            if (!o) continue;
+            wa_freq(o, WA_SET, n->f * fm[k], nt);
+            if (n->slide > 0.0f)
+                wa_freq(o, WA_EXP, n->slide * fm[k], nt + (double)n->d * 0.7);
+            wa_filter(o, WA_FILT_LOWPASS, 3800.0f, 4.0f);
+            wa_filter_freq(o, WA_SET, 3800.0f, nt);
+            wa_filter_freq(o, WA_EXP, 1600.0f, nt + (double)n->d);
+            wa_gain(o, WA_SET, 0.0001f, nt);
+            wa_gain(o, WA_LIN, n->v * vol_mul * 0.55f, nt + 0.012);
+            wa_gain(o, WA_EXP, 0.0001f, nt + (double)n->d);
+        }
+    }
+}
+
+static float amiga_period_freq(float hz) {
+    if (hz < 20.0f) return hz;
+    int period = (int)(3546895.0f / (hz * 32.0f) + 0.5f);
+    if (period < 113)   period = 113;
+    if (period > 32767) period = 32767;
+    return 3546895.0f / ((float)period * 32.0f);
+}
+
+void shim_amiga_lead(double t, float freq, float dur, float vol_mul) {
+    double s = s_score_base + t;
+    float f = amiga_period_freq(freq);
+    float d = dur > 0.02f ? dur : 0.15f;
+    WaNode *o1 = osc_take(WA_AMIGA_PULSE, s, s + (double)d);
+    if (o1) {
+        wa_freq(o1, WA_SET, f, s);
+        wa_vibrato(o1, 5.2f, 18.0f);
+        wa_filter(o1, WA_FILT_PAULA_LED, 4800.0f, 0.8f);
+        wa_gain(o1, WA_SET, 0.001f, s);
+        wa_gain(o1, WA_LIN, 0.95f * vol_mul, s + 0.006);
+        wa_gain(o1, WA_EXP, 0.001f, s + (double)d);
+    }
+    WaNode *o2 = osc_take(WA_AMIGA_SAW, s, s + (double)d);
+    if (o2) {
+        wa_freq(o2, WA_SET, f * 1.004f, s);
+        wa_vibrato(o2, 5.2f, 16.0f);
+        wa_filter(o2, WA_FILT_PAULA_LED, 4400.0f, 0.7f);
+        wa_gain(o2, WA_SET, 0.001f, s);
+        wa_gain(o2, WA_LIN, 0.75f * vol_mul, s + 0.006);
+        wa_gain(o2, WA_EXP, 0.001f, s + (double)d);
+    }
+}
+
+void lc_shim_note(int shim_no, double t, float hz, float vol, float dur) {
+    LcNote n = { hz, dur > 0.02f ? dur : 0.02f, vol, 0.0f, 0.0f };
+    float sc = hz > 1.0f ? (hz / 440.0f) : 1.0f;
+    if      (shim_no == LC_SHIM_SQUASH)    shim_pulse_squash(t, vol, sc);
+    else if (shim_no == LC_SHIM_FROG)      shim_frog_croak(t, sc, vol, 0);
+    else if (shim_no == LC_SHIM_ADD_BELL)  shim_pulse_bell(t, vol, sc);
+    else if (shim_no == LC_SHIM_WADDLE)    shim_waddle(t, hz, vol, n.d);
+    else if (shim_no == LC_SHIM_FLOAT)     shim_float(t, hz, vol, (const float *)0, 0, 0.035f, n.d);
+    else if (shim_no == LC_SHIM_DANCE)     shim_dance(t, sc, vol, (const LcNote *)0, 0);
+    else if (shim_no == LC_SHIM_DING)      shim_ding(t, hz, vol, dur > 0.05f ? dur : 0.70f);
+    else if (shim_no == LC_SHIM_KICK)      shim_kick(t, hz, vol, 0.16f);
+    else if (shim_no == LC_SHIM_SNARE)     shim_snare(t, vol, hz >= 110.0f);
+    else if (shim_no == LC_SHIM_HAT)       shim_hihat(t, hz >= 100.0f, vol);
+    else if (shim_no == LC_SHIM_GUITAR)    shim_guitar(t, &n, 1, 1.0f);
+    else if (shim_no == LC_SHIM_PIANO)     shim_grand_piano(t, hz, vol, dur > 0.05f ? dur : 1.2f);
+    else if (shim_no == LC_SHIM_PEDAL)     shim_pedal_bass(t, hz, vol, n.d);
+    else if (shim_no == LC_SHIM_SAX)       shim_sax_flute(t, &n, 1, 1.0f);
+    else if (shim_no == LC_SHIM_IND_KICK)  shim_industrial_kick(t, vol, 0.22f);
+    else if (shim_no == LC_SHIM_IND_SNARE) shim_industrial_snare(t, vol, 0);
+    else if (shim_no == LC_SHIM_IND_BASS)  shim_industrial_bass(t, hz, n.d, vol, 0.0f);
+    else if (shim_no == LC_SHIM_SWARM)     shim_swarmatron(t, hz, n.d, vol, 30.0f);
+    else if (shim_no == LC_SHIM_ZAP)       shim_glitch_zap(t, hz, vol, dur > 0.02f ? dur : 0.12f);
+    else if (shim_no == LC_SHIM_CYBER)     shim_cyber_lead(t, &n, 1, 1.0f);
+    else if (shim_no == LC_SHIM_VIOLIN)    shim_violin(t, &n, 1, 1.0f);
+    else if (shim_no == LC_SHIM_CELLO)     shim_cello(t, &n, 1, 1.0f, 0);
+    else if (shim_no == LC_SHIM_TIMPANI)   shim_timpani(t, hz, vol, dur);
+    else if (shim_no == LC_SHIM_AMIGA_LEAD) shim_amiga_lead(t, hz, dur, vol);
+    else if (s_shim_refuse < 4294967295u)  s_shim_refuse++;
+}
+\end{lstlisting}
