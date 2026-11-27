@@ -553,21 +553,21 @@ const DEMOS = [
         f: "Etude 01/17 [Broken Radio I] — Original Nested-Sine Signal Search\ny = 2.8 · sin(5 · sin(4 · sin(3 · sin(2 · sin(x)))))   [unquantized chaotic FM carrier]",
       },
       {
-        m: 2, modes: ["saw", "fm", "hpf", "lpf"],
-        f: "Etude 02/17 [Shortwave Sweep] — Numbers-Station Ramp, Sideband Pings & Carrier Floor\ny₁ = 1.73⌊1.5m₂⌋ − 2.3m₂ (SAW) + harmonic FM beacon pings + HPF static ticks + A1 carrier",
+        m: 2, modes: ["tri", "fm", "hpf", "lpf"],
+        f: "Etude 02/17 [Shortwave Beacon · Am9] — Melodic Radio Arpeggio & Carrier Floor\nConsonant Am→F→C→G beacon motif (TRI) + pure-fifth FM chimes + HPF pulse + LPF bass",
       },
       {
-        m: 3, modes: ["pls"],
-        f: "Etude 03/17 [Broken Radio III] — Chirp Burst & Carrier Hold\ny = { 3(1−2⌊2(6x mod 1)⌋)  if m₂<0.5  |  −1.2  if m₂<1.2  |  2.2−2(2x−⌊2x+½⌋)  otherwise",
+        m: 3, modes: ["pls", "tri", "lpf", "sine"],
+        f: "Etude 03/17 [Chiptune Pulse · Em] — Playful 16th-Note Square Arpeggios (Em · C · G · D)\nCrisp staccato PLS arps + warm TRI harmony + bouncy LPF bass + high SINE counter-bell",
       },
       {
-        m: 4, modes: ["hpf"],
-        f: "Etude 04/17 [Broken Radio IV] — Variable-Duty Telemetry Pulse\ny = 3 · (⌊(x mod 1) / (0.15 + 0.25·(⌊x⌋ mod 3))⌋ mod 2) − 1.5",
+        m: 4, modes: ["sine", "pls", "lpf", "nse"],
+        f: "Etude 04/17 [Minimalist Pulse · Am Pent] — Steve Reich Variable-Subdivision Groove\nVariable-duty subdivisions (1, 2, 3/beat) locked to A-minor pentatonic {A, C, D, E, G} + brush",
       },
       // Phase II: Signal Lock & Hans Zimmer Minimalist Ostinatos (5–8)
       {
-        m: 5, modes: ["fm", "lpf", "tri", "sine", "rvb"],
-        f: "Etude 05/17 [Signal Lock] — Rapid Damping e^(−0.55u) Blooming into A Minor Cathedral Arpeggio\nBroken radio locks into rising A2→E3→A3→B3→C4→E4→A4 arpeggio + A1 pedal & RVB halo",
+        m: 5, modes: ["sine", "lpf", "tri", "fm", "rvb"],
+        f: "Etude 05/17 [Cathedral Dawn · Am9] — Harmonic Overtone Bloom (A1 → E5)\nPure A1 organ pedal unfolding into ascending Am9 arpeggio (A2–E3–A3–B3–C4–E4–A4–B4–E5) + RVB",
       },
       {
         m: 6, modes: ["sine", "lfo", "lpf", "tri", "rvb"],
@@ -616,8 +616,8 @@ const DEMOS = [
         f: "Etude 16/17 [Grand Symphony] — 8-Voice Hans Zimmer Cathedral Climax (Am · F · C · G · Am)\nFull orchestra: Piano + Flute + Violin LFO + FM Bells + Cello LPF + Brass SAT + RVB Hall",
       },
       {
-        m: 17, modes: ["sat", "fm", "lpf", "hpf", "rvb"],
-        f: "Etude 17/17 [Aphex Twin · Bucephalus Bouncing Ball] — Geometric Gravity Cascade (r = 0.78)\nn = ⌊ln(1 − τ/T) / ln(0.78)⌋ · Parabolic bounce arcs h_n = 2.4·0.86^n accelerating into FM trill + F#m9",
+        m: 17, modes: ["sine", "tri", "lpf", "hpf", "rvb"],
+        f: "Etude 17/17 [Aphex Twin · Bucephalus Bouncing Ball] — Harmonic Gravity Cascade (F#m9 · Dmaj9)\nn = ⌊ln(1 − τ/T) / ln(0.78)⌋ · Accelerating pentatonic bounce arps (SINE/TRI) + LPF bass + SAW pad",
       },
     ],
     eval(x, pi) {
@@ -627,38 +627,66 @@ const DEMOS = [
       // --- PHASE I: ORIGINAL "BROKEN RADIO" (1–4) ---
       if (m === 1) return [2.8 * sin(5 * sin(4 * sin(3 * sin(2 * sin(x)))))];
       if (m === 2) {
-        // Upgraded Shortwave Numbers-Station Sweep + FM Beacon Pings + HPF Static + A1 Carrier
-        const m2 = mod(x, 2);
-        const sweep = mod(x, 16) < 2 ? 1.73 * fl(1.5 * m2) - 2.3 * m2 : 0.6 - 2 * m2;
-        const beacon = frac(u * 0.5) < 0.28 ? hz([880.0, 659.25, 1046.5, 880.0][mod(fl(u * 0.5), 4)]) : NaN;
-        const tick = (frac(u * 2) < 0.10 && mod(fl(u * 2), 3) === 0) ? 2.75 : NaN;
-        return [sweep, beacon, tick, hz(55.0)];
+        // Consonant Shortwave Beacon (Am -> F -> C -> G) + FM fifth chimes + HPF tick + LPF bass
+        const bar = clamp(fl(u / 4), 0, 3);
+        const st = fl(u * 2);
+        const sf = frac(u * 2);
+        const arps = [
+          [440.0, 523.25, 659.25, 493.88], // Am9
+          [349.23, 440.0, 523.25, 659.25], // Fmaj7
+          [523.25, 659.25, 783.99, 659.25], // C
+          [392.0, 493.88, 587.33, 659.25], // G6
+        ];
+        const mel = sf < 0.72 ? hz(arps[bar][mod(st, 4)]) : NaN;
+        const beacon = frac(u * 0.5) < 0.45 ? hz([880.0, 698.46, 1046.5, 783.99][bar]) : NaN;
+        const tick = (mod(st, 2) === 1 && sf < 0.14) ? 2.75 : NaN;
+        const bass = hz([110.0, 87.31, 130.81, 98.0][bar]);
+        return [mel, beacon, tick, bass];
       }
       if (m === 3) {
-        const m2 = mod(x, 2);
-        if (m2 < 0.5) return [clamp(3 * (1 - 2 * fl(2 * mod(6 * x, 1))), -2.8, 2.8)];
-        if (m2 < 1.2) return [-1.2];
-        return [2.2 - 2 * (2 * x - fl(2 * x + 0.5))];
+        // Playful 16th-Note Chiptune Pulse Etude (Em -> C -> G -> D)
+        const bar = clamp(fl(u / 4), 0, 3);
+        const st = fl(u * 3);
+        const sf = frac(u * 3);
+        const chords = [
+          [329.63, 392.0, 493.88, 659.25, 493.88, 392.0], // Em
+          [261.63, 329.63, 392.0, 523.25, 392.0, 329.63], // C
+          [392.0, 493.88, 587.33, 783.99, 587.33, 493.88], // G
+          [293.66, 369.99, 440.0, 587.33, 440.0, 369.99], // D
+        ];
+        const pls = sf < 0.70 ? hz(chords[bar][mod(st, 6)]) : NaN;
+        const harm = hz(chords[bar][0] * 0.5);
+        const bass = shimWaddleY(frac(u) * 0.4, [82.41, 65.41, 98.0, 73.42][bar], 0.28);
+        const bell = (mod(st, 6) === 3 && sf < 0.60) ? clamp(hz(chords[bar][3] * 2.0), -3, 3) : NaN;
+        return [pls, harm, bass, bell];
       }
       if (m === 4) {
-        const den = 0.15 + 0.25 * mod(fl(x), 3);
-        return [3 * mod(fl(mod(x, 1) / den), 2) - 1.5];
+        // Steve Reich Variable-Subdivision Minimalist Groove locked to A-minor Pentatonic
+        const div = [2, 3, 4, 2][mod(fl(u), 4)];
+        const st = fl(frac(u) * div);
+        const sf = frac(frac(u) * div);
+        const pent = [440.0, 523.25, 587.33, 659.25, 783.99, 880.0];
+        const idx = mod(fl(u) + st, pent.length);
+        const lead = sf < 0.72 ? hz(pent[idx]) : NaN;
+        const echo = sf < 0.55 ? hz(pent[mod(idx + 2, pent.length)] * 0.5) : NaN;
+        const bass = hz([110.0, 110.0, 87.31, 98.0][clamp(fl(u / 4), 0, 3)]);
+        const brush = (sf < 0.16 && mod(st, 2) === 0) ? 2.65 : NaN;
+        return [lead, echo, bass, brush];
       }
 
-      // --- PHASE II: SIGNAL LOCK & MINIMALIST OSTINATOS (5–8) ---
+      // --- PHASE II: CATHEDRAL DAWN & MINIMALIST OSTINATOS (5–8) ---
       if (m === 5) {
-        // Rapid damped radio lock blooming into rising A-minor cathedral arpeggio + pedal + RVB
-        const err = 1.8 * exp(-0.62 * u) * sin(3.2 * sin(1.8 * x));
-        const arpSeq = [110.0, 164.81, 220.0, 246.94, 261.63, 329.63, 440.0, 659.25];
+        // Pure A1 organ pedal unfolding into ascending Am9 cathedral arpeggio + FM fifth + RVB
+        const arpSeq = [110.0, 164.81, 220.0, 246.94, 261.63, 329.63, 392.0, 440.0, 493.88, 523.25, 659.25, 880.0];
         const ai = clamp(fl(u * 1.5), 0, 23);
-        const arpF = arpSeq[mod(ai, 8)] * (ai >= 16 ? 2.0 : 1.0);
-        return [
-          clamp(hz(329.63) + err, -3, 3),
-          hz(55.0),
-          u > 1.2 && frac(u * 1.5) < 0.84 ? clamp(hz(arpF), -3, 3) : NaN,
-          u > 3.5 ? hz(u < 10 ? 440.0 : 523.25) : NaN,
-          u > 2.5 ? hz(659.25) - 0.06 * exp(-0.25 * (u - 2.5)) * cos(3 * u) : NaN,
-        ];
+        const sf = frac(u * 1.5);
+        const note = arpSeq[mod(ai, 12)];
+        const mel = sf < 0.86 ? hz(note) : NaN;
+        const ped = hz(u < 12 ? 55.0 : 49.0);
+        const third = u > 2.0 ? hz(u < 8 ? 261.63 : 329.63) : NaN;
+        const fmHalo = u > 4.0 ? hz(u < 10 ? 329.63 : 440.0) : NaN;
+        const rvb = u > 3.0 ? hz(659.25) - 0.05 * frac(u / 4) : NaN;
+        return [mel, ped, third, fmHalo, rvb];
       }
       if (m === 6) {
         // Inception "Time" (Am -> Em -> G -> D)
@@ -835,30 +863,36 @@ const DEMOS = [
         return [pArp, flute, vln, fmBell, cello, brass, tick, rvb];
       }
 
-      // Part 17: Aphex Twin — Bucephalus Bouncing Ball (Exact Geometric Gravity Cascade r = 0.78)
+      // Part 17: Aphex Twin — Bucephalus Bouncing Ball (Musical F#m9 / Dmaj9 Geometric Gravity Cascade)
       const T_cyc = 8.05;
       const r = 0.78;
       const cyc = mod(u, 8.0);
-      const halfIdx = fl(u / 8.0); // 0 -> F#m9, 1 -> Dmaj7
-      const n = clamp(fl(Math.log(Math.max(1e-4, 1 - cyc / T_cyc)) / Math.log(r)), 0, 24);
+      const halfIdx = fl(u / 8.0); // 0 -> F#m9, 1 -> Dmaj9
+      const n = clamp(fl(Math.log(Math.max(1e-4, 1 - cyc / T_cyc)) / Math.log(r)), 0, 22);
       const t_n = T_cyc * (1 - Math.pow(r, n));
       const d_n = T_cyc * Math.pow(r, n) * (1 - r);
       const p = clamp((cyc - t_n) / Math.max(1e-4, d_n), 0, 1);
-      // 1) Rubbery metallic bouncing-ball impact (exponential pitch drop at each bounce, merging into buzz!)
-      const impDur = Math.min(0.32, Math.max(0.08, 0.36 * Math.pow(0.88, n)));
-      const hitF = (halfIdx === 0 ? 185.0 : 146.83) * Math.pow(1.03, Math.min(n, 16));
-      const ballImpact = p < impDur ? hz(hitF * 2.4 * Math.pow(0.38, p / impDur)) : NaN;
-      // 2) Visible parabolic gravity arc h_n = 2.4 * 0.86^n * 4p(1-p)
-      const floorY = halfIdx === 0 ? hz(185.0) : hz(146.83);
-      const arcH = 2.45 * Math.pow(0.86, n);
-      const ballArc = clamp(floorY + arcH * 4 * p * (1 - p), -3.0, 3.0);
-      // 3) Deep hypnotic Aphex acid-bass pedal (F#1 -> A1 -> E1 -> D1)
-      const acidPed = hz([46.25, 55.0, 41.20, 36.71][clamp(fl(u / 4), 0, 3)]);
-      // 4) Accelerating micro-glitch HPF tick locked to every bounce impact
-      const bTick = (p < 0.16 && mod(n, 2) === 0) ? 2.84 - 0.8 * p : NaN;
-      // 5) Lush Selected Ambient Works F#m9 / Dmaj7 pad floating serenely above
-      const pad = hz(halfIdx === 0 ? 415.30 : 369.99) + 0.015 * sin(2 * PI * 2.5 * u);
-      return [ballImpact, ballArc, acidPed, bTick, pad];
+
+      // Consonant chord-tone pools: F#m9 {F#4, A4, C#5, E5, G#5} & Dmaj9 {D4, F#4, A4, C#5, E5}
+      const scale = halfIdx === 0
+        ? [369.99, 440.00, 554.37, 659.25, 830.61]
+        : [293.66, 369.99, 440.00, 554.37, 659.25];
+      // Descending energy level maps bounce index n onto consonant chord tones (high -> root)
+      const deg = clamp(4 - fl(n / 3), 0, 4);
+      const noteF = scale[mod(deg + (mod(n, 2) === 0 ? 0 : 1), 5)];
+      // 1) Pure crystalline bouncing-ball strike (tight percussive marimba envelope, accelerating with r = 0.78!)
+      const gate = Math.min(0.76, Math.max(0.28, 0.78 - n * 0.02));
+      const ballNote = p < gate ? hz(noteF) + 0.025 * exp(-10 * p) : NaN;
+      // 2) Harmonic fifth / octave shadow following the shrinking bounce energy
+      const shadowF = scale[clamp(deg, 0, 4)] * 0.5;
+      const ballShadow = p < gate * 0.85 ? hz(shadowF) : NaN;
+      // 3) Deep warm Selected Ambient Works bass progression (F#1 -> A1 -> D2 -> E2)
+      const bass = hz([46.25, 55.0, 73.42, 82.41][clamp(fl(u / 4), 0, 3)]);
+      // 4) Subtle crisp hi-hat click on every 2nd bounce impact
+      const bTick = (p < 0.09 && mod(n, 2) === 0) ? 2.82 : NaN;
+      // 5) Serene floating ambient RVB pad (C#5 / E5)
+      const pad = hz(halfIdx === 0 ? 554.37 : 659.25) - 0.03 * frac(u / 8);
+      return [ballNote, ballShadow, bass, bTick, pad];
     },
   },
 
