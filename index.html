@@ -737,6 +737,7 @@
         <li><a href="Music.html">Music</a></li>
         <li><a href="Physics.html">Physics</a></li>
         <li><a href="Math.html">Math</a></li>
+        <li><a href="book/main.pdf">Book</a></li>
         <li><a href="BTRON-EDU-SPEC.txt">Spec</a></li>
       </ul>
     </div>
@@ -759,7 +760,7 @@
         <span>Synth Demos</span>
         <span>Physics Stations</span>
         <span>Math Stations</span>
-        <span>WebGL Vector CRT</span>
+        <span>B-Sound Book (90 pp.)</span>
         <span>48 kHz Phase Synth</span>
       </div>
     </div>
@@ -1096,11 +1097,101 @@
       </div>
     </section>
 
-    <!-- 03 / Physics Catalogue -->
+    <!-- 03 / B-Sound Formal Foundations Book -->
+    <section class="band" id="bsound-book">
+      <div class="wrap">
+        <div class="band-head">
+          <span class="band-index">03 / Monograph</span>
+          <h2>Formal Foundations for B-Sound Virtual DSP of B-System</h2>
+          <p class="band-eyebrow">Group-Theoretic Harmony · Analytical Waveforms · 23 Procedural Shims · RTOS DAW Orchestra · Pure C99</p>
+        </div>
+        <div class="band-intro">
+          <p>
+            <strong>B-Sound: Virtual DSP of the B-System</strong> is a 90-page academic monograph uniting algebraic
+            music theory, digital signal processing, and deterministic real-time operating system engineering into a
+            single verifiable reference — from Lie and dihedral pitch groups through all 23 zero-byte procedural shims
+            to the <code>632 µs</code> WCET C99 stage DAW <em>Orchestra</em>.
+          </p>
+          <p class="en">
+            Typeset in LaTeX (<code>memoir</code>) with formal Definitions, Theorems, Proofs, and Chapter/Part
+            conclusions, plus a compiler-verified, preprocessor-free pure C99 reference implementation in Appendix A
+            and direct alignment with the 136-part Functional Synthesizer in <strong>Music.html</strong>.
+          </p>
+        </div>
+        <figure class="plate">
+          <table class="cmp">
+            <thead>
+              <tr>
+                <th style="width:14%">Part</th>
+                <th style="width:28%">Title</th>
+                <th style="width:12%" class="num">Scope</th>
+                <th style="width:46%">Formal Theorems, Models &amp; Invariants</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Part">Part I</td>
+                <td data-label="Title">Mathematical Foundations of Sound &amp; Harmony</td>
+                <td class="num" data-label="Scope"><span class="badge badge-gold">Ch. 1–3</span></td>
+                <td data-label="Core">Zero-byte audio system <code>𝒜</code>, WCET decidability, Lie pitch group
+                  <code>Φ</code>, continued-fraction optimality of <code>ℤ₁₂</code>, <code>D₁₂</code> &amp; Neo-Riemannian
+                  <code>PLR</code> centralizer theorem, Jacobi–Anger FM Bessel spectra, Jury BIBO stability of biquads,
+                  <code>C¹</code> WaveShaper/limiter bounds &amp; Schroeder <code>RT₆₀</code>.
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Part">Part II</td>
+                <td data-label="Title">B-Sound Virtual DSP &amp; Procedural Shims</td>
+                <td class="num" data-label="Scope"><span class="badge badge-teal">Ch. 4–5</span></td>
+                <td data-label="Core"><code>L¹∩L²∩L∞</code> shim boundedness, full mathematical models of all 23
+                  canonical shims + <code>Boing</code>, <code>PROG[32]</code> registry, <code>O(1)</code> 48-slot
+                  loudness-decay allocator, bounded 4D Hopf projection (<code>≤ 2.4515</code>), 24-DOF critical damping,
+                  and 16th-note quantizer.
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Part">Part III</td>
+                <td data-label="Title">Reference RTOS DAW Architecture: Orchestra &amp; Functional Synth</td>
+                <td class="num" data-label="Scope"><span class="badge badge-teal">Ch. 6–10</span></td>
+                <td data-label="Core">Three-layer downward isolation, <code>OrchView</code> seqlock, exact integer
+                  tick↔sample round-trip (<code>960 PPQ</code>), 9-element C99 graph (<code>632 µs ≤ T</code>),
+                  shared hall pools, <code>73408</code>-byte sessions, SMF 1.0, offline WAV, plus the Functional
+                  Synthesizer, 13 DSP labels &amp; 136-part Edu curriculum.
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Part">Part IV</td>
+                <td data-label="Title">Repertoire, Emulators &amp; Engineering Position</td>
+                <td class="num" data-label="Scope"><span class="badge badge-gold">Ch. 11–12</span></td>
+                <td data-label="Core">Engine-generated 4-track album (<em>Carol of the Bells</em> 17-track canon,
+                  <em>Green Caterpillar</em>, <em>Rising Sun</em>, <em>TRON Init</em>), MSX/Amiga chip emulator
+                  coexistence on <code>S16_LE</code> VirtIO, Cubase/Pro Tools/Rosegarden matrix &amp; 11 documented limits.
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Part">Appendix A</td>
+                <td data-label="Title">Pure C99 Reference Models of B-Sound Shims</td>
+                <td class="num" data-label="Scope"><span class="badge badge-teal">Zero #</span></td>
+                <td data-label="Core">Complete, preprocessor-free C99 functions reviewed 1:1 against
+                  <code>src/media/sdk/lilcu64_score.c</code> (Shims 1–23, Amiga Paula, <code>lc_shim_note</code>) —
+                  verified warning-free with <code>cc -std=c99 -Wall -Wextra -Wpedantic</code>.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <figcaption>
+            <span><b>B-Sound: Virtual DSP of the B-System</b> — 90 Pages · LaTeX <code>memoir</code> · Formal Proofs &amp; Pure C99</span>
+            <span><a href="book/main.pdf">Download PDF (90 pp.) →</a> · <a href="book/main.tex">LaTeX Source →</a></span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 04 / Physics Catalogue -->
     <section class="band" id="physics-index">
       <div class="wrap">
         <div class="band-head">
-          <span class="band-index">03 / Physics</span>
+          <span class="band-index">04 / Physics</span>
           <h2>Physics.html — Series 41 Catalogue</h2>
           <p class="band-eyebrow">Classical · Electrodynamics · Quantum · Relativity · Audio DSP · 8085 / Z80 / 4004 CPU</p>
         </div>
@@ -1221,11 +1312,11 @@
       </div>
     </section>
 
-    <!-- 04 / Architecture -->
+    <!-- 05 / Architecture -->
     <section class="band" id="architecture">
       <div class="wrap">
         <div class="band-head">
-          <span class="band-index">04 / Architecture</span>
+          <span class="band-index">05 / Architecture</span>
           <h2>Portability &amp; Minimal Console Contract</h2>
           <p class="band-eyebrow">Single-Buffer Vector Stroke · Hidden-Line Removal · Sample-Accurate Audio</p>
         </div>
@@ -1261,6 +1352,7 @@
           <li><a href="Math.html">Math.html — Pure 3D Series 12</a></li>
           <li><a href="Music.html">Music.html — HAL 9000 Synth</a></li>
           <li><a href="Physics.html">Physics.html — Series 41</a></li>
+          <li><a href="book/main.pdf">B-Sound Virtual DSP Book (PDF, 90 pp.)</a></li>
           <li><a href="BTRON-EDU-SPEC.txt">BTRON-EDU-SPEC.txt</a></li>
         </ul>
       </div>

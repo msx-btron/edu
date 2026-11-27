@@ -23,6 +23,7 @@
 \setulmarginsandblock{2.6cm}{2.8cm}{*}
 \setheadfoot{28pt}{\footskip}
 \checkandfixthelayout
+\emergencystretch=1.5em
 
 \setsecnumdepth{subsection}
 \settocdepth{subsection}
@@ -45,12 +46,14 @@
 \newtheorem{remark}{Remark}[chapter]
 
 \lstset{
-  basicstyle=\ttfamily\small,
+  basicstyle=\ttfamily\footnotesize\color{black},
+  keywordstyle=\ttfamily\color{black},
+  commentstyle=\ttfamily\color{black},
+  stringstyle=\ttfamily\color{black},
   breaklines=true,
   columns=fullflexible,
   keepspaces=true,
-  frame=single,
-  backgroundcolor=\color{black!4},
+  frame=none,
   literate={~}{{\textasciitilde}}1
 }
 

@@ -62,16 +62,17 @@ summarized in Table~\ref{tab:four-constants}.
 \centering
 \caption{The four fixed architectural constants of B-Sound and Orchestra.}
 \label{tab:four-constants}
-\begin{tabular}{@{}lll@{}}
+\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
 \toprule
 Constant & Value & Architectural Role \\
 \midrule
-Sample rate $f_s$ & $48000\,\text{Hz}$ or $44100\,\text{Hz}$ & Binary choice only; default $48000\,\text{Hz}$. \\
-Host period $H_{\mathrm{per}}$ & $1024$ frames & VirtIO write cadence ($21.33\,\text{ms}$ / $23.22\,\text{ms}$). \\
-Synthesis quantum $Q$ & $32$ frames (\texttt{RENDER\_BLOCK}) & Atomic DSP block ($T = 666.7\,\mu\text{s}$ / $725.6\,\mu\text{s}$). \\
-Session container $B_{\mathrm{sess}}$ & $73408$ bytes (\texttt{ORCH\_FILE\_BYTES}) & Exact POD file length verified before reading. \\
+Sample rate $f_s$ & $48000$ / $44100\,\text{Hz}$ & Binary choice only; default $48000\,\text{Hz}$. \\
+Host period $H_{\mathrm{per}}$ & $1024$ frames & VirtIO write cadence ($21.33$ / $23.22\,\text{ms}$). \\
+Quantum $Q$ & $32$ frames (\texttt{RENDER\_BLOCK}) & Atomic DSP block ($T = 666.7$ / $725.6\,\mu\text{s}$). \\
+Session $B_{\mathrm{sess}}$ & $73408$ bytes (\texttt{ORCH\_FILE\_BYTES}) & Exact POD file length verified before reading. \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \begin{theorem}[Decidability of Hard Real-Time Schedulability under Fixed Quantum]

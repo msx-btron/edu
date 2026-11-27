@@ -54,15 +54,15 @@ f(n) = 440.0 \times 2^{(n - 69)/12}.
 \end{equation}
 
 \begin{definition}[Four-Stage Algebraic Pitch Pipeline]
-Given track parameters $(\texttt{key\_lo}, \texttt{key\_hi}, \Delta_{\mathrm{trk}})$ and program transposition $\Delta_{\mathrm{prog}}$, the \emph{B-Sound pitch pipeline} is the partial map $\Pi : \{0,\dots,127\} \to \mathbb{R}_{>0} \cup \{\bot\}$ defined by
+Given track split $[k_{\mathrm{lo}}, k_{\mathrm{hi}}]$ (\texttt{key\_lo}, \texttt{key\_hi}), track transpose $\Delta_{\mathrm{trk}}$, and program transpose $\Delta_{\mathrm{prog}}$, the \emph{B-Sound pitch pipeline} is the partial map $\Pi : \{0,\dots,127\} \to \mathbb{R}_{>0} \cup \{\bot\}$ defined by
 \begin{equation}
 \Pi(n) =
 \begin{cases}
-\bot, & \text{if } (\texttt{key\_lo}, \texttt{key\_hi}) \ne (0,0) \text{ and } n \notin [\texttt{key\_lo}, \texttt{key\_hi}], \\
-\texttt{s\_pitch}\!\big[\mathrm{clamp}(n + \Delta_{\mathrm{trk}} + \Delta_{\mathrm{prog}},\, 0,\, 127)\big], & \text{otherwise,}
+\bot, & (k_{\mathrm{lo}}, k_{\mathrm{hi}}) \ne (0,0) \;\wedge\; n \notin [k_{\mathrm{lo}}, k_{\mathrm{hi}}], \\[4pt]
+\texttt{s\_pitch}[k^*], & \text{otherwise, where } k^* = \mathrm{clamp}(n + \Delta_{\mathrm{trk}} + \Delta_{\mathrm{prog}}, 0, 127),
 \end{cases}
 \end{equation}
-where $\texttt{s\_pitch}[k] = f(k)$ is precomputed once at system boot for $k \in \{0,\dots,127\}$.
+and $\texttt{s\_pitch}[k] = f(k)$ is precomputed once at system boot for $k \in \{0,\dots,127\}$.
 \end{definition}
 
 \begin{proposition}[Total Boundedness and Zero-Transcendental Hot Path]

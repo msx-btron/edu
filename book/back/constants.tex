@@ -6,8 +6,8 @@ Every numerical constant below is a compile-time literal or verified output of t
 \begin{table}[htbp]
 \centering
 \caption{Normative architectural constants of B-Sound and Orchestra.}
-\small
-\begin{tabular}{@{}lll@{}}
+\scriptsize
+\begin{tabularx}{\textwidth}{@{}llX@{}}
 \toprule
 Quantity & Value & Defining Location / Constraint \\
 \midrule
@@ -30,5 +30,5 @@ SMF buffer ceiling & $262144$ bytes ($256\,\text{KiB}$) & \texttt{ORCH\_SMF\_CAP
 WAV export ceiling & $80\,\mathrm{MiB}$ / $64$ bars & 44-byte RIFF/WAVE; write-only \\
 Delay+Chorus RAM (PS2 / Host) & $284,672\,\text{B}$ / $3,225,600\,\text{B}$ & 2048 vs.\ $\min(f_s, 48000)$ delay samples \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}

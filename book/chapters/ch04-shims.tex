@@ -84,18 +84,26 @@ ID & Shim Identifier & Acoustic / Synth Role & Primary DSP Primitives \\
 
 \begin{definition}[Shim 1A — \texttt{shimPulseSquash}$(t_0, v_{\mathrm{mul}}, \rho)$]
 A 6-partial additive singing C-major chord ($\mathrm{C}_4, \mathrm{C}_5, \mathrm{E}_5, \mathrm{G}_5, \mathrm{C}_6, \mathrm{E}_6$) with upward $3\%$ scoop:
-\begin{equation}
-y(s) = \sum_{k=1}^{6} A_k(s)\sin\!\big(\varphi_k(s)\big), \qquad
-f_k(s) = \begin{cases} \mathrm{expRamp}(0.97\rho F_k,\, \rho F_k,\, s,\, 0.10), & s < 0.10, \\ \rho F_k, & s \ge 0.10, \end{cases}
-\end{equation}
-with $(F_k, V_k, d_k) \in \{(261.63, 0.055, 2.2),\,(523.25, 0.070, 2.4),\,(659.25, 0.048, 2.0),\,(783.99, 0.052, 2.1),\,(1046.50, 0.040, 1.7),\,(1318.51, 0.025, 1.4)\}$. Each partial ramps linearly from $10^{-4}$ to $v_{\mathrm{mul}} V_k$ in $0.09\,\text{s}$ and decays exponentially to $10^{-4}$ at $s = d_k$.
+\begin{align}
+y(s) &= \sum_{k=1}^{6} A_k(s)\sin\!\big(\varphi_k(s)\big), \\
+f_k(s) &=
+\begin{cases}
+\mathrm{expRamp}(0.97\rho F_k,\, \rho F_k,\, s,\, 0.10), & s < 0.10, \\
+\rho F_k, & s \ge 0.10,
+\end{cases}
+\end{align}
+with partials $(F_k, V_k, d_k)$ given by $(261.63, 0.055, 2.2)$, $(523.25, 0.070, 2.4)$, $(659.25, 0.048, 2.0)$, $(783.99, 0.052, 2.1)$, $(1046.50, 0.040, 1.7)$, and $(1318.51, 0.025, 1.4)$. Each partial ramps linearly from $10^{-4}$ to $v_{\mathrm{mul}} V_k$ in $0.09\,\text{s}$ and decays exponentially to $10^{-4}$ at $s = d_k$.
 \end{definition}
 
 \begin{definition}[Shim 1A-Alt — \texttt{shimFrogCroak}$(t_0, \rho, v_{\mathrm{mul}}, \mathrm{dbl})$]
 A call-and-response cu\'ica / frog rasp emitting Stroke~1 at $\Delta t_1 = 0\,\text{s}$ ($f_b = 125\,\text{Hz}, d = 0.19\,\text{s}, \alpha = 1.0$) and, if $\mathrm{dbl} = 1$, Stroke~2 at $\Delta t_2 = 0.25\,\text{s}$ ($f_b = 155\,\text{Hz}, d = 0.095\,\text{s}, \alpha = 0.85$). Each stroke sums a sawtooth throat oscillator ($f_1 = \rho f_b$) and triangle mouth overtone ($f_2 = 2.45\rho f_b$) through a bandpass cavity filter $H_{\mathrm{BP}}(f_c = 2.2\rho f_b, Q = 3.8)$:
 \begin{align}
-f_1(s) &= \begin{cases} \mathrm{expRamp}(0.88 f_1, 1.25 f_1, s, 0.75d), & s < 0.75d, \\ \mathrm{linRamp}(1.25 f_1, 0.95 f_1, s - 0.75d, 0.25d), & 0.75d \le s \le d, \end{cases} \\
-f_2(s) &= \mathrm{expRamp}(0.90 f_2, 1.20 f_2, \min(s, 0.75d), 0.75d).
+f_1(s) &=
+\begin{cases}
+\mathrm{expRamp}(0.88 f_1,\, 1.25 f_1,\, s,\, 0.75d), & s < 0.75d, \\
+\mathrm{linRamp}(1.25 f_1,\, 0.95 f_1,\, s - 0.75d,\, 0.25d), & 0.75d \le s \le d,
+\end{cases} \\
+f_2(s) &= \mathrm{expRamp}\!\big(0.90 f_2,\, 1.20 f_2,\, \min(s, 0.75d),\, 0.75d\big).
 \end{align}
 The output gain is modulated by a $32.26\,\text{Hz}$ ($\Delta p = 0.031\,\text{s}$) triangular AM rasp train of $N_p = \lfloor d / 0.031 \rfloor$ pulses with peak $P_p = 0.24\,v_{\mathrm{mul}}\alpha(1 - 0.07p)$, rising $0.2 P_p \to P_p$ in $9\,\text{ms}$ and falling to $0.15 P_p$ at $25\,\text{ms}$, followed by a $40\,\text{ms}$ exponential release.
 \end{definition}
@@ -103,26 +111,35 @@ The output gain is modulated by a $32.26\,\text{Hz}$ ($\Delta p = 0.031\,\text{s
 \begin{definition}[Shim 1B — \texttt{shimPulseBell}$(t_0, v_{\mathrm{mul}}, \rho)$]
 B-Sound specifies two dual realizations of \texttt{shimPulseBell}:
 \begin{enumerate}[leftmargin=1.5em]
-  \item \textbf{Web Audio Additive Swell:} An 8-partial sine overtone series $(F_k, V_k, d_k) \in \{(130.81, 0.065, 3.5),$ $(196.00, 0.050, 3.2),$ $(261.63, 0.070, 3.4),$ $(392.00, 0.055, 3.0),$ $(523.25, 0.060, 2.8),$ $(659.25, 0.040, 2.5),$ $(783.99, 0.035, 2.3),$ $(1046.50, 0.025, 1.9)\}$ with scoop $0.985\rho F_k \xrightarrow{\exp} \rho F_k$ in $0.14\,\text{s}$ and $0.12\,\text{s}$ linear attack.
-  \item \textbf{C99 Orchestra 2-Op FM (GM Program~98):} $y(s) = v_{\mathrm{mul}} e^{-s/1.8}\sin\!\big(2\pi f_c s + 1.8\sin(2\pi \cdot 2.76 f_c s)\big)$ (Theorem~\ref{thm:jacobi-anger}).
+  \item \textbf{Web Audio Additive Swell:} An 8-partial sine overtone series with $(F_k, V_k, d_k)$ equal to $(130.81, 0.065, 3.5)$, $(196.00, 0.050, 3.2)$, $(261.63, 0.070, 3.4)$, $(392.00, 0.055, 3.0)$, $(523.25, 0.060, 2.8)$, $(659.25, 0.040, 2.5)$, $(783.99, 0.035, 2.3)$, and $(1046.50, 0.025, 1.9)$. Each partial scoops $0.985\rho F_k \to \rho F_k$ exponentially in $0.14\,\text{s}$ with a $0.12\,\text{s}$ linear attack.
+  \item \textbf{C99 Orchestra 2-Op FM (GM Program~98):}
+  \[
+  y(s) = v_{\mathrm{mul}} e^{-s/1.8}\sin\!\big(2\pi f_c s + 1.8\sin(2\pi \cdot 2.76 f_c s)\big)
+  \]
+  (Theorem~\ref{thm:jacobi-anger}).
 \end{enumerate}
 \end{definition}
 
 \begin{definition}[Shim 2 — \texttt{shimWaddle}$(t_0, f_0, v_{\mathrm{mul}}, d)$]
 A bipedal step and upright walking bass ($f_0 = 430\,\text{Hz}, d = 0.08\,\text{s}$ default):
-\begin{equation}
-y(s) = \mathrm{expRamp}(0.12 v_{\mathrm{mul}}, 0.001, s, d) \cdot \big(w_{\mathrm{tri}}(\varphi(s)) * h_{\mathrm{LP}, 180}\big), \quad
-f(s) = \mathrm{expRamp}(f_0, 0.82 f_0, s, d),
-\end{equation}
+\begin{align}
+y(s) &= \mathrm{expRamp}(0.12 v_{\mathrm{mul}}, 0.001, s, d)\cdot\big(w_{\mathrm{tri}}(\varphi(s)) * h_{\mathrm{LP}, 180}\big), \\
+f(s) &= \mathrm{expRamp}(f_0, 0.82 f_0, s, d),
+\end{align}
 where the $180\,\text{Hz}$ low-pass body filter is active in the C99 bass voice (\texttt{shimWaddleD}, GM Program~32).
 \end{definition}
 
 \begin{definition}[Shim 3 — \texttt{shimFloat}$(t_0, f_0, v_{\mathrm{mul}}, \mathcal{C}, \delta, d)$]
-A staggered Rhodes / glass-harp chord. For default $\mathcal{C} = \emptyset$ and $\rho = f_0/523.25$, four sine voices enter at $t_k \in \{0, 0.06, 0.12, 0.18\}\,\text{s}$ with $(F_k, V_k, d_k) \in \{(523.25\rho, 0.12, 0.55),$ $(659.25\rho, 0.10, 0.50),$ $(783.99\rho, 0.11, 0.65),$ $(1046.50\rho, 0.08, 0.75)\}$; each scoops $0.985 F_k \to F_k$ in $40\,\text{ms}$, attacks in $30\,\text{ms}$, and decays exponentially to $10^{-4}$.
+A staggered Rhodes / glass-harp chord. For default $\mathcal{C} = \emptyset$ and $\rho = f_0/523.25$, four sine voices enter at $t_k \in \{0, 0.06, 0.12, 0.18\}\,\text{s}$ with $(F_k, V_k, d_k)$ given by $(523.25\rho, 0.12, 0.55)$, $(659.25\rho, 0.10, 0.50)$, $(783.99\rho, 0.11, 0.65)$, and $(1046.50\rho, 0.08, 0.75)$; each scoops $0.985 F_k \to F_k$ in $40\,\text{ms}$, attacks in $30\,\text{ms}$, and decays exponentially to $10^{-4}$.
 \end{definition}
 
 \begin{definition}[Shim 4 — \texttt{shimDance}$(t_0, \rho, v_{\mathrm{mul}}, \mathcal{N})$]
-A 5-note crystalline D-major cascade ($\mathrm{D}_5, \mathrm{F}\sharp_5, \mathrm{A}_5, \mathrm{D}_6, \mathrm{F}\sharp_6$) with default entries $(t_k, F_k, V_k, d_k) \in \{(0, 587.33\rho, 0.16, 0.20),$ $(0.085, 739.99\rho, 0.15, 0.22),$ $(0.170, 880.00\rho, 0.16, 0.25),$ $(0.255, 1174.66\rho, 0.18, 0.32),$ $(0.370, 1479.98\rho, 0.12, 0.45)\}$, pure sine oscillators with $20\,\text{ms}$ linear attack and exponential release to $10^{-4}$.
+A 5-note crystalline D-major cascade ($\mathrm{D}_5, \mathrm{F}\sharp_5, \mathrm{A}_5, \mathrm{D}_6, \mathrm{F}\sharp_6$) with default tuples $(t_k, F_k, V_k, d_k)$:
+\begin{align*}
+&(0,\, 587.33\rho,\, 0.16,\, 0.20), \quad (0.085,\, 739.99\rho,\, 0.15,\, 0.22), \quad (0.170,\, 880.00\rho,\, 0.16,\, 0.25), \\
+&(0.255,\, 1174.66\rho,\, 0.18,\, 0.32), \quad (0.370,\, 1479.98\rho,\, 0.12,\, 0.45),
+\end{align*}
+using pure sine oscillators with $20\,\text{ms}$ linear attack and exponential release to $10^{-4}$.
 \end{definition}
 
 \begin{definition}[Shim 5 — \texttt{shimDing}$(t_0, f_0, v_{\mathrm{mul}}, d)$ and \texttt{sfxLilCubeBoing}$(t_0)$]
@@ -150,10 +167,10 @@ where $f_{\mathrm{sh}}(s) = \mathrm{expRamp}(f_b, 0.65 f_b, s, 0.12)$ with $f_b 
 
 \begin{definition}[Shim 8 — \texttt{shimHiHat}$(t_0, \mathrm{open}, v_{\mathrm{mul}})$]
 With $d = 0.28\,\text{s}$ ($\mathrm{open} = 1$, MIDI $v_m \ge 100$) or $d = 0.055\,\text{s}$ (closed):
-\begin{equation}
-y(s) = \mathrm{expRamp}(0.08 v_{\mathrm{mul}}, 5\!\times\!10^{-4}, s, d)(\xi * h_{\mathrm{HP},7500})(s)
-     + \mathrm{expRamp}(0.04 v_{\mathrm{mul}}, 5\!\times\!10^{-4}, s, d)\sin(2\pi f_m s),
-\end{equation}
+\begin{align}
+y(s) &= \mathrm{expRamp}(0.08 v_{\mathrm{mul}}, 5\!\times\!10^{-4}, s, d)(\xi * h_{\mathrm{HP},7500})(s) \nonumber\\
+     &\quad + \mathrm{expRamp}(0.04 v_{\mathrm{mul}}, 5\!\times\!10^{-4}, s, d)\sin(2\pi f_m s),
+\end{align}
 with metallic overtone ping $f_m = 6200\,\text{Hz}$ (open) or $8400\,\text{Hz}$ (closed).
 \end{definition}
 
@@ -186,7 +203,7 @@ A 3-partial stiff-string model with natural inharmonicity ratios $r_h \in \{1.0,
 \end{definition}
 
 \begin{definition}[Shim 11 — \texttt{shimPedalBass}$(t_0, f_0, v_{\mathrm{mul}}, d)$]
-A sforzando sub-bass ($f_0 = 55\,\text{Hz}, d = 2.2\,\text{s}$): triangle oscillator with subtle $2\%$ string-tension sag $f(s) = \mathrm{expRamp}(f_0, 0.98 f_0, s, d)$ and exponential envelope $0.20 v_{\mathrm{mul}} \to 5\times 10^{-4}$.
+A sforzando sub-bass ($f_0 = 55\,\text{Hz}$, $d = 2.2\,\text{s}$): triangle oscillator with subtle $2\%$ string-tension sag $f(s) = \mathrm{expRamp}(f_0, 0.98 f_0, s, d)$ and exponential envelope from $0.20 v_{\mathrm{mul}}$ to $5\times 10^{-4}$.
 \end{definition}
 
 \begin{definition}[Shim 18 — \texttt{shimSaxFlute}$(t_0, \mathcal{N}, v_{\mathrm{mul}})$]
@@ -203,7 +220,13 @@ A five-stage bowed string model:
   \item \textbf{Rosin Transient:} $\xi * h_{\mathrm{BP}}(3200\,\text{Hz}, Q=3.0)$, $8\,\text{ms}$ attack to $0.045 v_{\mathrm{mul}}$, decay to $5\times 10^{-4}$ at $40\,\text{ms}$.
   \item \textbf{Dual Dispersive Saws:} $w_{\mathrm{saw}}(\varphi_1) + w_{\mathrm{saw}}(\varphi_2)$ at $(f_0, 1.002 f_0)$ ($+3.46\,\text{cents}$ detune; optional $0.85d$ slide).
   \item \textbf{Delayed Vibrato LFO:} $5.8\,\text{Hz}$ sine modulating both frequencies after delay $\min(0.08, 0.3d)\,\text{s}$, ramping to depth $0.012 f_0$ (solo) or $0.008 f_0$ (section) by $\min(0.24, 0.7d)\,\text{s}$.
-  \item \textbf{Body Formants:} Series cascade $h_{\mathrm{PEAK}}(520\,\text{Hz}, Q=2.2, +4\,\text{dB}) \to h_{\mathrm{PEAK}}(2800\,\text{Hz}, Q=1.8, +3\,\text{dB}) \to h_{\mathrm{LP}}(6200/5000\,\text{Hz})$. (In C99 \emph{Orchestra}, where \texttt{wa\_filter} lacks peaking, \texttt{shimViolin} uses a 3-node noise/2-saw/LP reduction and delegates body resonance to the track EQ insert.)
+  \item \textbf{Body Formants:} Series cascade
+  \begin{align*}
+  h_{\mathrm{PEAK}}(520\,\text{Hz}, Q=2.2, +4\,\text{dB})
+  &\;\to\; h_{\mathrm{PEAK}}(2800\,\text{Hz}, Q=1.8, +3\,\text{dB}) \\
+  &\;\to\; h_{\mathrm{LP}}(6200 / 5000\,\text{Hz}).
+  \end{align*}
+  (In C99 \emph{Orchestra}, where \texttt{wa\_filter} lacks peaking, \texttt{shimViolin} uses a 3-node noise/2-saw/LP reduction and delegates body resonance to the track EQ insert.)
   \item \textbf{Bowed Envelope:} Linear attack $\min(0.045, 0.25d)\,\text{s}$ to $v$, sustain $0.90v$ at $0.75d$, exponential release to $5\times 10^{-4}$.
 \end{enumerate}
 \end{definition}
@@ -292,7 +315,11 @@ Under one-shot semantics, percussive timbre duration is an invariant of the proc
 
 Cross-checking the mathematical models of Sections~\ref{sec:fam-kin}--\ref{sec:fam-ind} against the production C99 runtime in \texttt{src/media/sdk/lilcu64\_score.c} and \texttt{lilcu64\_wa.h} confirms exact 1:1 parameter parity with seven deliberate C99 systems adaptations:
 \begin{enumerate}[leftmargin=1.5em]
-  \item \textbf{Canonical Enumeration:} \texttt{lilcu64\_score.h} assigns IDs \texttt{1..23} (\texttt{LC\_SHIM\_SQUASH} through \texttt{LC\_SHIM\_TIMPANI}), capture-only IDs \texttt{24..25} (\texttt{LC\_CAP\_HAMMER}, \texttt{LC\_CAP\_SWOOSH}), and eight Commodore Amiga Paula 8-bit extensions \texttt{26..33} (\texttt{LC\_SHIM\_AMIGA\_KICK} through \texttt{LC\_SHIM\_AMIGA\_BELL}) using PAL period snapping $f_q = 3546895 / (32\cdot\mathrm{round}(3546895/(32f)))$ and a $4.4\,\text{kHz}$ 2-pole Butterworth LED low-pass filter (\texttt{WA\_FILT\_PAULA\_LED}).
+  \item \textbf{Canonical Enumeration:} \texttt{lilcu64\_score.h} assigns IDs \texttt{1..23} (\texttt{LC\_SHIM\_SQUASH} through \texttt{LC\_SHIM\_TIMPANI}), capture-only IDs \texttt{24..25} (\texttt{LC\_CAP\_HAMMER}, \texttt{LC\_CAP\_SWOOSH}), and eight Commodore Amiga Paula 8-bit extensions \texttt{26..33} (\texttt{LC\_SHIM\_AMIGA\_KICK} through \texttt{LC\_SHIM\_AMIGA\_BELL}) using PAL period snapping
+  \[
+  f_q = \frac{3546895}{32 \cdot \mathrm{round}\!\big(3546895 / (32 f)\big)}
+  \]
+  and a $4.4\,\text{kHz}$ 2-pole Butterworth LED low-pass filter (\texttt{WA\_FILT\_PAULA\_LED}).
   \item \textbf{Track-Level Saturation Delegation:} Because \texttt{lilcu64\_wa} provides linear oscillator/filter/gain nodes without per-node wave-shaping, \texttt{shimIndustrialBass} (per-osc gain $0.11 v_{\mathrm{mul}}$) and \texttt{shimCyberLead} (per-osc gain $0.55 v\cdot v_{\mathrm{mul}}$) delegate Chebyshev saturation $C_k(x)$ to the track's \texttt{SAT} insert.
   \item \textbf{Violin 3-Node Reduction:} \texttt{shimViolin} allocates rosin BP noise ($3200\,\text{Hz}, Q=3.0$) and dual detuned saws ($f_0, 1.002f_0$) through $5000\,\text{Hz}$ LP ($Q=0$), delegating $520\,\text{Hz}$ body peaking to the track EQ insert.
   \item \textbf{Explicit Cello dB-$Q$ Conversion:} \texttt{shimCello} computes \texttt{cello\_qdb()} $= 20\log_{10}(2.2) \approx 6.848\,\text{dB}$ explicitly before calling \texttt{wa\_filter}.

@@ -50,7 +50,7 @@ Active track inserts (up to $16 \times 2$ slots) & $120$ \\
 \end{table}
 
 \begin{theorem}[Real-Time Admission Condition]
-Playback transition (\texttt{gst\_rt\_set\_state(PLAYING)}) succeeds if and only if three invariants hold simultaneously: (1)~current state is \texttt{READY} or \texttt{PAUSED}, (2)~\texttt{virtio\_sound\_is\_ready()} is true, and (3)~$\mathrm{WCET} \le T$. Since $632\,\mu\text{s} \le 666\,\mu\text{s} < 725\,\mu\text{s}$, the closed concert graph satisfies admission at both permitted sample rates with margins of $34\,\mu\text{s}$ ($48\,\text{kHz}$) and $93\,\mu\text{s}$ ($44.1\,\text{kHz}$).
+The transition \texttt{gst\_rt\_set\_state(PLAYING)} succeeds if and only if three invariants hold simultaneously: (1)~current state is \texttt{READY} or \texttt{PAUSED}, (2)~\texttt{virtio\_sound\_is\_ready()} is true, and (3)~$\mathrm{WCET} \le T$. Since $632\,\mu\text{s} \le 666\,\mu\text{s} < 725\,\mu\text{s}$, the closed concert graph satisfies admission at both permitted sample rates with margins of $34\,\mu\text{s}$ ($48\,\text{kHz}$) and $93\,\mu\text{s}$ ($44.1\,\text{kHz}$).
 \end{theorem}
 
 If any invariant fails, \texttt{gst\_rt\_set\_state} returns $0$, prints \texttt{"play"} to the status line, and leaves the state unchanged. If a runtime invariant (\texttt{orch\_check}) is ever violated, a sticky fault latches and all subsequent blocks return \texttt{REFUSE}—producing clean silence rather than corrupted clicks.
