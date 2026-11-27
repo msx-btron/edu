@@ -1,0 +1,77 @@
+\chapter{Reference DAW Architecture for an RTOS: Three Layers and Seven Windows}
+\label{ch:daw-arch}
+
+Building a Digital Audio Workstation inside a real-time operating system demands strict structural discipline. If UI painting code can touch audio hardware, or if a file parser can mutate live DSP state mid-block, real-time deadlines collapse and rendering bugs corrupt user sessions. B-System \emph{Orchestra} prevents these failure modes through strict one-way layering, seqlock state publication, and exact integer musical time.
+
+\section{Three-Layer Isolation and Line-Count Ceilings}
+
+\emph{Orchestra} partitions its C99 codebase into three strictly ordered layers in which \texttt{\#include} arrows point exclusively downward:
+
+\begin{lstlisting}[caption={Three-layer architecture of B-System Orchestra (arrows point strictly down).}]
+Layer 1: Desk & Session (src/media, 10 files, 7712 lines)
+  orchestra.c (957)        menu, tick, commands, layout
+  orchestra_stage.c (409)  W_STAGE      orchestra_arrange.c (1037) W_ARRANGE
+  orchestra_piano.c (697)  W_PIANO      orchestra_score.c (924)    W_SCORE
+  orchestra_mix.c (295)    W_MIX        orchestra_insert.c (236)   W_INSERT
+  orchestra_about.c (79)   W_ABOUT
+  orchestra_session.c (1761) session I/O & undo | orchestra_smf.c (1317) SMF
+              |
+              v  (published POD snapshot OrchView under seqlock)
+Layer 2: Media Runtime (src/media/gst_rt.c + include/media/gst_rt.h = 2000 lines)
+              |
+              v  (5-call S16_LE stereo hardware contract)
+Layer 3: System (virtio_sound_*, async_rt.h, /SYS filesystem)
+\end{lstlisting}
+
+Layer enforcement is mechanical rather than advisory: the session and SMF modules never include \texttt{wnd.h} and never write to hardware; the media runtime never includes \texttt{wnd.h}, \texttt{app\_menu.h}, or \texttt{dp.h}; the system layer has no knowledge of Rock, Classic, or Orchestra templates. All desk state crosses the boundary as a single plain-old-data snapshot \texttt{OrchView} published under a seqlock (\texttt{gst\_seq\_begin} / \texttt{gst\_seq\_end}), so readers observe either the complete previous state or the complete new state, never a torn intermediate.
+
+Code complexity is audited by three line-count ceilings: $4000$ lines for the eight window/command files (currently $4634$ lines, logged transparently as Limit~\#1 in Chapter~\ref{ch:emulators}), $1800$ lines for session I/O ($1761$ actual), and $1400$ lines for SMF ($1317$ actual). Whenever trimming is needed, drawing boilerplate and comments are cut first—never a lookup table or DSP algorithm.
+
+\section{Exact Integer Musical Time and Tick--Sample Round-Trip}
+
+A floating-point musical clock accumulates drift between the arrange grid, the audio renderer, and exported MIDI files. \emph{Orchestra} therefore defines musical time purely in integer ticks at $\texttt{ORCH\_PPQ} = 960$ ticks per quarter note.
+
+Tempo is constrained to integer $\mathrm{BPM} \in [40, 240]$, time-signature numerator $\mathrm{num} \in [1, 12]$, and denominator $\mathrm{den} \in \{2, 4, 8, 16\}$. Crucially, \emph{the denominator defines the beat} (Equation~1):
+\begin{equation}
+\label{eq:beat-bar}
+T_{\mathrm{beat}} = \frac{60}{\mathrm{BPM}}, \qquad
+T_{\mathrm{bar}} = T_{\mathrm{beat}} \cdot \mathrm{num}, \qquad
+T_{\mathrm{quarter}} = T_{\mathrm{beat}} \cdot \frac{\mathrm{den}}{4} = \frac{15 \cdot \mathrm{den}}{\mathrm{BPM}}.
+\end{equation}
+Edit quantization snaps to four integer quanta (Equation~2):
+$\mathrm{BAR} = \mathrm{num} \times 3840 / \mathrm{den}$, $\mathrm{BEAT} = 3840 / \mathrm{den}$, $\mathrm{8TH} = 480$, and $\mathrm{16TH} = 240$ ticks ($\mathrm{snap}(t) = \lfloor t / q \rfloor \cdot q$).
+
+Converting between integer tick $t$ and integer sample index $N$ uses exact integer division in both directions (Equations~3--4):
+\begin{align}
+\label{eq:tick-to-sample}
+\mathrm{sample}(t) &= \left\lfloor \frac{t \cdot f_s \cdot \mathrm{den} + 32\cdot\mathrm{BPM}}{64\cdot\mathrm{BPM}} \right\rfloor, \\
+\label{eq:sample-to-tick}
+\mathrm{tick}(N) &= \left\lfloor \frac{(N + 1)\,D - D/2 - 1}{f_s \cdot \mathrm{den}} \right\rfloor, \qquad D = 64\cdot\mathrm{BPM}.
+\end{align}
+
+\begin{proposition}[Exact Tick--Sample Round-Trip]
+For $f_s = 48000\,\text{Hz}$, $\mathrm{den} = 4$, and $\mathrm{BPM} = 128$, Equation~\eqref{eq:tick-to-sample} maps $t = 40$ (one MIDI clock pulse at $24\,\text{PPQ}$) to $N = 938$, and Equation~\eqref{eq:sample-to-tick} recovers $\mathrm{tick}(938) = 40$ while $\mathrm{tick}(937) = 39$.
+\end{proposition}
+
+\begin{proof}
+Compute $D = 64 \times 128 = 8192$ and $f_s \cdot \mathrm{den} = 192000$. Then
+\[
+\mathrm{sample}(40) = \left\lfloor \frac{40 \times 192000 + 4096}{8192} \right\rfloor = \left\lfloor \frac{7684096}{8192} \right\rfloor = \lfloor 938.0 \rfloor = 938.
+\]
+Inversely,
+\[
+\mathrm{tick}(938) = \left\lfloor \frac{939 \times 8192 - 4096 - 1}{192000} \right\rfloor = \left\lfloor \frac{7688191}{192000} \right\rfloor = \lfloor 40.0426 \rfloor = 40,
+\]
+and $\mathrm{tick}(937) = \lfloor 7679999 / 192000 \rfloor = \lfloor 39.9999 \rfloor = 39$. The half-denominator rounding offset $D/2$ is load-bearing and cannot be omitted without breaking round-trip identity.
+\end{proof}
+
+\section{The Seven Windows and Three Practice Templates}
+
+\emph{Orchestra} exposes seven windows: only \texttt{W\_STAGE} ($780\times 520$) opens at launch; \texttt{W\_ARRANGE} ($760\times 420$), \texttt{W\_PIANO} ($760\times 480$), \texttt{W\_SCORE} ($720\times 320$, single-staff treble/bass notation), \texttt{W\_MIX} ($780\times 460$), \texttt{W\_INSERT} ($420\times 460$), and \texttt{W\_ABOUT} ($520\times 270$, the sole non-resizable window) open on demand. Undo is bounded to a static 16-entry ring buffer without redo.
+
+Each of the three practice templates configures track count, tempo, hall parameters, insert chains, polyphony ceilings, and 16 loudness scenes:
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Rock (8 tracks, $\texttt{poly\_max} = 1$):} Monophonic enforcement prevents overlapping guitar tails; drum gates ($20$--$40\,\text{ms}$ release) keep kit hits articulate inside the shared hall.
+  \item \textbf{Classic (6 tracks, $84\,\text{BPM}$, Piano $\texttt{poly\_max} = 6$):} Zero saturators; dedicated \emph{Cadenza} scene isolates piano and violin as a loudness preset rather than a mute flag.
+  \item \textbf{Orchestra (16 monophonic seats, $96\,\text{BPM}$, Hall $85/40/60/40$):} EQ and BYPASS only; Channel~10 carries French Horn (Program~60); Viola ($-7$) and Contrabass ($-12$) apply program-level transpositions; typical volume $64$ yields $G_{\mathrm{trk}} = 0.2665$ via Equation~\eqref{eq:track-gain}.
+\end{itemize}

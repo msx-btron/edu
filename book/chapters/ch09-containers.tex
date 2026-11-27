@@ -1,0 +1,48 @@
+\chapter{Deterministic Containers: 73,408-Byte Sessions, SMF~1.0, and Offline WAV}
+\label{ch:containers}
+
+A real-time DAW's persistence layer must satisfy the same determinism as its audio loop: malformed files must never partially mutate live state, binary layouts must never depend on C compiler struct padding, and offline audio export must produce sample-for-sample identical output to live playback without disturbing transport counters.
+
+\section{The 73,408-Byte \texttt{ORCH} Session Container}
+
+Every B-System \emph{Orchestra} session is serialized field-by-field in little-endian order with zero pointers and an exact, immutable byte size (Equation~22):
+\begin{align}
+\label{eq:session-size}
+\texttt{ORCH\_FILE\_BYTES}
+&= 128 + (64 \times 96) + (16 \times 100) + (4096 \times 16) \nonumber\\
+&= 128 + 6144 + 1600 + 65536 = 73408\,\text{bytes}.
+\end{align}
+
+Before reading a single byte of payload, \texttt{read\_orch()} invokes \texttt{stat()} and immediately refuses any file whose size is not exactly $73408$ bytes. Session I/O is also refused while \texttt{PLAYING} (stopped state only). Validation executes in five sequential predicates inside \texttt{accept\_buf()} before \texttt{commit\_buf()} atomically publishes the new state under the seqlock:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \texttt{hdr\_ok}: Verifies magic \texttt{"ORCH"}, version~$1$, $\mathrm{BPM} \in [40, 240]$, $f_s \in \{44100, 48000\}$, $\mathrm{num} \in [1, 12]$, $\mathrm{den} \in \{2, 4, 8, 16\}$, $\texttt{scene\_count} == 16$, hall parameters $\in [0, 100]$, and exact canonical path \texttt{/SYS/orchestra.orch}.
+  \item \texttt{tracks\_ok} / \texttt{one\_track\_ok}: Validates all 64 track slots (96 bytes each: name, channel $1..16$, key split, transpose, velocity curve $0..2$, volume/pan/send, registered program, \texttt{ins0}/\texttt{ins1}, \texttt{p0[4]}/\texttt{p1[4]}, accent color, \texttt{poly\_max}) and requires trailing unused track slots to be zero-filled.
+  \item \texttt{type\_over}: Enforces the 8-instance ceiling per stateful insert algorithm.
+  \item \texttt{scenes\_ok}: Validates all 16 scenes (100 bytes each: 32-byte name, tempo, meter, 16 program overrides where $255$ means unused, 16 volume overrides, 32-byte lighting tag).
+  \item \texttt{events\_ok}: Validates all active events (16 bytes each: track $< \texttt{track\_count}$, key $\in [0, 127]$, non-zero velocity, \texttt{flags == 0}, \texttt{start\_tick}, \texttt{dur\_tick}, \texttt{reserved == 0}) and zero-fill beyond \texttt{event\_count}.
+\end{enumerate}
+
+If any predicate fails, \texttt{refuse\_session} increments and the in-memory session remains completely untouched.
+
+\section{Standard MIDI Files 1.0 (\texttt{SMF}) Exchange}
+
+\emph{Orchestra} implements MMA Standard MIDI Files~1.0 (\texttt{MThd}, \texttt{MTrk}, variable-length quantities) at \texttt{/SYS/orchestra.mid} with a hard buffer cap of $\texttt{ORCH\_SMF\_CAP} = 262144\,\text{bytes}$ ($256\,\text{KiB}$). It reads Format~0 and Format~1 files and writes Format~1 (or Format~0 for single-track sessions) at $\mathrm{division} = 960\,\mathrm{PPQ}$. Negative SMPTE timecode divisions are refused outright.
+
+SMF parsing enforces two distinct failure disciplines:
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Structural Damage (Full Refusal):} Invalid \texttt{MThd}, missing \texttt{FF 2F 00} end-of-track, truncated chunks, $\ge 5$-byte VLQs, or 32-bit tick overflow trigger \texttt{snap\_restore()} and \texttt{refuse\_smf}, rolling back the entire load atomically.
+  \item \textbf{Capacity Overflow (Counted Truncation):} A well-formed file exceeding $4096$ events increments \texttt{refuse\_smf} and drops surplus events without aborting the parse.
+\end{itemize}
+
+On export (\texttt{orch\_cmd\_smf\_save}), note-on/note-off pairs (up to 8192 entries) are sorted so that \emph{note-off precedes note-on at identical ticks}, preventing stuck notes across zero-gap legato boundaries.
+
+\section{Write-Only Offline RIFF/WAVE Export}
+
+\emph{Orchestra} writes 44-byte little-endian \texttt{RIFF/WAVE} headers (16-bit signed stereo PCM at the session's $f_s$) strictly to \texttt{/SYS/orchestra.wav} while \texttt{PAUSED}. No WAV reader exists—B-Sound never imports external PCM.
+
+To guarantee sample-for-sample parity with live performance, offline export invokes the exact same five DSP functions (\texttt{clock\_block}, \texttt{slots\_expire}, \texttt{chase\_on}, \texttt{chase\_off}, \texttt{render\_graph}) using a private slot table and local export clock. Export length is governed by Equation~23:
+\begin{equation}
+\label{eq:wav-bounds}
+1\text{ bar} \;\le\; L_{\mathrm{WAV}} \;\le\; \min\!\left(64\text{ bars},\; \frac{80\,\mathrm{MiB} - 44}{4}\text{ frames}\right).
+\end{equation}
+Before rendering begins, fifteen live diagnostic counters, meters, and transport phase are saved into \texttt{CtrSnap}; upon completion, counters, clock, hall, and insert states are restored atomically before clearing \texttt{s\_export = 0}. Thus an offline take never perturbs live transport position $N$ or hardware queue depth.

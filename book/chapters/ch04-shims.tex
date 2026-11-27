@@ -1,0 +1,89 @@
+\chapter{The Procedural Sound Shim Architecture}
+\label{ch:shims}
+
+Having established the pitch groups of Chapter~\ref{ch:group-theory} and the DSP primitives of Chapter~\ref{ch:waveforms-dsp}, we now assemble the core synthesis abstraction of B-Sound: the \textbf{Sound Shim}, its 32-program General MIDI registry, and its 48-slot loudness-decay voice allocator.
+
+\section{Formal Definition and Zero-Byte Lifecycle}
+
+\begin{definition}[Sound Shim]
+A \emph{Sound Shim} $S(t_0, \mathbf{p})$ is a stateless procedural synthesis routine parameterized by an exact trigger timestamp $t_0$ and a finite parameter vector $\mathbf{p} = (f, v, d, \dots)$ that generates a finite-duration acoustic signal via partial superposition (Equations~10--11):
+\begin{equation}
+\label{eq:shim-def}
+y(t) = \sum_{k=1}^{K} A_k(t - t_0)\cdot W_k\!\big(2\pi f_k(t - t_0) + \phi_k\big) * h_k(t),
+\end{equation}
+where $W_k$ is a canonical oscillator or deterministic noise primitive, $h_k$ is the impulse response of an optional biquad filter, $*$ denotes convolution, and $A_k$ is an exponential ADSR envelope:
+\begin{equation}
+\label{eq:shim-env}
+A(t) = V_{\mathrm{peak}} \cdot e^{-(t - t_{\mathrm{attack}})/\tau}.
+\end{equation}
+\end{definition}
+
+In the Web Audio prototype, every transient oscillator registers into a disposal list via \texttt{registerTrackOsc(osc)}; stopping or switching tracks invokes \texttt{osc.stop(0)} and \texttt{osc.disconnect()} across the list to prevent garbage-collection leaks. In the native C99 runtime (\texttt{lilcu64\_wa.c}), oscillators draw strictly from a static voice pool with zero \texttt{malloc()} calls.
+
+\section{The 23 Canonical B-Sound Shims}
+
+B-Sound organizes its procedural sound bank into four functional families covering chiptune, acoustic jazz, symphonic orchestra, and industrial synthesis:
+
+\begin{table}[htbp]
+\centering
+\caption{Canonical B-Sound procedural Sound Shim library (zero-byte asset footprint).}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Shim Identifier & Acoustic / Synth Role & DSP Topology \\
+\midrule
+\texttt{shimPulseSquash} & Dual-phase singing triad & 6-harmonic additive sine + pitch scoop ($0.97 \to 1.0$) \\
+\texttt{shimFrogCroak} & Cu\'ica / nocturnal frog & Dual saw/tri + $2.2f$ formant BP + $32\,\text{Hz}$ AM rasp \\
+\texttt{shimPulseBell} & FM spiritual bell & 2-Op FM sine ($f_m/f_c = 2.76$, $I = 1.8$) \\
+\texttt{shimWaddle} & Acoustic walking bass & Dual triangle + $180\,\text{Hz}$ 2-pole LPF body \\
+\texttt{shimFloat} & Fender Rhodes E-piano & Polyphonic additive sine + resonant tines \\
+\texttt{shimDance} & Star / coin arpeggio & Rapid 16th-note sine cascade + exponential decay \\
+\texttt{shimDing} & Crystalline chime & Pure high sine ($\mathrm{A}_6/\mathrm{E}_7$) + $0.70\,\text{s}$ tail \\
+\texttt{shimKick} & Jazz / retro bass drum & Exponential sine sweep ($120 \to 45\,\text{Hz}$, $160\,\text{ms}$) \\
+\texttt{shimSnare} & Dual-component snare & Triangle shell ($175\,\text{Hz}$) + BP $2.4\,\text{kHz}$ wire noise \\
+\texttt{shimHiHat} & Metallic cymbal chick & HP $7.5\,\text{kHz}$ white noise ($55\,\text{ms}$ closed / $280\,\text{ms}$ open) \\
+\texttt{shimGuitar} & Hollowbody jazz guitar & Dual triangle + LP $2.8\,\text{kHz}$ comb resonance \\
+\texttt{shimGrandPiano} & Concert grand piano & Tri-harmonic detuned strings + felt hammer transient \\
+\texttt{shimPianoHammer} & Felt hammer strike & Low triangle click ($120 \to 40\,\text{Hz}$, helper shim) \\
+\texttt{shimPedalSwoosh} & Damper pedal lift & Formant BP ($450 \to 280\,\text{Hz}$) air friction (helper) \\
+\texttt{shimPedalBass} & Sforzando sub-bass & $\mathrm{A}_0$ ($27.5\,\text{Hz}$) / $\mathrm{A}_1$ ($55\,\text{Hz}$) piano thunder \\
+\texttt{shimSaxFlute} & Breathy woodwind & Triangle lead + $1.8f$ / $2\,\text{kHz}$ BP breath noise ($0.025$) \\
+\texttt{shimViolin} & Bowed violin / viola & 3-node rosin noise + dual saw + LPF \\
+\texttt{shimCello} & Arco / pizzicato cello & Deep LPF saw ($520\,\text{Hz}$, $Q_{\mathrm{dB}} = 20\log_{10} 2.2$) \\
+\texttt{shimTimpani} & Concert kettle drum & Membrane $(1,1)$ pitch glide + LP $260\,\text{Hz}$ \\
+\texttt{shimIndustrialBass} & Overdriven cyber bass & WaveShaper ($k=25$) + dual saw + LP $2.6\,\text{kHz}$ sweep \\
+\texttt{shimIndustrialKick} & Sub-drop industrial kick & Fixed $160 \to 42\,\text{Hz}$ saturated punch ($220\,\text{ms}$) \\
+\texttt{shimCyberLead} & Detuned industrial brass & Unison saw/pulse + resonant LPF ($400$--$3800\,\text{Hz}$) \\
+\texttt{shimSwarmatron} & 8-voice ribbon cluster & 8 micro-detuned oscillators in 1 voice slot \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The Immutable 32-Program Registry (\texttt{PROG[32]})}
+
+In \emph{Orchestra}, a \emph{Program} is not a multi-megabyte soundbank; it is an immutable call-site descriptor mapping 32 selected General MIDI numbers onto existing shims, clef indicators (\texttt{tr}/\texttt{bs}), track polyphony ceilings $p$, and program-level transpositions $\mathrm{tr}$.
+
+The remaining 96 General MIDI program numbers are intentionally undefined: requesting an unmapped number increments \texttt{refuse\_program} and leaves the track's current instrument untouched. There is no special MIDI Channel~10 drum map—percussion is selected explicitly by program number (`47` Timpani, `116` Kick, `117` Snare, `118` Hat, `119` Ind.\ Kick), which frees Channel~10 in the philharmonic template for the French Horn (Program~60).
+
+Three percussion shims (`Snare`, `Hat`, `Ind.Kick`) repurpose the velocity argument to switch articulation: velocity $\ge 110$ triggers a rimshot on `shimSnare` ($220 \to 143\,\text{Hz}$ + BP $3.2\,\text{kHz}$ crack), and velocity $\ge 100$ opens `shimHiHat` from $0.055\,\text{s}$ to $0.28\,\text{s}$.
+
+\section{48-Slot Voice Allocation and Loudness-Decay Stealing}
+
+The DAW maintains a static pool \texttt{s\_slot[48]} where each slot represents one active MIDI note (distinct from the synthesizer's internal 48-oscillator pool; an 8-oscillator \texttt{shimSwarmatron} note occupies exactly one DAW slot).
+
+When a new note arrives at sample position $n_{\mathrm{pos}}$, each occupied slot triggered at sample $t_0$ with initial gain $g$ is ranked by an exponential loudness proxy with time constant $\tau = 1\,\text{s}$ (Equation~9):
+\begin{equation}
+\label{eq:voice-proxy}
+\mathrm{proxy}(\mathrm{slot}) = g \cdot \exp\!\left(-\frac{n_{\mathrm{pos}} - t_0}{f_s}\right).
+\end{equation}
+
+Allocation follows a strict three-tier deterministic policy:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Per-Track Ceiling:} If the track already holds $\ge \texttt{poly\_max}$ slots, steal the slot on that same track minimizing $\mathrm{proxy}(\mathrm{slot})$.
+  \item \textbf{Free Pool Scan:} Otherwise, allocate the lowest-indexed free slot in \texttt{s\_slot[0..47]}.
+  \item \textbf{Global Steal:} If all 48 slots are occupied, steal the globally quietest slot across all tracks and increment \texttt{steal\_voice} (suppressed during offline WAV export).
+\end{enumerate}
+
+\begin{remark}[One-Shot Expiry vs.\ Note-Off]
+Nine percussive and chime rows (`47` Timpani, `80` Pulse, `102` Dance, `103` Zap, `112` Chime, `116` Kick, `117` Snare, `118` Hat, `119` Ind.\ Kick) set \texttt{shot = 1}. One-shot voices ignore MIDI Note-Off messages and are reclaimed solely upon expiry by \texttt{slots\_expire()}, preventing short pencil edits from truncating natural drum or cymbal decay.
+\end{remark}

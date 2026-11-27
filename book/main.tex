@@ -1,0 +1,97 @@
+\documentclass[11pt,a4paper]{memoir}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+% \input paths are tried as written, then under book/ so the same
+% main.tex builds from book/ and from the repository root.
+\makeatletter
+\def\input@path{{./}{book/}}
+\makeatother
+
+\setlrmarginsandblock{2.6cm}{2.6cm}{*}
+\setulmarginsandblock{2.6cm}{2.8cm}{*}
+\setheadfoot{28pt}{\footskip}
+\checkandfixthelayout
+
+\setsecnumdepth{subsection}
+\settocdepth{subsection}
+\setpnumwidth{2em}
+\setrmarg{3.2em}
+\chapterstyle{ger}
+\pagestyle{ruled}
+
+% Academic theorem environments (Springer textbook discipline)
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{example}{Example}[chapter]
+\newtheorem{invariant}{Invariant}[chapter]
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}{Proposition}[chapter]
+\newtheorem{corollary}{Corollary}[chapter]
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}[chapter]
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  backgroundcolor=\color{black!4},
+  literate={~}{{\textasciitilde}}1
+}
+
+\newenvironment{spec}{\begin{quote}\small}{\end{quote}}
+
+\title{B-Sound: Virtual DSP of the B-System.\\[0.3em]
+\Large Group-Theoretic Harmony, Procedural Synthesis,\\
+and Real-Time DAW Architecture}
+\author{B-System / BTRON 3.20\\Cryptographic Telesystems, LLC.}
+\date{November 2026}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+\include{front/preface}
+\include{front/note}
+\include{front/notation}
+
+\mainmatter
+\part{Mathematical Foundations of Sound and Harmony}
+\include{chapters/ch01-introduction}
+\include{chapters/ch02-group-theory}
+\include{chapters/ch03-waveforms-dsp}
+
+\part{The B-Sound Virtual DSP and Procedural Shims}
+\include{chapters/ch04-shims}
+\include{chapters/ch05-kinematics-sync}
+
+\part{Reference RTOS DAW Architecture: B-System Orchestra}
+\include{chapters/ch06-daw-architecture}
+\include{chapters/ch07-rtos-graph}
+\include{chapters/ch08-inserts-hall}
+\include{chapters/ch09-containers}
+
+\part{Repertoire, Emulation, and Engineering Position}
+\include{chapters/ch10-album}
+\include{chapters/ch11-emulators-ecosystem}
+
+\backmatter
+\include{back/constants}
+\include{back/exercises}
+\include{back/glossary}
+\include{back/references}
+\end{document}

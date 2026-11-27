@@ -1,0 +1,57 @@
+\chapter{Audio-Visual Phase-Locking, 4D Hopf Fibration, and Kinematics}
+\label{ch:kinematics}
+
+In the B-System \emph{Lil~Cu~64} ceremonial runtime (\texttt{MEDIA-SDK.txt} and \texttt{MEDIA-SOUND.txt}), B-Sound does not operate as an isolated background player; it is mathematically phase-locked to a 60\,FPS OpenGL scene comprising a 4D Hopf fibration background and a 24-degree-of-freedom (24-DOF) low-poly mascot.
+
+\section{4D Hopf Fibration and Stereographic Projection $S^3 \to \mathbb{R}^3$}
+
+The visual backdrop is a real-time discretization of the Hopf fibration $\pi : S^3 \to S^2$, where each fiber is a great circle on the unit 3-sphere $S^3 \subset \mathbb{R}^4$. A nested family of flat tori is parameterized by elevation $\eta$, fiber azimuth $\beta$, and circle parameter $\xi$:
+\begin{align}
+\eta(t) &= \frac{\pi}{7} + (t + 0.6)\frac{\pi}{2.8\,N_{\mathrm{tori}}}, \qquad
+\beta(f) = \frac{2\pi f}{N_{\mathrm{fibers}}} + \omega, \qquad
+\xi(p) = \frac{2\pi p}{N_{\mathrm{pts}}},
+\end{align}
+with $\omega = 0.08\,\tau + 0.40\,\Phi_c$ and $\psi = 0.12\,\tau + \Phi_c$ driven by time $\tau$ and an inertial flywheel phase $\Phi_c$ damped at $\dot{\Phi}_c \leftarrow 0.968\,\dot{\Phi}_c$ per frame. Mapping onto $S^3$:
+\begin{align}
+x_0 &= \cos\eta\cos(\xi + \beta/2 + \psi), & x_1 &= \cos\eta\sin(\xi + \beta/2 + \psi), \\
+x_2 &= \sin\eta\cos(\xi - \beta/2 + 0.8\psi), & x_3 &= \sin\eta\sin(\xi - \beta/2 + 0.8\psi).
+\end{align}
+Stereographic projection from $(0,0,0,1)$ with bounded denominator $1.08 - x_3$ maps $S^3$ into $\mathbb{R}^3$:
+\begin{equation}
+(X, Y, Z) = \frac{(x_0, x_1, x_2)}{1.08 - x_3},
+\end{equation}
+rendered in three density tiers ($18$, $36$, or $54$ rings) with dynamic HSV spectral dispersion. When a sacred pulse is triggered, a dual-tier spherical radiant wave expands with non-linear radius $r(t) = 0.5 + \big(1 - (1 - t/T)^{2.8}\big)(R_{\max} - 0.5)$.
+
+\section{24-DOF Mascot State Vector and Critical Damping}
+
+The canonical mascot \emph{Lil~Cu~64} is a chamfered low-poly cube ($26$ primary vertices radially clamped at $R_{\mathrm{bevel}} = 1.65$, $< 180$ triangles) enclosing a counter-rotating regular octahedron ($R_{\mathrm{gem}} = 0.78$) beneath a 24-slice toroidal rainbow halo ($R = 0.95, r = 0.05$). Its complete pose is a continuous vector $\mathbf{x}(t) \in \mathbb{R}^{24}$ covering root position/orientation, torso offset/rotation, volumetric scale $(S_x, S_y, S_z)$, hand and foot joints, and mouth morph weights.
+
+Every state transition obeys a critically damped ($\zeta = 1.0$) second-order differential equation ensuring $C^\infty$ smoothness with zero overshoot:
+\begin{equation}
+\ddot{x}_i + 2\omega_i\dot{x}_i + \omega_i^2\big(x_i(t) - x_i^*(t)\big) = 0,
+\end{equation}
+integrated at $60\,\text{FPS}$ ($\Delta t = 16.67\,\text{ms}$) via the frame-rate-independent exponential relaxation
+\begin{equation}
+x_i(t + \Delta t) = x_i^*(t) + \big(x_i(t) - x_i^*(t)\big)e^{-k_i \Delta t},
+\end{equation}
+with subsystem stiffness constants $k_{\mathrm{pos}} = 18$, $k_{\mathrm{rot}} = 16$, $k_{\mathrm{scale}} = 22$, $k_{\mathrm{hand}} = 15$, $k_{\mathrm{foot}} = 20$, and $k_{\mathrm{mouth}} = 24\,\text{s}^{-1}$.
+
+\section{Phase-Locked Kinematics and Interactive Beat Quantization}
+
+The mascot finite state machine comprises seven canonical states, each directly coupled to B-Sound shims via the shared audio clock \texttt{wa\_time() - s\_tl\_base} ($\approx 0.7\,\text{ms}$ granularity):
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{IDLE:} Isovolumetric breathing $S_y = 1 + 0.04\sin(3.2t)$, $S_x = S_z = 1 - 0.02\sin(3.2t)$ paired with \texttt{shimPulseBell}.
+  \item \textbf{WADDLE:} Stride phase $\Phi_w(t) = \int 7.5\,dt$; zero-crossings of $\sin\Phi_w$ fire \texttt{shimWaddle} on alternating root and fifth bass notes so the character literally walks on the bassline.
+  \item \textbf{FLOAT:} Four-phase $3.35\,\text{s}$ anti-gravity spline levitation with cosine ease-in/out paired with \texttt{shimFloat} Rhodes chords and touchdown \texttt{shimBoing}.
+  \item \textbf{DANCE:} $4.10\,\text{s}$ pirouette and backflip choreography triggering 16th-note \texttt{shimDance} star arpeggios every $90^\circ$ rotation.
+  \item \textbf{SQUASH / BLESSING:} Isovolumetric compression ($S_y = 0.60, S_{xz} = 1.30$, $S_y S_{xz}^2 \approx 1.014$) exploding to $S_y = 1.45, S_{xz} = 0.82$, firing \texttt{shimPulseSquash} and a Journey radiant wave.
+  \item \textbf{SING:} Wide resonant O-mouth ($w_{\mathrm{omouth}} = 1.25$) with $5\times$ internal gem acceleration synced to fortissimo climaxes.
+  \item \textbf{POKE:} Viscoelastic damped oscillation $\mathrm{squish}(t) = 0.36\,e^{-4.5t}\cos(22t)$ decaying in $0.55\,\text{s}$.
+\end{enumerate}
+
+To prevent player input from clashing with background music, interactive triggers are quantized forward to the next 16th-note boundary:
+\begin{equation}
+t_{\mathrm{trigger}} = t_{\mathrm{bar}} + \left\lceil \frac{t_{\mathrm{input}} - t_{\mathrm{bar}}}{T_{\mathrm{16th}}} \right\rceil T_{\mathrm{16th}}.
+\end{equation}
+Under adaptive stem mixing, taking damage sweeps a high-pass filter to $800\,\text{Hz}$ and introduces a heartbeat kick, while invincibility boosts the \texttt{shimDance} stem by $+3\,\text{dB}$.

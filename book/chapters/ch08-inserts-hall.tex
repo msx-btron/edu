@@ -1,0 +1,65 @@
+\chapter{Insert Chains, Shared Hall Memory, and Static Pool Governance}
+\label{ch:inserts-hall}
+
+A commercial desktop DAW treats audio effects as dynamically loaded binary plugins (VST, AU, AAX) that allocate arbitrary heap memory per track. In a deterministic RTOS, dynamic linking (\texttt{dlopen}) and unbounded per-track allocations violate both memory safety and WCET admission. B-Sound resolves this by modeling inserts as \emph{fixed positions} populated from a closed, statically pooled catalogue of eight algorithms.
+
+\section{Inserts as Positions, Not Graph Elements}
+
+Nine insert identifiers are defined: \texttt{ORCH\_INS\_BYPASS = 0}, \texttt{EQ = 1}, \texttt{SAT = 2}, \texttt{DELAY = 3}, \texttt{REVERB = 4}, \texttt{CHORUS = 5}, \texttt{GATE = 6}, \texttt{TREMOLO = 7}, and \texttt{LIMITER = 8}. Crucially, inserts are \emph{not} elements of the nine-element graph of Chapter~\ref{ch:rtos-graph}: if each of the 64 tracks added two insert nodes, the 16-element graph vocabulary would be exceeded immediately.
+
+Instead, every track carries exactly two inline insert slots (\texttt{ins0}, \texttt{ins1}), and the master bus carries one dedicated slot (\texttt{master\_lim}) restricted exclusively to \texttt{LIMITER} or \texttt{BYPASS}. Attempting to assign any other type to the master—or exceeding a pool ceiling—increments \texttt{refuse\_insert}, displays \texttt{"insert"} on the status line, and leaves the active chain intact.
+
+\section{Four-Integer Parameter Encoding and Double Clamping}
+
+Every insert accepts exactly four 16-bit signed integers (\texttt{P1}--\texttt{P4}), enabling direct serialization into eight \texttt{int16\_t} fields per track inside the 73,408-byte session container (Chapter~\ref{ch:containers}). Values are clamped twice: once upon UI editing (\texttt{clamp\_row}) and again immediately before DSP evaluation (\texttt{clamp\_i}).
+
+\begin{table}[htbp]
+\centering
+\caption{Closed catalogue of eight B-Sound insert algorithms and integer ranges (\texttt{P1}--\texttt{P4}).}
+\scriptsize
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Insert & \texttt{P1} & \texttt{P2} & \texttt{P3} & \texttt{P4} & Eq. \\
+\midrule
+\texttt{BYPASS} & \multicolumn{4}{l}{No parameters} & --- \\
+\texttt{EQ} & Mode $0..3$ (LP/HP/BP/Peak) & $f_0 \in [20, 20000]\,\text{Hz}$ & $Q\times 100 \in [10, 1000]$ & Gain $[-24, +24]\,\text{dB}$ & Eq.~13 \\
+\texttt{SAT} & Drive $k \in [0, 100]$ (def.\ $25$) & $0$ & $0$ & $0$ & Eq.~14 \\
+\texttt{DELAY} & Steps $k \in [1, 16]$ (16ths) & Feedback $0..90\%$ & Wet $0..100\%$ & $0$ & Eq.~16 \\
+\texttt{REVERB} & Track send $0..127$ & Hall room $0..100$ & Damping $0..100$ & Wet $0..100$ & Eq.~15 \\
+\texttt{CHORUS} & Base $d_0 \in [1, 40]\,\text{ms}$ & Depth $0..10\,\text{ms}$ & $f_{\mathrm{LFO}}\times 10 \in [1, 50]$ & Mix $0..100\%$ & Eq.~17 \\
+\texttt{GATE} & Thresh.\ $\times 100 \in [1, 100]$ & Release $\tau \in [1, 500]\,\text{ms}$ & Hold $0..500\,\text{ms}$ & $0$ & Eq.~18 \\
+\texttt{TREMOLO} & Depth $d \in [0, 100]\%$ & Rate $f\times 10 \in [1, 120]$ & $0$ & $0$ & Eq.~19 \\
+\texttt{LIMITER} & \multicolumn{4}{l}{Master bus only; threshold $0.85$, soft knee} & Eq.~20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Per-Track Signal Flow and Shared Hall Memory}
+
+Within every track, audio traverses a fixed five-stage chain:
+\[
+\texttt{ins0} \;\longrightarrow\; \texttt{ins1} \;\longrightarrow\; \text{Fader } G_{\mathrm{trk}}\;(\text{Eq.~7}) \;\longrightarrow\; \text{Pan } (G_L, G_R)\;(\text{Eq.~8}) \;\longrightarrow\; \text{Aux Send } s_{\mathrm{send}}.
+\]
+The aux bus accumulates $s_{\mathrm{send}} \mathrel{+}= (L + R) \cdot (\texttt{send}/127)$ into a \emph{single shared Schroeder hall} per session. Because the hall requires four comb filters and four all-pass filters per stereo channel with two 44,100-sample delay buffers, instantiating independent halls per track would multiply static RAM unacceptably. The four global hall parameters (\texttt{room}, \texttt{damping}, \texttt{feedback}, \texttt{wet} $\in [0,100]$) reside in bytes 28--31 of the session header; track-level \texttt{REVERB} inserts update \texttt{send} (\texttt{P1}) and forward \texttt{P2}--\texttt{P4} to the shared hall (last scanned track wins), while \texttt{feedback} is written exclusively by templates and session files.
+
+The metronome click runs on isolated bus~65 with zero send, centered $0.7071$ stereo gain, bypassing track faders, mute, and solo.
+
+\section{Static Pool Ceilings Across Embedded and Host Targets}
+
+Stateful delay and chorus lines are allocated from static pools capped at \emph{eight instances per algorithm}. Attempting to place a ninth \texttt{DELAY} or \texttt{CHORUS} forces that slot to \texttt{BYPASS} and increments \texttt{refuse\_insert}. Memory sizing adapts deterministically to hardware RAM ceilings:
+
+\begin{table}[htbp]
+\centering
+\caption{Static delay and chorus pool memory footprint across targets.}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Target Platform & Delay Line Length & Total Pool (incl.\ Snapshot) \\
+\midrule
+PlayStation~2 (RDRAM) & $2048$ samples ($65,536\,\text{B}$) & $284,672\,\text{B}$ ($\approx 278\,\text{KiB}$) \\
+Desktop / Pi~4B / QEMU & $\min(f_s, 48000)$ ($1,536,000\,\text{B}$) & $3,225,600\,\text{B}$ ($\approx 3.08\,\text{MiB}$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Chorus lines are fixed at $2400$ samples ($50\,\text{ms}$ at $48\,\text{kHz}$) across all targets. On RDRAM-constrained consoles, long 16-step delays are clamped cleanly and reported rather than overflowing memory.

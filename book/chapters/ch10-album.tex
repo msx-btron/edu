@@ -1,0 +1,42 @@
+\chapter{Case Study: The Canonical Four-Track Procedural Album}
+\label{ch:album}
+
+To prove that zero-byte procedural synthesis, group-theoretic harmony, and a $632\,\mu\text{s}$ RTOS DAW can produce complete, stylistically diverse musical works, B-System ships a four-track canonical album. Crucially, the four \texttt{.orch} and \texttt{.mid} files in \texttt{/SYS/} are \emph{never hand-edited}: the host build target \texttt{album\_encode} executes \texttt{lc\_score\_schedule()} directly from the synthesis engine, validates each container via \texttt{orch\_session\_load\_buf()}, exports SMF, reloads SMF, and asserts exact event-count round-trip equality.
+
+\begin{table}[htbp]
+\centering
+\caption{The four canonical B-Sound procedural compositions.}
+\scriptsize
+\begin{tabular}{@{}rllllll@{}}
+\toprule
+\# & Title & Meter & BPM & Key & Dur. & Primary Shims \\
+\midrule
+1 & \emph{Carol of the Bells} & $3/4$ & $168$ & E min & $27.36\,\text{s}$ & \texttt{Ding}, \texttt{PulseBell}, \texttt{Waddle}, \texttt{Dance} \\
+2 & \emph{Green Caterpillar} & $4/4$ & $98/120$ & D min & $24.49\,\text{s}$ & \texttt{Float}, \texttt{Guitar}, \texttt{Waddle}, \texttt{FrogCroak} \\
+3 & \emph{House of the Rising Sun} & $6/8$ & $76/125$ & A min & $25.92\,\text{s}$ & \texttt{GrandPiano}, \texttt{PedalBass}, \texttt{SaxFlute} \\
+4 & \emph{TRON Init} & $4/4$ & $93/132$ & A/F$\sharp$m & $25.80\,\text{s}$ & \texttt{Ind.Bass}, \texttt{Swarmatron}, \texttt{CyberLead} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Track 1: \emph{Carol of the Bells} — 17-Track Canon Architecture}
+
+The opening track (\texttt{bells.orch}, the desk's default startup session) comprises $17$ tracks, $325$ events, and $73535$ ticks ($25.5$ bars in $3/4$ at $168\,\text{BPM}$, $27.36\,\text{s}$). Its musical core is Mykola Leontovych's iconic four-note ostinato ($\mathrm{G}_5 - \mathrm{F}\sharp_5 - \mathrm{G}_5 - \mathrm{E}_5$) arranged as an eight-voice contrapuntal canon across Channels~1--8 (\texttt{Crystal chime 1..8}, Program~112 \texttt{shimDing}), entering at staggered ticks $0, 960, 1440, 4320, 6720, 7200, 7200, 10080$.
+
+\begin{remark}[Single-Wet Canon Depth Ordering]
+Only Channel~1 carries \texttt{EQ+REVERB}; the seven answering chime voices (Channels~2--8) are deliberately kept \emph{dry}. Because B-Sound shares a single Schroeder hall across the session (Chapter~\ref{ch:inserts-hall}), sending all eight canon entries into the same room would wash out contrapuntal intelligibility. Keeping entries~2--8 dry preserves clear spatial foreground/background separation.
+\end{remark}
+
+Channel~9 sounds a single sustained \texttt{Golden chi bell} (Program~98, 2-Op FM $r=2.76, I=1.8$, key~44, $9408$ ticks—the longest note in the file). Channels~10--13 provide gated jazz percussion (\texttt{Hi-hat}, \texttt{Kick}, \texttt{Snare}, \texttt{Snare~2}), Channel~14 adds \texttt{EQ+CHORUS} walking bass (\texttt{shimWaddle}), and Channels~15--17 layer \texttt{shimPulseSquash}, \texttt{shimDance} arpeggios, and \texttt{shimSaxFlute} counterpoint. Total insert usage stays well below the 8-instance ceiling: $6$ EQ, $4$ REVERB, $3$ GATE, $1$ DELAY, $1$ CHORUS.
+
+\section{Track 2: \emph{Green Caterpillar} — Jazz-Fusion Swing}
+
+Modeled on Masaru Imada's 1975 Three Blind Mice quartet recording ($98\,\text{BPM}$, $4/4$ swing, $24.49\,\text{s}$ across $10$ measures), Track~2 demonstrates acoustic emulation purely from low-order primitives: \texttt{shimFloat} Fender Rhodes chord pads, \texttt{shimWaddle} upright walking bass ($180\,\text{Hz}$ LPF), \texttt{shimGuitar} hollowbody jazz leads, Tetsujiro Obara's swinging ride/rimshot snare (\texttt{vel >= 110}), and \texttt{shimFrogCroak} ($32\,\text{Hz}$ AM cu\'ica friction rasp) providing nocturnal call-and-response cues phase-locked to the mascot's curiosity pose.
+
+\section{Track 3: \emph{The House of the Rising Sun} — Compound $6/8$ Piano Acoustics}
+
+Arranged after Thomas Kr\"uger's concert grand interpretation ($6/8$ rolling arpeggios, $25.92\,\text{s}$ across $18$ bars over the Neo-Riemannian progression $\mathrm{Am} \to \mathrm{C} \to \mathrm{D} \to \mathrm{F} \to \mathrm{Am} \to \mathrm{E}_7$), Track~3 combines five acoustic piano sub-models: \texttt{shimGrandPiano} tri-harmonic strings, \texttt{shimPianoHammer} felt thumps, \texttt{shimPedalSwoosh} damper air friction, \texttt{shimPedalBass} sforzando $\mathrm{A}_0/\mathrm{A}_1$ thunder, and \texttt{shimSaxFlute} lyrical vocal cantabile, culminating in a cascading $\mathrm{E}_6 \to \mathrm{G}\sharp_5$ waterfall run.
+
+\section{Track 4: \emph{TRON Init} — Non-Linear Saturation and Swarm Synthesis}
+
+Inspired by Nine Inch Nails' industrial cyber-grid aesthetic ($10$ exact measures at $2.58\,\text{s/bar}$, $25.80\,\text{s}$ total), Track~4 stress-tests B-Sound's non-linear and multi-oscillator primitives: \texttt{shimGlitchZap} high-pass telemetry bursts, \texttt{shimIndustrialKick} saturated $160 \to 42\,\text{Hz}$ sub-drops, \texttt{shimIndustrialSnare} distorted trash-can clanks, \texttt{shimIndustrialBass} WaveShaper ($k = 25$, Eq.~\ref{eq:waveshaper}) driving 16th-note saw/square basslines, \texttt{shimCyberLead} unison brass melodies, and the 8-oscillator \texttt{shimSwarmatron} ribbon glissando dissolving into Schroeder hall reverb.

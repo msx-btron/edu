@@ -1,0 +1,18 @@
+\chapter{How to Read This Book}
+
+This monograph follows a strict \emph{cumulative vocabulary discipline}, inherited directly from the B-System \emph{Orchestra} manual. Each chapter builds exclusively on mathematical definitions, equations, and system invariants established in earlier chapters.
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Part~I (Chapters~1--3)} introduces the mathematical objects: pitch groups ($\mathbb{Z}_{12}$, $D_{12}$, $PLR$), analytical waveforms, FM spectra, biquad transfer functions, wave-shapers, and reverberators.
+  \item \textbf{Part~II (Chapters~4--5)} constructs the B-Sound Virtual DSP from Part~I's primitives: the 23 Sound Shims, the 32-program registry, 48-slot voice stealing, and audio-visual kinematic phase-locking.
+  \item \textbf{Part~III (Chapters~6--9)} embeds B-Sound inside a deterministic RTOS DAW: three-layer separation, integer tick-to-sample arithmetic, the nine-element C99 graph, WCET admission control, static insert pools, and binary file validation.
+  \item \textbf{Part~IV (Chapters~10--11)} evaluates the complete stack on a four-track procedural album and compares its engineering trade-offs against hardware sound-chip emulators and desktop DAWs.
+\end{itemize}
+
+\section*{Normative Conventions}
+
+Throughout the text, numbered equations correspond to the canonical B-System specification numbering where applicable. Worked numerical checks—such as the integer tick round-trip ($\text{tick } 40 \leftrightarrow \text{sample } 938$ at $48\,\text{kHz}$, $128\,\text{BPM}$) and the $73408$-byte session decomposition—are proven inline rather than deferred.
+
+\begin{spec}
+\textbf{Architectural Honesty Rule.} No latency figure is printed unless it is either a proven worst-case ceiling (such as $632\,\mu\text{s}$ per block) or a runtime queue measurement ($\text{queued\_frames}/f_s$). Unproven claims, dynamic heap allocations on the audio path, and undocumented fallbacks are explicitly forbidden.
+\end{spec}

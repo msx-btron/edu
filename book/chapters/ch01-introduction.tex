@@ -1,0 +1,68 @@
+\chapter{Foundations of Procedural Audio and the B-Sound Paradigm}
+\label{ch:intro}
+
+Digital audio systems in the twenty-first century are dominated by sample-based playback. A typical commercial Digital Audio Workstation (DAW) or game audio engine loads multi-gigabyte SoundFont or PCM libraries into virtual memory, streams compressed audio from disk, and hosts opaque third-party binary plugins via dynamic linking (\texttt{dlopen}). While effective on over-provisioned desktop workstations, this architecture breaks down under the strict determinism, memory ceilings, and worst-case execution time (WCET) guarantees required by real-time operating systems (RTOS), embedded sound devices, and hardware synthesizer emulators.
+
+\textbf{B-Sound} is the Virtual Digital Signal Processor (Virtual DSP) of the B-System / BTRON~3.20 operating system. Rather than storing static recordings of instruments, B-Sound synthesizes every acoustic event from closed-form mathematical procedures at native sample rate ($44.1\,\text{kHz}$ or $48\,\text{kHz}$). Together with its reference stage DAW \emph{Orchestra} and its phase-locked 3D runtime \emph{Lil~Cu~64}, B-Sound demonstrates that a complete, musically expressive production studio can operate with a \emph{zero-byte external sample footprint} and a provable sub-millisecond block deadline.
+
+\section{The Audio-Visual Shim Principle}
+
+In conventional multimedia pipelines, geometry, animation, and sound are authored in disconnected silos and loosely coupled via event tags referencing pre-recorded WAV or OGG files. B-Sound replaces that coupling with a unified architectural invariant:
+
+\begin{invariant}[The Audio-Visual Shim Principle]
+Every fundamental kinematic action of a physical or virtual entity maps one-to-one onto a deterministic, stateless procedural DSP function—a \emph{Sound Shim}—requiring zero bytes of external PCM sample data. Complex acoustic instruments and multi-track musical compositions are constructed exclusively by parameterizing, layering, and sequencing these shims within a statically bounded signal graph.
+\end{invariant}
+
+Four concrete engineering properties follow immediately from this invariant:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Zero Loading Latency.} Instruments are instantiated instantaneously from compiled C99 or Web Audio code without disk I/O, decompression, or asset streaming.
+  \item \textbf{Frame-Accurate Phase-Locking.} Because kinematic state variables and DSP oscillators share a single monotonic clock, physical impacts (footfalls, volumetric squash, radiant waves) lock to sample-accurate acoustic transients.
+  \item \textbf{Embedded Memory Determinism.} The entire 23-shim synthesis engine fits well within sub-$100\,\text{KiB}$ of executable code, with all delay lines, voice pools, and session buffers allocated statically at boot.
+  \item \textbf{Continuous Parametric Expressiveness.} Pitch glides, filter formants, velocity curves, and reverberation morph continuously in real time without sample-stretching artifacts or pitch-shift aliasing.
+\end{enumerate}
+
+\section{The Four Immutable Constants of B-Sound}
+
+Unlike desktop DAWs that expose arbitrary buffer-size sliders, arbitrary sample rates, and unbounded project files, B-Sound and \emph{Orchestra} anchor their entire real-time contract on four compile-time literals:
+
+\begin{table}[htbp]
+\centering
+\caption{The four fixed architectural constants of B-Sound and Orchestra.}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Constant & Value & Architectural Role \\
+\midrule
+Sample rate $f_s$ & $48000\,\text{Hz}$ or $44100\,\text{Hz}$ & Binary choice only; default $48000\,\text{Hz}$. \\
+Host period $H_{\text{per}}$ & $1024$ frames & VirtIO write cadence ($21.33\,\text{ms}$ / $23.22\,\text{ms}$). \\
+Synthesis quantum $Q$ & $32$ frames (\texttt{RENDER\_BLOCK}) & Atomic DSP block ($T = 666.7\,\mu\text{s}$ / $725.6\,\mu\text{s}$). \\
+Session container & $73408$ bytes (\texttt{ORCH\_FILE\_BYTES}) & Exact POD file length verified before reading. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{remark}
+These four numbers are not user preferences; they are invariants that turn real-time schedulability into elementary arithmetic. Fixing $Q = 32$ and $f_s \in \{44100, 48000\}$ reduces the admission test of Chapter~\ref{ch:rtos-graph} to a single inequality $\mathrm{WCET} \le Q / f_s$. Fixing the session length at $73408 = 128 + 64\times 96 + 16\times 100 + 4096\times 16$ bytes allows \texttt{stat()} to reject malformed containers before a single payload byte enters memory.
+\end{remark}
+
+\section{Three Practices and the VirtIO Hardware Boundary}
+
+B-Sound's reference DAW \emph{Orchestra} is designed around three fixed musical practices rather than an open-ended plugin marketplace:
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Rock} (8 monophonic tracks): kick, snare, hi-hat, bass, guitar, keys, lead, and voice.
+  \item \textbf{Classic} (6 tracks): voice, 6-voice polyphonic grand piano, flute, violin, cello, and continuo.
+  \item \textbf{Orchestra} (16 monophonic seats): philharmonic seating from first violin through brass, timpani, harp, and percussion.
+\end{itemize}
+
+At the hardware boundary, B-Sound communicates with the host or bare-metal audio device through exactly five VirtIO Sound primitives:
+\texttt{virtio\_sound\_open}, \texttt{virtio\_sound\_write}, \texttt{virtio\_sound\_close}, \texttt{virtio\_sound\_is\_ready}, and \texttt{virtio\_sound\_get\_queued\_bytes}.
+The output wire format is interleaved little-endian 16-bit signed PCM (\texttt{S16\_LE}, $L, R, L, R$, $4\,\text{bytes/frame}$). Crucially, \emph{no audio capture or read primitive exists}: audio flows strictly outward, and the sole feedback from hardware to software is the instantaneous queue depth in bytes.
+
+\section{Position in Scientific Procedural Audio}
+
+B-Sound occupies a distinct intersection among four applied disciplines:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Mathematical Music Theory:} Operationalizing equal-tempered cyclic groups, dihedral transpositions, and consonant triadic voice-leading directly inside synthesis code.
+  \item \textbf{Synthesizer Construction and Emulation:} Providing a canonical, portable C99 virtual DSP whose S16\_LE stereo contract is shared cleanly with retro hardware chip emulators (MSX PSG, OPLL, OPL4) without coupling their internal synthesis models.
+  \item \textbf{Embedded Sound Devices:} Demonstrating how bounded static pools ($284\,\text{KiB}$ on PS2 RDRAM vs.\ $3.2\,\text{MiB}$ on desktop hosts) preserve identical musical semantics across radically different memory tiers.
+  \item \textbf{Real-Time DAW Software:} Proving that a multi-window DAW with sequencer, piano roll, notation, mixer, inserts, SMF~1.0 exchange, and offline WAV export can be built with zero runtime heap allocations and an explicit, auditable $632\,\mu\text{s}$ WCET ceiling.
+\end{enumerate}

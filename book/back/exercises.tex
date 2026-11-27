@@ -1,0 +1,28 @@
+\chapter{Exercises and Laboratory Problems}
+\label{app:exercises}
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Dihedral Group Action on Triads (Chapter~\ref{ch:group-theory}).}
+  Verify explicitly that the inversion operator $I_k(x) \equiv -x + k \pmod{12}$ maps every major triad $\langle r, r+4, r+7\rangle$ onto a minor triad. Determine the unique $k \in \mathbb{Z}_{12}$ that maps the E-minor triad of \emph{Carol of the Bells} ($\{4, 7, 11\}$) onto C major ($\{0, 4, 7\}$).
+
+  \item \textbf{Neo-Riemannian Word Length (Chapter~\ref{ch:group-theory}).}
+  Express the complete chord progression of \emph{The House of the Rising Sun} ($\mathrm{Am} \to \mathrm{C} \to \mathrm{D} \to \mathrm{F} \to \mathrm{Am} \to \mathrm{E}$) as a sequence of minimal-length words in the generators $\{\mathcal{P}, \mathcal{L}, \mathcal{R}\}$ and compute the total semitone voice-leading displacement per transition.
+
+  \item \textbf{FM Bessel Spectrum of \texttt{shimPulseBell} (Chapter~\ref{ch:waveforms-dsp}).}
+  Using $f_c = 440\,\text{Hz}$, $f_m = 2.76\,f_c$, and $I = 1.8$, compute the frequencies and relative amplitudes $|J_m(1.8)|$ for all sidebands $|m| \le 4$. Identify which negative-order sidebands reflect across $0\,\text{Hz}$ and explain why the resulting spectrum sounds metallic rather than harmonic.
+
+  \item \textbf{Biquad $Q$-Convention Conversion (Chapter~\ref{ch:waveforms-dsp}).}
+  Compute the normalized Direct Form~I coefficients $(b_0/a_0, b_1/a_0, b_2/a_0, a_1/a_0, a_2/a_0)$ for a $520\,\text{Hz}$ low-pass filter at $f_s = 48000\,\text{Hz}$ with linear $Q = 2.2$ (as used in \texttt{shimCello}). Show what happens to the resonant peak if $2.2$ is passed directly to \texttt{wa\_filter} without converting to $Q_{\mathrm{dB}} = 20\log_{10}(2.2)$.
+
+  \item \textbf{Integer Tick--Sample Round-Trip Proof (Chapter~\ref{ch:daw-arch}).}
+  Using Equations~\eqref{eq:tick-to-sample} and \eqref{eq:sample-to-tick} at $f_s = 44100\,\text{Hz}$, $\mathrm{den} = 8$ ($6/8$ meter), and $\mathrm{BPM} = 96$, verify the exact round-trip of one eighth-note beat ($t = 480$ ticks) and one bar ($t = 2880$ ticks). Prove that removing the $+32\cdot\mathrm{BPM}$ half-denominator term breaks round-trip identity for at least one tick $t \in [0, 960]$.
+
+  \item \textbf{WCET Admission Analysis (Chapter~\ref{ch:rtos-graph}).}
+  Suppose an engineer proposes adding a second independent Schroeder hall reverberator costing $48\,\mu\text{s}$ per $Q = 32$ quantum. Evaluate $\mathrm{WCET} \le T$ at both $48000\,\text{Hz}$ and $44100\,\text{Hz}$, and compute the resulting static RAM increase on PlayStation~2 RDRAM.
+
+  \item \textbf{Session Container Validator (Chapter~\ref{ch:containers}).}
+  Write a standalone C99 program that opens a binary file, verifies its size equals $73408$ bytes via \texttt{stat()}, parses the 128-byte \texttt{ORCH} header field-by-field in little-endian order, and checks all five invariants of \texttt{hdr\_ok} and \texttt{type\_over}.
+
+  \item \textbf{Custom Sound Shim Design (Chapter~\ref{ch:shims}).}
+  Design a zero-byte procedural Sound Shim for a wooden marimba using a fundamental sine oscillator, an inharmonic $4\times$ overtone decaying $6\times$ faster than the fundamental, and a band-pass mallet impact transient. Specify its exact parameter vector $\mathbf{p}$ and verify that it fits within one \texttt{s\_slot} voice and the $340\,\mu\text{s}$ \texttt{shimsynth} budget.
+\end{enumerate}

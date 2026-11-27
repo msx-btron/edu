@@ -1,0 +1,60 @@
+\chapter{Synthesizer Construction, Hardware Emulators, and Position Among DAWs}
+\label{ch:emulators}
+
+The principles embodied in B-Sound extend far beyond a single operating system. They provide a general blueprint for constructing procedural synthesizers, integrating retro sound-chip emulators, and engineering honest real-time audio workstations.
+
+\section{Coexistence with Hardware Sound-Chip Emulators}
+
+A recurring architectural mistake in retro-computing systems is forcing hardware chip emulators (PSG, FM, wavetable) to route through a high-level procedural synthesizer. B-System avoids this coupling completely: as noted in \texttt{MEDIA-SOUND.txt}, MSX, MSX2, and turboR sound-chip emulators (AY-3-8910 PSG, YM2413 OPLL, YMF278B OPL4) act as \emph{independent producers of the exact same \texttt{S16\_LE} stereo VirtIO contract}.
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Shared Wire Contract:} Both B-Sound's \texttt{lilcu64} renderer and cycle-accurate chip emulators emit interleaved 16-bit stereo frames at $44.1 / 48\,\text{kHz}$ into \texttt{virtio\_sound\_write()}.
+  \item \textbf{Zero Cross-Coupling:} Emulators do not invoke B-Sound shims, and B-Sound does not depend on chip register timing. Each domain preserves its native mathematical model while sharing the deterministic mixer, limiter, and hardware queue monitor.
+\end{itemize}
+
+For synthesizer builders, B-Sound's 13-primitive vocabulary (\texttt{SINE}, \texttt{TRI}, \texttt{SAW}, \texttt{PLS}, \texttt{FM}, \texttt{AM}, \texttt{NSE}, \texttt{SAT}, \texttt{LPF}, \texttt{HPF}, \texttt{BPF}, \texttt{LFO}, \texttt{RVB}) and its interactive analytical workbench (\texttt{Music.html} / \texttt{synth-engine.js}) demonstrate how continuous functions $y(x) = \log_2(f/F_0)$ unify visual curve analysis with sample-accurate synthesis.
+
+\section{Comparative Position Among Commercial and Open-Source DAWs}
+
+Evaluating B-System \emph{Orchestra} against three historical reference witnesses—\textbf{Steinberg Cubase} (Score/VST lineage), \textbf{Avid Pro Tools} (mixer/insert/session ceiling), and \textbf{Rosegarden} (open-source linear MIDI + notation)—using strict three-valued verdicts (\emph{Present}, \emph{Partial}, \emph{Absent}) clarifies its exact engineering niche:
+
+\begin{table}[htbp]
+\centering
+\caption{Structured capability comparison of B-System Orchestra against reference DAWs.}
+\small
+\begin{tabular}{@{}lp{3.4cm}p{5.8cm}@{}}
+\toprule
+Capability & Verdict in Orchestra & Architectural Basis \\
+\midrule
+MIDI Tracks & \textbf{Present} (up to 64) & Static 64-slot track table in 73,408-byte session. \\
+Arrange / Piano Roll & \textbf{Partial} & Linear MIDI ticks (\texttt{W\_ARRANGE}, \texttt{W\_PIANO}); no audio clips or CC lanes. \\
+Score Notation & \textbf{Partial} & Single-staff treble/bass (\texttt{W\_SCORE}); no multi-staff or LilyPond export. \\
+Mixer \& Aux Hall & \textbf{Partial} & Track strips, master fader, 1 shared hall send (vs.\ 10 in Pro Tools). \\
+Inserts / Plugins & \textbf{Partial} (role only) & 2 track slots + master limiter from 8 built-in algorithms; no binary VST/AAX. \\
+Standard MIDI Files & \textbf{Present} (Type 0 \& 1) & Exact round-trip verified at $960\,\mathrm{PPQ}$ up to $256\,\text{KiB}$. \\
+Audio Tracks / Capture & \textbf{Absent} & VirtIO sound interface is output-only (no hardware read call). \\
+SoundFont / SF2 & \textbf{Absent} & Zero-byte procedural shim invariant replaces external sample banks. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Load-Bearing Absences}
+
+Every absence in \emph{Orchestra} is load-bearing rather than accidental. Introducing binary VST/LV2 plugins via \texttt{dlopen} would permit dynamic heap allocations on the audio path, immediately invalidating the $632\,\mu\text{s}$ WCET sum of Chapter~\ref{ch:rtos-graph}. Adding RTP-MIDI or WebRTC networking would open sockets across the system trust boundary. Replacing linear integer ticks with pattern loops would break the single-model SMF round-trip invariant. Each omitted feature is the price paid for mathematical predictability.
+
+\section{Honest Accounting of Documented Limitations}
+
+Following the Springer and B-System discipline of engineering transparency, eleven known limitations of the current build are explicitly recorded:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Window Line Ceiling:} The eight UI/command files total $4634$ lines against a $4000$-line target (session $1761 \le 1800$ and SMF $1317 \le 1400$ remain within budget).
+  \item \textbf{Dead Menu Helper:} \texttt{orch\_menu\_scenes} exits early; scenes 1--16 are selected via the Stage grid.
+  \item \textbf{Unwired Live MIDI Input:} \texttt{orchestra\_dispatch\_midi\_event} is implemented but has no hardware caller in this build, so live keyboard recording is inactive.
+  \item \textbf{Triplicated Snap Labels:} The four snap strings appear separately in Arrange, Piano, and Score.
+  \item \textbf{Single-Staff Notation:} Multi-voice polyphonic engraving and part extraction are not yet implemented.
+  \item \textbf{UI-Driven Audio Service:} No dedicated \texttt{SCHED\_FIFO} audio thread exists in this build; guarantees rest on the $632\,\mu\text{s} \le T$ WCET sum and 64-block catch-up ceiling.
+  \item \textbf{Inactive \texttt{qos\_drops}:} The QoS drop counter resets but has no triggering path (always $0$).
+  \item \textbf{Document Divergence:} \texttt{SOUND.txt} describes Track~1 as $\sim 25.8\,\text{s}$ ($24$ bars), whereas the normative built container \texttt{bells.orch} measures $27.36\,\text{s}$ ($25.5$ bars in $3/4$).
+  \item \textbf{Narrow-Window Controls:} Below $700\,\text{px}$ width, score toolbars hide visually while remaining active via \texttt{v->tool}.
+  \item \textbf{Family Polyphony Cap:} Rock forces $\texttt{poly\_max} = 1$ even on Program~0 (Piano).
+  \item \textbf{Unproven Formal Audio Properties:} While plane budgets are witnessed in \texttt{media\_smp\_properties.v}, sample-level shim determinism and voice-stealing continuity are verified by acceptance tests rather than Coq proofs.
+\end{enumerate}

@@ -1,0 +1,88 @@
+\chapter{Static DSP Graph, WCET Admission Control, and Bounded Latency}
+\label{ch:rtos-graph}
+
+A real-time audio engine cannot prove deadline satisfaction if its signal graph is rebuilt dynamically on a heap. \emph{Orchestra} resolves this by compiling a closed, nine-element C99 pipeline once at boot (\texttt{gst\_rt\_boot}) and gating playback behind an explicit worst-case execution time (WCET) admission test.
+
+\section{The Closed Nine-Element C99 Pipeline}
+
+Ten element factory names are registered in \texttt{gst\_rt.c}: \texttt{midisrc}, \texttt{queue}, \texttt{midiroute}, \texttt{shimsynth}, \texttt{audioconvert}, \texttt{tee}, \texttt{audiomixer}, \texttt{volume}, \texttt{identity}, and \texttt{virtiosndsink}. Unknown factory names (including legacy strings such as \texttt{fluidsynth}) increment \texttt{refuse\_factory}, return $0$, and leave the existing graph intact. In concert operation, \texttt{identity} is omitted, yielding exactly nine active elements (\texttt{OrchView.element\_count == 9}):
+
+\begin{lstlisting}[caption={Closed nine-element static signal graph in gst\_rt.c.}]
+  midisrc --> queue --> midiroute --> shimsynth --> audioconvert --> tee
+                                                                     / \
+                                                                    v   v
+                                                           audiomixer   send (aux)
+                                                                |
+                                                                v
+                                                             volume --> virtiosndsink
+\end{lstlisting}
+
+Only three capability types (\emph{caps}) exist: MIDI events, $Q = 32$-frame \texttt{float32} buffers (1 or 2 channels at $f_s$), and $Q = 32$-frame interleaved \texttt{int16} buffers. Caps negotiation is exact integer equality—no string parsing occurs. Every buffer in the runtime is statically pooled: $8$ MIDI tokens, $64$-entry record ring, $48$ voice slots, $66\times Q$ mix planes (64 tracks + click bus~65; bus~0 is excluded), $6$ scratch lines, $Q\times 2$ wire buffers, $8$ delay lines, and $8$ chorus lines.
+
+\section{The $632\,\mu\text{s}$ WCET Budget and Admission Control}
+
+The hardware deadline for rendering one $Q = 32$-frame synthesis quantum is (Equation~21):
+\begin{equation}
+\label{eq:block-period}
+T = \frac{Q}{f_s} = \frac{32 \times 10^6}{f_s}\,\mu\text{s}
+  = \begin{cases} 666\,\mu\text{s}, & f_s = 48000\,\text{Hz}, \\ 725\,\mu\text{s}, & f_s = 44100\,\text{Hz}. \end{cases}
+\end{equation}
+
+\begin{table}[htbp]
+\centering
+\caption{Declared per-stage WCET budget in \texttt{gst\_rt\_wcet\_us()} at $Q = 32$.}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Pipeline Stage & WCET ($\mu\text{s}$) \\
+\midrule
+\texttt{queue} & $8$ \\
+\texttt{midiroute} & $24$ \\
+\texttt{shimsynth} (up to 16 active voices) & $340$ \\
+Active track inserts (up to $16 \times 2$ slots) & $120$ \\
+\texttt{tee}, \texttt{audiomixer}, \texttt{volume}, pan, aux hall, limiter & $100$ \\
+\texttt{audioconvert} (\texttt{float32} $\to$ \texttt{int16}) & $16$ \\
+\texttt{virtiosndsink} (\texttt{virtio\_sound\_write}) & $24$ \\
+\texttt{identity} (optional; $0$ in concert build) & $0$ \\
+\midrule
+\textbf{Total Published WCET} & $\mathbf{632\,\mu\mathbf{s}}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{theorem}[Real-Time Admission Condition]
+Playback transition (\texttt{gst\_rt\_set\_state(PLAYING)}) succeeds if and only if three invariants hold simultaneously: (1)~current state is \texttt{READY} or \texttt{PAUSED}, (2)~\texttt{virtio\_sound\_is\_ready()} is true, and (3)~$\mathrm{WCET} \le T$. Since $632\,\mu\text{s} \le 666\,\mu\text{s} < 725\,\mu\text{s}$, the closed concert graph satisfies admission at both permitted sample rates with margins of $34\,\mu\text{s}$ ($48\,\text{kHz}$) and $93\,\mu\text{s}$ ($44.1\,\text{kHz}$).
+\end{theorem}
+
+If any invariant fails, \texttt{gst\_rt\_set\_state} returns $0$, prints \texttt{"play"} to the status line, and leaves the state unchanged. If a runtime invariant (\texttt{orch\_check}) is ever violated, a sticky fault latches and all subsequent blocks return \texttt{REFUSE}—producing clean silence rather than corrupted clicks.
+
+\section{Bounded Pacer and Catch-Up Discipline}
+
+Audio service is invoked via \texttt{orchestra\_audio\_service(now\_us)}, which renders at most $64$ blocks per call so a stalled host can never trap the UI loop:
+
+\begin{lstlisting}[caption={Bounded catch-up pacer algorithm in orchestra\_audio\_service.}]
+service(now_us):
+  if (!booted || state != PLAYING) return;
+  T = period_us();                      // 666 us (48 kHz) or 725 us (44.1 kHz)
+  if (render_perf_us() == 0) {          // clockless target: 1 quantum per tick
+      audio_tick(); return;
+  }
+  if (due == 0) due = now_us;
+  for (i = 0; i < 64; i++) {            // bounded 64-block catch-up ceiling
+      qf = queued_bytes / 4;            // 1 stereo S16_LE frame = 4 bytes
+      if (qf >= 2048) break;            // queue full -> chain_drop
+      if (qf >= 1024 && now_us < due) break; // >= 1 host period & ahead of due
+      audio_tick();                     // render and write Q = 32 frames
+      if (now_us >= due) due += T;      // advance deadline monotonically
+  }
+\end{lstlisting}
+
+Missed deadlines never stretch musical tempo: when the hardware queue exceeds $2048$ frames, the quantum is skipped, \texttt{chain\_drop} increments, and the transport cursor \texttt{npos} still advances by $Q = 32$ frames.
+
+\section{Disambiguating the Three Latency Lengths}
+
+Audio literature routinely conflates three distinct temporal quantities. B-Sound separates them rigorously:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Block Compute Budget ($632\,\mu\text{s} \le T$):} An arithmetic schedulability ceiling, not audible delay.
+  \item \textbf{INPUT Plane Budget ($500\,\mu\text{s}$ within $1000\,\mu\text{s}$ period):} The RTOS contract for MIDI delivery (dispatcher currently unwired in the single-thread build; see Chapter~\ref{ch:emulators}).
+  \item \textbf{Audible Output Latency ($\mathrm{queued\_frames} / f_s$):} The sole quantity reported in milliseconds on the desk (\texttt{"q NN ms"} via \texttt{gst\_rt\_queued\_ms()}). Printing fabricated constants such as \texttt{"0.8 ms"} is explicitly forbidden; with $H_{\text{per}} = 1024$ frames, typical steady-state queue depth is $1$--$2$ host periods ($21.3$--$42.7\,\text{ms}$ at $48\,\text{kHz}$).
+\end{enumerate}
