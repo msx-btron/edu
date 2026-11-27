@@ -270,6 +270,10 @@
         <span class="mf">φ_mod(t) = φ(t) + d · sin(2π f_LFO t)   [Orchestra Eq. 17 Chorus / Vibrato]<span class="ms">Pitch / Ribbon LFO · shimViolin (5.8 Hz delayed vibrato) · shimSwarmatron ribbon drift</span></span>
       </div>
       <div class="mrow">
+        <span class="mk">◎ RVB</span>
+        <span class="mf">y[n] = Σ_{c=1..4} b_c[n − D_c],  b_c[n] = x[n] + g·LP(b_c[n − D_c]), g = 0.78   [Orchestra Eq. 15]<span class="ms">4-Comb Schroeder Hall Reverb · Visible exponential hall decay tail in Track 4 (TRON Init)</span></span>
+      </div>
+      <div class="mrow">
         <span class="mk">METERS</span>
         <span class="mf">dBFS = 20·log₁₀(|x|) · RMS = √(Σx²/N) · LIM: |x| &gt; 0.85 [Eq. 20] · MIDI n = round(60 + 12y) · ↗/↘ df/dt<span class="ms">ISO 16 Pitch Grid (A4 = 440 Hz, C2–C6) · Stereo Balance L──●──R (Eq. 8) · WCET 632 µs @ Q = 32</span></span>
       </div>

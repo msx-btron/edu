@@ -543,292 +543,322 @@ const DEMOS = [
     },
   },
 
-  // 16 — Analytical Etudes (16 parts: 4 Pure-Math Suites × 4 Parts based on the 4 B-System Album Compositions)
+  // 16 — Analytical Etudes (17 parts: Broken Radio -> Hans Zimmer Symphony -> Aphex Twin Bucephalus Bouncing Ball)
   {
-    id: "16", name: "ANALYTICAL ETUDES", src: "MATH × ALBUM", speed: 2.1,
+    id: "16", name: "ANALYTICAL ETUDES", src: "RADIO → SYMPHONY", speed: 1.75, reverb: 0.34,
     parts: [
-      // Suite I: Carol of the Bells (E Minor, 3/4)
+      // Phase I: Original "Broken Radio / Searching" Analytical Etudes (1–4)
       {
-        m: 1, modes: ["sine", "fm", "tri", "lpf"],
-        f: "Etude 01/16 [Carol · Em] — Just-Intonation Harmonic Series & 3/4 Bell Motif\ny₁ = log₂(E5·2^(m(x)/12)/F₀), m ∈ {3,2,3,0} · y₂ = log₂(3·E3/F₀) [FM 5th] · y₄ = E2/B2 LPF",
+        m: 1, modes: ["fm"],
+        f: "Etude 01/17 [Broken Radio I] — Original Nested-Sine Signal Search\ny = 2.8 · sin(5 · sin(4 · sin(3 · sin(2 · sin(x)))))   [unquantized chaotic FM carrier]",
       },
       {
-        m: 2, modes: ["sine", "pls", "lpf", "hpf"],
-        f: "Etude 02/16 [Carol · Em] — Golden-Ratio (φ) Counterpoint & Descending Tetrachord\nBass: Em→D→C→B7 · Lead: B5→C6–B5–A5→G5–A5–B5→E5 (PLS) + φ-sparkle HPF chimes",
+        m: 2, modes: ["saw", "fm", "hpf", "lpf"],
+        f: "Etude 02/17 [Shortwave Sweep] — Numbers-Station Ramp, Sideband Pings & Carrier Floor\ny₁ = 1.73⌊1.5m₂⌋ − 2.3m₂ (SAW) + harmonic FM beacon pings + HPF static ticks + A1 carrier",
       },
       {
-        m: 3, modes: ["fm", "sine", "tri", "bpf"],
-        f: "Etude 03/16 [Carol · Em] — Quantized Nested-Sine FM Bells\ny = Q_Em(2.2·sin(3·sin(2·sin(0.5x))))  [E-minor pentatonic quantizer] + FM halo + BPF breeze",
+        m: 3, modes: ["pls"],
+        f: "Etude 03/17 [Broken Radio III] — Chirp Burst & Carrier Hold\ny = { 3(1−2⌊2(6x mod 1)⌋)  if m₂<0.5  |  −1.2  if m₂<1.2  |  2.2−2(2x−⌊2x+½⌋)  otherwise",
       },
       {
-        m: 4, modes: ["sine", "pls", "lpf", "fm", "hpf"],
-        f: "Etude 04/16 [Carol · Em] — Piecewise 16th Harmonic-Minor Speedrun & Starlight Cadence\ny₁ = Q_Ehm(⌊6x⌋) ascending/descending cascade + PLS harmony + E6→B5→E7 FM/HPF shimmer",
+        m: 4, modes: ["hpf"],
+        f: "Etude 04/17 [Broken Radio IV] — Variable-Duty Telemetry Pulse\ny = 3 · (⌊(x mod 1) / (0.15 + 0.25·(⌊x⌋ mod 3))⌋ mod 2) − 1.5",
       },
-      // Suite II: Green Caterpillar (D Minor Blues, 4/4)
+      // Phase II: Signal Lock & Hans Zimmer Minimalist Ostinatos (5–8)
       {
-        m: 5, modes: ["am", "tri", "lpf", "fm"],
-        f: "Etude 05/16 [Caterpillar · Dm] — Blues-Scale Quantizer, Tanh Bend & 32 Hz AM Frog\ny₂ = Q_Dbl(⌊2x⌋) + 0.08·tanh(6·frac(2x)) [G→G# blue bend] + AM cuíca + LPF walking bass",
-      },
-      {
-        m: 6, modes: ["sine", "sine", "lfo", "lpf", "nse"],
-        f: "Etude 06/16 [Caterpillar · Dm] — Cosine-Gated Modal Rhodes (Dm9 · G13 · Ebmaj7#11)\ny_k(x) = chord_k(⌊u/4⌋) if cos(πx) > −0.2 · LFO tine shimmer + LPF bass + NSE brush",
+        m: 5, modes: ["fm", "lpf", "tri", "sine", "rvb"],
+        f: "Etude 05/17 [Signal Lock] — Rapid Damping e^(−0.55u) Blooming into A Minor Cathedral Arpeggio\nBroken radio locks into rising A2→E3→A3→B3→C4→E4→A4 arpeggio + A1 pedal & RVB halo",
       },
       {
-        m: 7, modes: ["tri", "bpf", "lpf", "sine", "nse"],
-        f: "Etude 07/16 [Caterpillar · Dm] — Analytic Parallel Thirds in D Dorian\ny₂(x) = y₁(x) + (4 − (⌊x⌋ mod 2))/12  [BPF flute 3rds above TRI guitar] + walking bass",
+        m: 6, modes: ["sine", "lfo", "lpf", "tri", "rvb"],
+        f: "Etude 06/17 [Time · Ostinato] — Inception 4-Chord Piano Pulse (Am · Em · G · D)\nPiecewise e^(−6·frac(2x)) piano pulses + deep LPF cello pedal + warm LFO string fifths",
       },
       {
-        m: 8, modes: ["tri", "sine", "lpf", "am", "nse"],
-        f: "Etude 08/16 [Caterpillar · Dm] — 16% Sinusoidal Swing Warp & Turnaround Vamp\nx_sw = x + 0.16·sin(2πx)/(2π) · Unison blues hook + D3→C3→Bb2→A2 turnaround + AM frog",
-      },
-      // Suite III: House of the Rising Sun (A Minor, 6/8)
-      {
-        m: 9, modes: ["sine", "tri", "lpf", "bpf"],
-        f: "Etude 09/16 [Rising Sun · Am] — 6/8 Triangular-Index Rolling Arpeggio\ni(x) = 3 − |mod(3x, 6) − 3|  over Am→C→D→F→Am→C→E→E7 + LPF pedal + BPF damper lift",
+        m: 7, modes: ["sine", "tri", "fm", "lpf", "lfo", "rvb"],
+        f: "Etude 07/17 [Cornfield Chase] — Full 3/4 Interstellar Organ & Celesta Cascade\n6-step rolling arpeggio (A4–E5 → B4–E5 → C5–E5 → D5–C5–B4) + F–G–Am–Em cathedral organ",
       },
       {
-        m: 10, modes: ["tri", "bpf", "sine", "lpf"],
-        f: "Etude 10/16 [Rising Sun · Am] — Logistic-Sigmoid Cantabile Vocal Curve\ny₁(x) = y_a + (y_b − y_a)/(1 + e^(−12·τ))  [smooth A4–C5–D5–E5–F#4 vocal glide] + 1.8f BPF",
+        m: 8, modes: ["sat", "lpf", "lfo", "sine", "rvb"],
+        f: "Etude 08/17 [Dune / BR2049] — Low Brass Swell (BRAAM) & Exponential Sub-Heartbeat\nWaveShaper A1+E2 brass swell + damped e^(−8·frac) timpani pulse + cavernous RVB hall",
+      },
+      // Phase III: Piecewise Pure-Function Orchestration (9–12)
+      {
+        m: 9, modes: ["sine", "tri", "lfo", "lpf", "rvb"],
+        f: "Etude 09/17 [S.T.A.Y.] — Music-Box Harmonics & Rising Cello/Violin Fifths\nHigh celesta ostinato (A5–E5–C5–E5) + slow rising LFO strings over warm LPF pedal",
       },
       {
-        m: 11, modes: ["sine", "sine", "lfo", "lpf"],
-        f: "Etude 11/16 [Rising Sun · Am] — Octave Resonance, 2.002× String Inharmonicity & Vibrato\nDoubled piano octaves (E5/E6→D5/D6→C5/C6→A5/A6) + 5.8 Hz LFO violin + 0.98^(τ/d) pedal",
+        m: 10, modes: ["tri", "bpf", "lfo", "lpf", "rvb"],
+        f: "Etude 10/17 [Gladiator · Dorian] — Logistic-Sigmoid Vocal Cantabile (D Dorian)\ny₁ = y_a + (y_b−y_a)/(1+e^(−14τ))  [human voice/cello portamento] + 1.8f BPF breath",
       },
       {
-        m: 12, modes: ["sine", "sine", "tri", "lpf", "fm"],
-        f: "Etude 12/16 [Rising Sun · Am] — Exponential Waterfall Cascade & Am(add9) Overtone Bloom\nE6→D6→C6→B5→A5→G#5→A5 cascade blooming into 5-voice Am(add9) + A6 FM morning star",
-      },
-      // Suite IV: TRON Init (A Minor, 4/4)
-      {
-        m: 13, modes: ["sat", "pls", "lpf", "hpf"],
-        f: "Etude 13/16 [TRON · Am] — WaveShaper C(x, k=25) & 16th Industrial Ostinato\nA1–A1–C2–A1–D2–C2–A1–G1 · F1–G1–A1→C2 slide (SAT + PLS) + LPF sub + HPF glitch zaps",
+        m: 11, modes: ["fm", "sine", "pls", "lpf", "rvb"],
+        f: "Etude 11/17 [No Time For Caution] — 3:4 Cathedral Organ Polyrhythm (Am · F · Dm · E7)\nInterlocking 3-against-4 pure-function arpeggios + cathedral FM organ & timpani pulse",
       },
       {
-        m: 14, modes: ["lfo", "saw", "saw", "saw", "lpf"],
-        f: "Etude 14/16 [TRON · Am] — Hyperbolic Sech Ribbon Swarmatron\ny_k(x) = y₀(x) + k·0.07·sech(0.45·x)  [harmonic A1→A2→E3→A3 bloom & unison convergence]",
+        m: 12, modes: ["lfo", "tri", "lpf", "sine", "rvb"],
+        f: "Etude 12/17 [Sangreal · Canon] — Consonant D-Minor String Canon & Harp Arpeggio\nD4–F4–A4–G4–F4–E4–D4 violin theme answered in pure thirds/octaves over Dm–Bb–C–Am + harp",
+      },
+      // Phase IV: Grand Symphonic Synthesis & Aphex Twin Physics (13–17)
+      {
+        m: 13, modes: ["sat", "lpf", "lfo", "nse", "hpf"],
+        f: "Etude 13/17 [Mombasa · Chase] — Ostinato Strings, Syncopated Sub-Kick & Brass Octaves\nDriving 16th string pulse + WaveShaper sub-kick + heroic LFO octave brass + NSE/HPF",
       },
       {
-        m: 15, modes: ["sat", "pls", "lpf", "nse", "hpf"],
-        f: "Etude 15/16 [TRON · Am] — Bitmask Industrial Beat & Octave Power-Slide Lead\nbit(44718, k) rhythm + octave sync lead (A4/A5→C5/C6→D5/D6→E5/E6→A5) + HPF stutter",
+        m: 14, modes: ["hpf", "fm", "sine", "lpf", "lfo", "rvb"],
+        f: "Etude 14/17 [Mountains · Pendulum] — Relativistic Clock Tick & Growing Cathedral Chord\nCrisp HPF pendulum tick + swelling 5-voice Am → Fmaj7 → C → G6 organ & RVB hall wash",
       },
       {
-        m: 16, modes: ["sine", "tri", "pls", "fm", "lfo", "lpf", "sat", "hpf"],
-        f: "Etude 16/16 [Grand Convergence] — All 4 Album Themes & 8-DSP Analytical Finale\nCarol Bells (SINE/FM) + Blues 3rds (TRI) + Rising Sun Arp (PLS/LFO) + TRON Sub (LPF/SAT/HPF)",
+        m: 15, modes: ["sat", "lfo", "sine", "tri", "lpf", "rvb"],
+        f: "Etude 15/17 [Flight · Fanfare] — Heroic D-Major Fifths & Triumphant Octave Brass\nNoble D2–A2–D3 fifths + soaring F#4→G4→A4→D5→E5→F#5 melody over pulsing piano",
+      },
+      {
+        m: 16, modes: ["sine", "tri", "lfo", "fm", "lpf", "sat", "hpf", "rvb"],
+        f: "Etude 16/17 [Grand Symphony] — 8-Voice Hans Zimmer Cathedral Climax (Am · F · C · G · Am)\nFull orchestra: Piano + Flute + Violin LFO + FM Bells + Cello LPF + Brass SAT + RVB Hall",
+      },
+      {
+        m: 17, modes: ["sat", "fm", "lpf", "hpf", "rvb"],
+        f: "Etude 17/17 [Aphex Twin · Bucephalus Bouncing Ball] — Geometric Gravity Cascade (r = 0.78)\nn = ⌊ln(1 − τ/T) / ln(0.78)⌋ · Parabolic bounce arcs h_n = 2.4·0.86^n accelerating into FM trill + F#m9",
       },
     ],
     eval(x, pi) {
       const u = x + 8; // 0..16
       const m = this.parts[pi].m;
-      const quant = (val, rootHz, scale) => {
-        const idx = Math.round(val);
-        const oct = fl(idx / scale.length);
-        const deg = mod(idx, scale.length);
-        return clamp(hz(rootHz) + oct + scale[deg] / 12, -2.95, 2.95);
-      };
-      const EM_PENT = [0, 3, 5, 7, 10];
-      const E_HARM  = [0, 2, 3, 5, 7, 8, 11];
-      const D_BLUES = [0, 3, 5, 6, 7, 10];
-      const A_MIN   = [0, 2, 3, 5, 7, 8, 10];
 
-      // --- SUITE I: CAROL OF THE BELLS (Parts 1–4) ---
-      if (m === 1) {
-        const bt = frac(u / 2) * 3;
-        const bF = bt < 0.9 ? 783.99 : (bt < 1.45 ? 739.99 : (bt < 1.95 ? 783.99 : 659.25));
-        const bar = clamp(fl(u / 4), 0, 3);
-        const roots = [82.41, 73.42, 65.41, 61.74];
-        return [
-          hz(bF),
-          hz(roots[bar] * 3.0), // Pure 3rd harmonic (Just fifth + octave)
-          hz(roots[bar] * 4.0) + 0.015 * sin(2 * PI * u),
-          shimWaddleY(frac(bt) * 0.35, roots[bar], 0.28),
-        ];
-      }
+      // --- PHASE I: ORIGINAL "BROKEN RADIO" (1–4) ---
+      if (m === 1) return [2.8 * sin(5 * sin(4 * sin(3 * sin(2 * sin(x)))))];
       if (m === 2) {
-        const bar = clamp(fl(u / 4), 0, 3);
-        const bt = frac(u / 4) * 3;
-        const bF = bt < 0.9 ? 783.99 : (bt < 1.45 ? 739.99 : (bt < 1.95 ? 783.99 : 659.25));
-        const lead = evalEvents(u, [
-          [0.0, 987.77, 3.6],
-          [4.0, 1046.50, 1.2], [5.33, 987.77, 1.2], [6.66, 880.00, 1.2],
-          [8.0, 783.99, 1.2], [9.33, 880.00, 1.2], [10.66, 987.77, 1.2],
-          [12.0, 659.25, 3.6],
-        ]);
-        const bass = [82.41, 73.42, 65.41, 61.74][bar];
-        const phiTick = frac(u * 1.618034) < 0.16 ? clamp(hz(659.25 * 2), -3, 3) : NaN;
-        return [hz(bF), lead, shimWaddleY(frac(bt) * 0.35, bass, 0.25), phiTick];
+        // Upgraded Shortwave Numbers-Station Sweep + FM Beacon Pings + HPF Static + A1 Carrier
+        const m2 = mod(x, 2);
+        const sweep = mod(x, 16) < 2 ? 1.73 * fl(1.5 * m2) - 2.3 * m2 : 0.6 - 2 * m2;
+        const beacon = frac(u * 0.5) < 0.28 ? hz([880.0, 659.25, 1046.5, 880.0][mod(fl(u * 0.5), 4)]) : NaN;
+        const tick = (frac(u * 2) < 0.10 && mod(fl(u * 2), 3) === 0) ? 2.75 : NaN;
+        return [sweep, beacon, tick, hz(55.0)];
       }
       if (m === 3) {
-        const nested = 4.5 + 3.2 * sin(2.2 * sin(1.6 * sin(0.45 * x)));
-        const qBell = quant(nested, 329.63, EM_PENT);
-        const qHarm = quant(nested - 2, 164.81, EM_PENT);
-        const root = hz([164.81, 146.83, 130.81, 123.47][clamp(fl(u / 4), 0, 3)]);
-        const breeze = clamp(qBell + 0.5 + 0.04 * sin(3 * x), -3, 3);
-        return [qBell, qHarm, root, breeze];
+        const m2 = mod(x, 2);
+        if (m2 < 0.5) return [clamp(3 * (1 - 2 * fl(2 * mod(6 * x, 1))), -2.8, 2.8)];
+        if (m2 < 1.2) return [-1.2];
+        return [2.2 - 2 * (2 * x - fl(2 * x + 0.5))];
       }
       if (m === 4) {
-        const step = fl(u * 3);
-        const sf = frac(u * 3);
-        const waveIdx = abs(mod(step, 14) - 7);
-        const lead = sf < 0.82 ? quant(waveIdx + 2, 329.63, E_HARM) : NaN;
-        const harm = sf < 0.82 ? quant(waveIdx, 329.63, E_HARM) : NaN;
-        const bass = hz([82.41, 73.42, 65.41, 61.74][clamp(fl(u / 4), 0, 3)]);
-        const star = u >= 12 ? hz(u < 13.5 ? 1318.51 : (u < 14.8 ? 987.77 : 1760.0)) : NaN;
-        const tick = (mod(step, 3) === 0 && sf < 0.25) ? 2.80 : NaN;
-        return [lead, harm, bass, star, tick];
+        const den = 0.15 + 0.25 * mod(fl(x), 3);
+        return [3 * mod(fl(mod(x, 1) / den), 2) - 1.5];
       }
 
-      // --- SUITE II: GREEN CATERPILLAR (Parts 5–8) ---
+      // --- PHASE II: SIGNAL LOCK & MINIMALIST OSTINATOS (5–8) ---
       if (m === 5) {
-        const s = fl(u * 2);
-        const sf = frac(u * 2);
-        const deg = [0, 1, 2, 3, 4, 3, 2, 1, 0, 2, 4, 5, 4, 2, 1, 0][mod(s, 16)];
-        const bend = deg === 2 ? (1 / 12) * Math.tanh(5 * sf) : 0; // Smooth G->G# blue bend
-        const mel = hz(293.66) + D_BLUES[deg] / 12 + bend;
-        const frog = shimFrogY(mod(u, 4) * 0.22 - 0.05, 125, 0.19);
-        const bass = shimWaddleY(frac(u) * 0.4, [146.83, 174.61, 196.0, 207.65, 220.0, 196.0, 174.61, 146.83][mod(fl(u), 8)], 0.28);
-        return [frog, mel, bass, hz(73.42)];
+        // Rapid damped radio lock blooming into rising A-minor cathedral arpeggio + pedal + RVB
+        const err = 1.8 * exp(-0.62 * u) * sin(3.2 * sin(1.8 * x));
+        const arpSeq = [110.0, 164.81, 220.0, 246.94, 261.63, 329.63, 440.0, 659.25];
+        const ai = clamp(fl(u * 1.5), 0, 23);
+        const arpF = arpSeq[mod(ai, 8)] * (ai >= 16 ? 2.0 : 1.0);
+        return [
+          clamp(hz(329.63) + err, -3, 3),
+          hz(55.0),
+          u > 1.2 && frac(u * 1.5) < 0.84 ? clamp(hz(arpF), -3, 3) : NaN,
+          u > 3.5 ? hz(u < 10 ? 440.0 : 523.25) : NaN,
+          u > 2.5 ? hz(659.25) - 0.06 * exp(-0.25 * (u - 2.5)) * cos(3 * u) : NaN,
+        ];
       }
       if (m === 6) {
+        // Inception "Time" (Am -> Em -> G -> D)
         const bar = clamp(fl(u / 4), 0, 3);
-        const gate = cos(PI * u) > -0.22;
-        const chords = [
-          [349.23, 440.0, 659.25], [349.23, 493.88, 880.0],
-          [392.0, 466.16, 739.99], [349.23, 440.0, 659.25],
-        ];
-        const ch = chords[bar];
-        const bass = [146.83, 196.0, 155.56, 146.83][bar];
-        const brush = (frac(u) < 0.18 && mod(fl(u), 2) === 1) ? 2.45 - 1.2 * frac(u) : NaN;
-        return [
-          gate ? hz(ch[0]) : NaN,
-          gate ? hz(ch[1]) : NaN,
-          gate ? hz(ch[2]) + 0.018 * sin(2 * PI * 5.2 * u) : NaN,
-          shimWaddleY(frac(u) * 0.4, bass, 0.30),
-          brush,
-        ];
+        const roots = [55.0, 82.41, 98.0, 73.42];
+        const top = [
+          [440.0, 523.25], [329.63, 493.88], [392.0, 493.88], [293.66, 440.0],
+        ][bar];
+        const st = fl(u * 2);
+        const sf = frac(u * 2);
+        const piano = sf < 0.78 ? hz(top[mod(st, 2)]) + 0.03 * exp(-8 * sf) : NaN;
+        const vln = hz(top[1] * 2) + 0.02 * sin(2 * PI * 5.2 * u);
+        const cello = hz(roots[bar]);
+        const fifth = hz(roots[bar] * 3.0);
+        const rvb = hz(top[0]) - 0.06 * (1 - exp(-2 * frac(u / 4)));
+        return [piano, vln, cello, fifth, rvb];
       }
       if (m === 7) {
-        const mel = evalEvents(u, [
-          [0.0, 349.23, 0.9], [1.0, 392.0, 0.9], [2.0, 440.0, 0.9], [3.0, 523.25, 0.9], [4.0, 587.33, 1.8],
-          [6.0, 523.25, 0.9], [7.0, 440.0, 0.9], [8.0, 392.0, 0.9, 415.30], [9.0, 440.0, 1.8],
-          [11.0, 523.25, 0.9], [12.0, 587.33, 0.9], [13.0, 523.25, 0.9], [14.0, 440.0, 0.9], [15.0, 293.66, 0.95],
-        ]);
-        const third = Number.isFinite(mel) ? mel + (4 - mod(fl(u), 2)) / 12 : NaN;
-        const bass = shimWaddleY(frac(u) * 0.4, [146.83, 174.61, 196.0, 220.0][mod(fl(u), 4)], 0.28);
-        const pad = hz(440.0);
-        const brush = frac(u * 2) < 0.14 ? 2.75 : NaN;
-        return [mel, third, bass, pad, brush];
+        // Upgraded Interstellar "Cornfield Chase" — 6-step rolling 3/4 cascade + octave shimmer + F–G–Am–Em organ
+        const bar = clamp(fl(u / 4), 0, 3);
+        const step = fl(u * 3);
+        const sf = frac(u * 3);
+        const pats = [
+          [440.0, 659.25, 440.0, 659.25, 440.0, 659.25], // A4-E5
+          [493.88, 659.25, 493.88, 659.25, 493.88, 659.25], // B4-E5
+          [523.25, 659.25, 523.25, 659.25, 523.25, 659.25], // C5-E5
+          [587.33, 659.25, 523.25, 659.25, 493.88, 659.25], // D5-C5-B4 cascade
+        ];
+        const cel = sf < 0.82 ? hz(pats[bar][mod(step, 6)]) : NaN;
+        const hiCel = (u >= 6.0 && sf < 0.72) ? clamp(hz(pats[bar][mod(step, 6)] * 2.0), -3, 3) : NaN;
+        const organ = hz([174.61, 196.0, 220.0, 164.81][bar]); // F3 - G3 - Am - Em
+        const bass = hz([87.31, 98.0, 110.0, 82.41][bar]);
+        const hiStr = hz([659.25, 783.99, 880.0, 987.77][bar]) + 0.022 * sin(2 * PI * 5.5 * u);
+        const rvb = hz(659.25) - 0.08 * frac(u / 4);
+        return [cel, hiCel, organ, bass, hiStr, rvb];
       }
       if (m === 8) {
-        const xSw = u + 0.16 * sin(2 * PI * u) / (2 * PI);
-        const step = fl(xSw * 2);
-        const sf = frac(xSw * 2);
-        const riff = [392.0, 415.30, 440.0, 523.25, 587.33, 523.25, 440.0, 349.23];
-        const lead = sf < 0.78 ? hz(riff[mod(step, 8)]) : NaN;
-        const oct = Number.isFinite(lead) ? clamp(lead + 1.0, -3, 3) : NaN;
-        const turn = [146.83, 130.81, 116.54, 110.0][clamp(fl(u / 4), 0, 3)];
-        const frog = u >= 12 ? shimFrogY((u - 12.2) * 0.22, 125, 0.19) : NaN;
-        const ride = frac(xSw) < 0.18 ? 2.68 : NaN;
-        return [lead, oct, shimWaddleY(frac(xSw) * 0.4, turn, 0.28), frog, ride];
+        // Dune / Blade Runner Low Brass Swell (BRAAM) + Heartbeat Sub + RVB
+        const bar = clamp(fl(u / 4), 0, 3);
+        const bt = frac(u / 4);
+        const r = [55.0, 55.0, 65.41, 49.0][bar];
+        const swell = bt < 0.72 ? hz(r) : NaN;
+        const brass5 = bt < 0.72 ? hz(r * 1.5) : NaN;
+        const hiPad = hz(r * 4.0) + 0.025 * sin(2 * PI * 4.8 * u);
+        const pulse = frac(u * 1.5) < 0.25 ? shimKickY(frac(u * 1.5) * 0.4, 55, 0.16) : NaN;
+        const rvb = bt >= 0.55 ? hz(r * 3.0) - 0.25 * (bt - 0.55) : NaN;
+        return [swell, brass5, hiPad, pulse, rvb];
       }
 
-      // --- SUITE III: HOUSE OF THE RISING SUN (Parts 9–12) ---
-      const rsProg = [
-        [110.0, 164.81, 220.0, 261.63, 55.0], // Am
-        [130.81, 196.0, 261.63, 329.63, 65.41], // C
-        [146.83, 220.0, 293.66, 369.99, 73.42], // D
-        [174.61, 261.63, 349.23, 440.0, 87.31], // F
-        [110.0, 164.81, 220.0, 261.63, 55.0], // Am
-        [130.81, 196.0, 261.63, 329.63, 65.41], // C
-        [164.81, 246.94, 329.63, 415.30, 82.41], // E
-        [164.81, 293.66, 329.63, 415.30, 82.41], // E7
-      ];
-      const rsBar = clamp(fl(u / 2), 0, 7);
-      const rsCh = rsProg[rsBar];
-      const triIdx = 3 - abs(mod(fl(u * 3), 6) - 3); // 0,1,2,3,2,1 triangular 6/8 wave!
-
+      // --- PHASE III: PIECEWISE PURE-FUNCTION ORCHESTRATION (9–12) ---
       if (m === 9) {
-        const arp = frac(u * 3) < 0.84 ? hz(rsCh[triIdx]) : NaN;
-        const h2 = frac(u * 3) < 0.56 ? hz(rsCh[triIdx] * 2.002) : NaN;
-        const swoosh = frac(u / 2) < 0.20 ? hz(450 * Math.pow(280 / 450, frac(u / 2) / 0.20)) : NaN;
-        return [arp, h2, hz(rsCh[4]), swoosh];
+        // S.T.A.Y. — Music-box ostinato + slow rising LFO strings
+        const box = [880.0, 659.25, 523.25, 659.25][mod(fl(u * 2), 4)];
+        const mel = evalEvents(u, [
+          [0, 220.0, 3.8], [4, 246.94, 3.8], [8, 261.63, 3.8], [12, 329.63, 3.8],
+        ]);
+        const vln = Number.isFinite(mel) ? mel + 1.0 + 0.022 * sin(2 * PI * 5.6 * u) : NaN;
+        const ped = hz([110.0, 87.31, 65.41, 98.0][clamp(fl(u / 4), 0, 3)]);
+        const rvb = hz(659.25) - 0.08 * frac(u / 4);
+        return [frac(u * 2) < 0.76 ? hz(box) : NaN, mel, vln, ped, rvb];
       }
       if (m === 10) {
-        const targets = [440.0, 523.25, 587.33, 659.25, 587.33, 369.99, 440.0, 523.25, 440.0, 523.25, 587.33, 659.25, 493.88, 415.30, 493.88, 659.25];
+        // Gladiator D-Dorian Vocal Cantabile with smooth logistic-sigmoid portamento
+        const notes = [293.66, 329.63, 349.23, 392.0, 440.0, 440.0, 392.0, 349.23, 329.63, 349.23, 392.0, 440.0, 523.25, 440.0, 392.0, 293.66];
         const i0 = clamp(fl(u), 0, 15);
         const i1 = Math.min(15, i0 + 1);
-        const sig = 1 / (1 + exp(-10 * (frac(u) - 0.72)));
-        const vocal = hz(targets[i0]) * (1 - sig) + hz(targets[i1]) * sig;
+        const sig = 1 / (1 + exp(-14 * (frac(u) - 0.78)));
+        const vocal = hz(notes[i0]) * (1 - sig) + hz(notes[i1]) * sig;
         const breath = clamp(vocal + log2(1.8), -3, 3);
-        const arp = frac(u * 3) < 0.80 ? hz(rsCh[triIdx]) : NaN;
-        return [vocal, breath, arp, hz(rsCh[4])];
+        const str = hz([293.66, 261.63, 233.08, 220.0][clamp(fl(u / 4), 0, 3)]) + 0.02 * sin(2 * PI * 5.4 * u);
+        const ped = hz([73.42, 65.41, 58.27, 73.42][clamp(fl(u / 4), 0, 3)]);
+        const rvb = vocal - 0.05;
+        return [vocal, breath, str, ped, rvb];
       }
       if (m === 11) {
-        const mel = evalEvents(u, [
-          [0, 659.25, 1.9], [2, 523.25, 1.9], [4, 587.33, 1.0], [5, 880.0, 0.95],
-          [6, 880.0, 0.95], [7, 698.46, 0.95], [8, 659.25, 0.95], [9, 523.25, 0.95],
-          [10, 493.88, 1.9], [12, 415.30, 1.9], [14, 440.0, 1.95],
-        ]);
-        const oct = Number.isFinite(mel) ? clamp(mel + log2(2.002), -3, 3) : NaN;
-        const vln = hz(rsCh[3]) + 0.024 * sin(2 * PI * 5.8 * u);
-        const ped = hz(rsCh[4] * Math.pow(0.98, frac(u / 2)));
-        return [mel, oct, vln, ped];
+        // No Time For Caution — 3-against-4 cathedral organ polyrhythm (Am · F · Dm · E7)
+        const bar = clamp(fl(u / 4), 0, 3);
+        const ch = [
+          [220.0, 261.63, 329.63, 440.0],
+          [174.61, 220.0, 261.63, 349.23],
+          [146.83, 220.0, 293.66, 349.23],
+          [164.81, 246.94, 329.63, 415.30],
+        ][bar];
+        const v3 = frac(u * 1.5) < 0.80 ? hz(ch[mod(fl(u * 1.5), 4)]) : NaN;
+        const v4 = frac(u * 2.0) < 0.78 ? hz(ch[mod(fl(u * 2.0), 4)] * 2.0) : NaN;
+        const pls = frac(u * 2.0) < 0.45 ? hz(ch[0] * 2.0) : NaN;
+        const timp = shimKickY(frac(u) * 0.4, [55.0, 43.65, 73.42, 82.41][bar], 0.16);
+        const rvb = hz(ch[3]) - 0.05 * frac(u / 4);
+        return [v3, v4, pls, timp, rvb];
       }
       if (m === 12) {
-        const casc = evalEvents(u, [
-          [0.0, 1318.51, 0.7], [0.8, 1174.66, 0.7], [1.6, 1046.50, 0.7], [2.4, 987.77, 0.7],
-          [3.2, 880.0, 0.7], [4.0, 830.61, 0.7], [4.8, 880.0, 1.4],
-          [6.5, 1318.51, 0.7], [7.3, 1046.50, 0.7], [8.1, 880.0, 1.4],
-        ]);
-        const bloom = u >= 9.6;
-        return [
-          bloom ? hz(659.25) : casc,
-          bloom && u >= 10.2 ? hz(440.0) : (frac(u * 3) < 0.75 ? hz(rsCh[triIdx]) : NaN),
-          bloom && u >= 10.8 ? hz(261.63) : hz(220.0),
-          hz(55.0),
-          u >= 11.6 ? hz(1760.0) : NaN,
-        ];
+        // Upgraded Chevaliers de Sangreal — Consonant D-Minor String Canon + Harp over Dm -> Bb -> C -> Am
+        const bar = clamp(fl(u / 4), 0, 3);
+        const vlnMel = [293.66, 349.23, 440.0, 392.0, 349.23, 392.0, 440.0, 523.25, 587.33, 523.25, 440.0, 392.0, 349.23, 329.63, 293.66, 440.0];
+        const idx = clamp(fl(u), 0, 15);
+        const v1 = hz(vlnMel[idx]) + 0.024 * sin(2 * PI * 5.6 * u);
+        // Consonant third/octave canon answer
+        const ansSeq = [220.0, 220.0, 293.66, 349.23, 233.08, 293.66, 349.23, 392.0, 261.63, 329.63, 392.0, 329.63, 220.0, 261.63, 220.0, 293.66];
+        const v2 = u >= 1.0 ? hz(ansSeq[idx]) : NaN;
+        const bass = hz([73.42, 58.27, 65.41, 55.0][bar]); // D2 - Bb1 - C2 - A1
+        const harpCh = [
+          [293.66, 349.23, 440.0, 587.33], [233.08, 293.66, 349.23, 466.16],
+          [261.63, 329.63, 392.0, 523.25], [220.0, 261.63, 329.63, 440.0],
+        ][bar];
+        const harp = frac(u * 2) < 0.72 ? hz(harpCh[mod(fl(u * 2), 4)]) : NaN;
+        const rvb = v1 + 1.0 - 0.10 * frac(u / 4);
+        return [v1, v2, bass, harp, clamp(rvb, -3, 3)];
       }
 
-      // --- SUITE IV: TRON INIT (Parts 13–16) ---
-      const tLine = [55.0, 55.0, 65.41, 55.0, 73.42, 65.41, 55.0, 49.0, 55.0, 55.0, 65.41, 55.0, 43.65, 49.0, 55.0, 55.0];
-      const s16 = mod(fl(u * 2), 16);
-      const sf2 = frac(u * 2);
-
+      // --- PHASE IV: GRAND SYMPHONIC SYNTHESIS (13–16) ---
       if (m === 13) {
-        const f = tLine[s16];
-        const bf = s16 === 15 ? f * Math.pow(65.41 / 55.0, clamp(sf2 / 0.8, 0, 1)) : f;
-        const kick = (s16 === 0 || s16 === 8) ? shimIndKickY(sf2 * 0.22, 0.20) : NaN;
-        const zap = (s16 === 4 || s16 === 12) ? shimGlitchY(sf2 * 0.14, 3600, 0.09) : NaN;
-        return [sf2 < 0.82 ? hz(bf) : NaN, sf2 < 0.82 ? hz(bf * 1.005) : NaN, kick, zap];
+        // Mombasa — Ostinato Strings + Syncopated Sub-Kick + Heroic Brass Octaves
+        const st = fl(u * 2);
+        const sf = frac(u * 2);
+        const ost = [220.0, 220.0, 261.63, 220.0, 293.66, 261.63, 220.0, 196.0][mod(st, 8)];
+        const kick = (mod(st, 8) === 0 || mod(st, 8) === 3 || mod(st, 8) === 6) ? shimIndKickY(sf * 0.25, 0.18) : NaN;
+        const brass = evalEvents(u, [
+          [0, 440.0, 3.6], [4, 523.25, 3.6], [8, 587.33, 3.6], [12, 659.25, 3.8],
+        ]);
+        const perc = (mod(st, 4) === 2 && sf < 0.45) ? 2.25 - 1.4 * sf : NaN;
+        const tick = (mod(st, 2) === 1 && sf < 0.22) ? 2.82 : NaN;
+        return [sf < 0.78 ? hz(ost) : NaN, kick, brass, perc, tick];
       }
       if (m === 14) {
-        const sech = (v) => 1 / Math.cosh(v);
-        const spr = 0.02 + 0.14 * sech(0.45 * x);
-        const base = hz(55.0 * Math.pow(4.0, clamp(u / 16, 0, 1) * 0.75));
-        return [base - 1.5 * spr, base - 0.5 * spr, base + 0.5 * spr, base + 1.5 * spr, hz(55.0)];
+        // Mountains — Relativistic Clock Tick + Swelling 5-Voice Cathedral Chord (Am -> Fmaj7 -> C -> G6)
+        const bar = clamp(fl(u / 4), 0, 3);
+        const tick = frac(u * 1.25) < 0.12 ? 2.86 : NaN;
+        const ch = [
+          [110.0, 220.0, 329.63, 523.25],
+          [87.31, 174.61, 329.63, 440.0],
+          [130.81, 261.63, 392.0, 659.25],
+          [98.0, 196.0, 329.63, 587.33],
+        ][bar];
+        const bt = frac(u / 4);
+        return [
+          tick,
+          hz(ch[1]),
+          bt > 0.15 ? hz(ch[2]) : NaN,
+          hz(ch[0]),
+          bt > 0.30 ? hz(ch[3]) + 0.02 * sin(2 * PI * 5.2 * u) : NaN,
+          hz(ch[3]) - 0.18 * bt,
+        ];
       }
       if (m === 15) {
-        const kick = bit(44718, s16) ? shimIndKickY(sf2 * 0.22, 0.19) : NaN;
-        const lead = evalEvents(u, [
-          [0, 440.0, 1.8], [2, 523.25, 1.8], [4, 587.33, 1.8], [6, 659.25, 1.8],
-          [8, 783.99, 1.8], [10, 659.25, 1.8], [12, 587.33, 1.8], [14, 659.25, 1.9, 880.0],
+        // Flight (Man of Steel) — Heroic D-Major Fifths & Triumphant Octave Fanfare
+        const fanfare = evalEvents(u, [
+          [0.0, 369.99, 1.8], [2.0, 392.0, 1.8], [4.0, 440.0, 3.6],
+          [8.0, 587.33, 1.8], [10.0, 659.25, 1.8], [12.0, 739.99, 3.8],
         ]);
-        const oct = Number.isFinite(lead) ? clamp(lead + 1.0, -3, 3) : NaN;
-        const sn = ((s16 === 4 || s16 === 12) && sf2 < 0.55) ? 2.2 - 1.4 * sf2 : NaN;
-        const zap = u >= 14.0 ? shimGlitchY(sf2 * 0.12, 4800, 0.08) : NaN;
-        return [lead, oct, kick, sn, zap];
+        const hiFan = Number.isFinite(fanfare) ? clamp(fanfare + 1.0, -3, 3) : NaN;
+        const pArp = frac(u * 2) < 0.78 ? hz([293.66, 440.0, 587.33, 440.0][mod(fl(u * 2), 4)]) : NaN;
+        const fifth = hz([146.83, 146.83, 196.0, 220.0][clamp(fl(u / 4), 0, 3)]);
+        const sub = hz([73.42, 73.42, 98.0, 110.0][clamp(fl(u / 4), 0, 3)]);
+        const rvb = Number.isFinite(hiFan) ? hiFan - 0.08 * frac(u / 4) : NaN;
+        return [fanfare, hiFan, pArp, fifth, sub, rvb];
       }
-      // Part 16: Grand Analytical Convergence — All 4 Album Keys & 8 DSP Voices in Pure Harmony
-      const qBar = clamp(fl(u / 4), 0, 3);
-      const carol = hz([783.99, 739.99, 783.99, 659.25][mod(fl(u * 2), 4)]);
-      const blues = quant(3 + 2 * sin(0.6 * u), 293.66, A_MIN);
-      const rsArp = frac(u * 3) < 0.80 ? hz(rsProg[mod(fl(u / 2), 8)][triIdx]) : NaN;
-      const fmHalo = hz([329.63, 293.66, 261.63, 220.0][qBar]);
-      const vln = hz([659.25, 587.33, 523.25, 880.0][qBar]) + 0.022 * sin(2 * PI * 5.8 * u);
-      const sub = hz([82.41, 73.42, 65.41, 55.0][qBar]);
-      const indBass = sf2 < 0.78 ? hz(tLine[s16]) : NaN;
-      const star = (mod(fl(u * 2), 8) === 0 && sf2 < 0.35) ? hz(1760.0) : NaN;
-      return [carol, blues, rsArp, fmHalo, vln, sub, indBass, star];
+      if (m === 16) {
+        // Part 16: Grand 8-Voice Hans Zimmer Cathedral Symphony Finale (Am · F · C · G · Am)
+        const q = clamp(fl(u / 4), 0, 3);
+        const prog = [
+          { r: 55.0, c: 220.0, m: 440.0, h: 659.25, a: [220, 329.63, 440, 523.25] }, // Am
+          { r: 43.65, c: 174.61, m: 349.23, h: 698.46, a: [174.61, 261.63, 349.23, 440] }, // F
+          { r: 65.41, c: 261.63, m: 523.25, h: 783.99, a: [261.63, 392.0, 523.25, 659.25] }, // C
+          { r: 49.0, c: 196.0, m: 587.33, h: 880.0, a: [196.0, 293.66, 392.0, 587.33] }, // G -> Am
+        ][q];
+        const pArp = frac(u * 2) < 0.80 ? hz(prog.a[mod(fl(u * 2), 4)]) : NaN;
+        const flute = hz(prog.h);
+        const vln = hz(prog.h) + 0.025 * sin(2 * PI * 5.8 * u);
+        const fmBell = hz(prog.m);
+        const cello = hz(prog.c);
+        const brass = hz(prog.r);
+        const tick = (mod(fl(u * 2), 4) === 0 && frac(u * 2) < 0.25) ? hz(1760.0) : NaN;
+        const rvb = hz(prog.h) - 0.14 * frac(u / 4);
+        return [pArp, flute, vln, fmBell, cello, brass, tick, rvb];
+      }
+
+      // Part 17: Aphex Twin — Bucephalus Bouncing Ball (Exact Geometric Gravity Cascade r = 0.78)
+      const T_cyc = 8.05;
+      const r = 0.78;
+      const cyc = mod(u, 8.0);
+      const halfIdx = fl(u / 8.0); // 0 -> F#m9, 1 -> Dmaj7
+      const n = clamp(fl(Math.log(Math.max(1e-4, 1 - cyc / T_cyc)) / Math.log(r)), 0, 24);
+      const t_n = T_cyc * (1 - Math.pow(r, n));
+      const d_n = T_cyc * Math.pow(r, n) * (1 - r);
+      const p = clamp((cyc - t_n) / Math.max(1e-4, d_n), 0, 1);
+      // 1) Rubbery metallic bouncing-ball impact (exponential pitch drop at each bounce, merging into buzz!)
+      const impDur = Math.min(0.32, Math.max(0.08, 0.36 * Math.pow(0.88, n)));
+      const hitF = (halfIdx === 0 ? 185.0 : 146.83) * Math.pow(1.03, Math.min(n, 16));
+      const ballImpact = p < impDur ? hz(hitF * 2.4 * Math.pow(0.38, p / impDur)) : NaN;
+      // 2) Visible parabolic gravity arc h_n = 2.4 * 0.86^n * 4p(1-p)
+      const floorY = halfIdx === 0 ? hz(185.0) : hz(146.83);
+      const arcH = 2.45 * Math.pow(0.86, n);
+      const ballArc = clamp(floorY + arcH * 4 * p * (1 - p), -3.0, 3.0);
+      // 3) Deep hypnotic Aphex acid-bass pedal (F#1 -> A1 -> E1 -> D1)
+      const acidPed = hz([46.25, 55.0, 41.20, 36.71][clamp(fl(u / 4), 0, 3)]);
+      // 4) Accelerating micro-glitch HPF tick locked to every bounce impact
+      const bTick = (p < 0.16 && mod(n, 2) === 0) ? 2.84 - 0.8 * p : NaN;
+      // 5) Lush Selected Ambient Works F#m9 / Dmaj7 pad floating serenely above
+      const pad = hz(halfIdx === 0 ? 415.30 : 369.99) + 0.015 * sin(2 * PI * 2.5 * u);
+      return [ballImpact, ballArc, acidPed, bTick, pad];
     },
   },
 
@@ -1885,49 +1915,49 @@ const DEMOS = [
     },
   },
 
-  // 24 — Composition 4: TRON Init (Nine Inch Nails) — 10 Exact Measures (1:1 media.html lines 5606–5914, 93 BPM = 25.80s)
+  // 24 — Composition 4: TRON Init (Nine Inch Nails) — 10 Exact Measures + Hall Reverb Decay (1:1 media.html, 93 BPM = 25.80s)
   {
-    id: "24", name: "TRACK 4: TRON INIT", src: "MEDIA.HTML T4", speed: 16 / 2.58, bsound: true,
+    id: "24", name: "TRACK 4: TRON INIT", src: "MEDIA.HTML T4", speed: 16 / 2.58, bsound: true, reverb: 0.36,
     parts: [
       {
-        m: 1, modes: ["hpf", "sat", "lpf", "lfo", "saw", "nse", "fm"],
-        f: "Measure 01/10 · Nine Inch Nails『TRON: Ares - Init』(93 BPM, Am) — System Init (0.00–2.58 s)\n# ./start_ares_program — 4 Glitch Zaps + IndKick + A1 Pedal/Swarmatron + Pulse + Snare Flams",
+        m: 1, modes: ["hpf", "sat", "lpf", "lfo", "saw", "nse", "rvb"],
+        f: "Measure 01/10 · Nine Inch Nails『TRON: Ares - Init』(93 BPM, Am) — System Init (0.00–2.58 s)\n# ./start_ares_program — 4 Zaps + IndKick + A1 Swarmatron + Snare Flams + Hall Reverb Decay (RVB)",
       },
       {
-        m: 2, modes: ["sat", "sat", "nse", "hpf", "lfo", "sine"],
-        f: "Measure 02/10 · 93 BPM Industrial Groove Ignites (2.58–5.16 s)\n16th Overdriven Bass (A1–A1–C2–A1–D2–C2–A1–G1 · F1–G1–A1→C2) + Kick + Clank + HH + A6 Ding",
+        m: 2, modes: ["sat", "sat", "nse", "hpf", "lfo", "rvb"],
+        f: "Measure 02/10 · 93 BPM Industrial Groove Ignites (2.58–5.16 s)\n16th Overdriven Bass (A1–C2–D2–G1 · F1–G1–A1→C2) + Kick + Clank + A6 Ding & RVB Hall Tail",
       },
       {
-        m: 3, modes: ["sat", "sat", "nse", "hpf", "sine"],
-        f: "Measure 03/10 · Driving Acceleration, Double-Kick & Glitch Fills (5.16–7.74 s)\nSyncopated Double Kick (6.13/6.45 s) + Glitch Zaps (2400/3600/4800 Hz) + A1→D2 Slide",
+        m: 3, modes: ["sat", "sat", "nse", "hpf", "rvb"],
+        f: "Measure 03/10 · Driving Acceleration, Double-Kick & Glitch Fills (5.16–7.74 s)\nSyncopated Double Kick (6.13/6.45 s) + Glitch Zaps (2400/3600/4800 Hz) + A1→D2 + RVB Tail",
       },
       {
-        m: 4, modes: ["sat", "sat", "sat", "nse", "lfo", "saw"],
-        f: "Measure 04/10 · Swarmatron A2 (110 Hz) Ascension & Cyber Lead Teaser (7.74–10.32 s)\nA2 Swarmatron Cluster + Cyber Lead Teaser (A4–C5 @ 9.35 s) + Pre-Drop Snare Flams",
+        m: 4, modes: ["sat", "sat", "sat", "nse", "lfo", "rvb"],
+        f: "Measure 04/10 · Swarmatron A2 (110 Hz) Ascension & Cyber Lead Teaser (7.74–10.32 s)\nA2 Swarmatron Cluster + Cyber Lead Teaser (A4–C5 @ 9.35 s) + Pre-Drop Flams & RVB Wash",
       },
       {
-        m: 5, modes: ["sat", "sat", "sat", "nse", "lfo", "sine"],
-        f: "Measure 05/10 · The Searing TRON: Ares Cyber Lead Drops! (10.32–12.90 s)\nCyber Lead: A4–C5–B4–G4–A4–E5→F5 Cry + Full 16th Industrial Bass + Kick + Clank + HH",
+        m: 5, modes: ["sat", "sat", "sat", "nse", "lfo", "rvb"],
+        f: "Measure 05/10 · The Searing TRON: Ares Cyber Lead Drops! (10.32–12.90 s)\nCyber Lead: A4–C5–B4–G4–A4–E5→F5 + 16th Bass + Cavernous Hall Reverb Decay Tail (RVB)",
       },
       {
-        m: 6, modes: ["sat", "sat", "sat", "nse", "lfo", "saw"],
-        f: "Measure 06/10 · Theme Resolution & E3 (165 Hz) Swarmatron (12.90–15.48 s)\nCyber Lead: D5–C5–D5–E5→A5 Power Slide + Bass (D2–C2–A1–G1–D2–E2–G2) + Snare Flams",
+        m: 6, modes: ["sat", "sat", "sat", "nse", "lfo", "rvb"],
+        f: "Measure 06/10 · Theme Resolution & E3 (165 Hz) Swarmatron (12.90–15.48 s)\nCyber Lead: D5–C5–D5–E5→A5 Power Slide + Bass (D2–C2–E2–G2) + Trailing RVB Hall Tail",
       },
       {
-        m: 7, modes: ["sat", "pls", "sat", "sat", "nse", "lfo", "lpf"],
-        f: "Measure 07/10 · Full Industrial Climax / Fortissimo Octaves (15.48–18.06 s)\nOctave Lead (A4/A5→C5/C6→D5/D6→E5/E6) + 220 Hz Swarmatron + Double-Kick + Syncopated Bass",
+        m: 7, modes: ["sat", "pls", "sat", "sat", "nse", "lfo", "rvb"],
+        f: "Measure 07/10 · Full Industrial Climax / Fortissimo Octaves (15.48–18.06 s)\nOctave Lead (A4/A5→C5/C6→D5/D6→E5/E6) + 220 Hz Swarmatron + Double-Kick + RVB Bloom",
       },
       {
-        m: 8, modes: ["sat", "pls", "sat", "sat", "nse", "lfo", "hpf"],
-        f: "Measure 08/10 · Climax Cascade & Digital Stutter Glitches (18.06–20.64 s)\nOctave Lead (G5/G6→E5/E6→D5/D6→C5/C6→A4/A5) + 4 Stutter Glitches (4800/3600/2400/5200 Hz)",
+        m: 8, modes: ["sat", "pls", "sat", "sat", "nse", "hpf", "rvb"],
+        f: "Measure 08/10 · Climax Cascade & Digital Stutter Glitches (18.06–20.64 s)\nOctave Lead (G5/G6→A4/A5) + 4 Stutter Glitches (4800/3600/2400/5200) + Long RVB Decay",
       },
       {
-        m: 9, modes: ["lpf", "sat", "hpf", "lfo", "saw", "fm"],
-        f: "Measure 09/10 · Ares Terminal Execution & A0 Sub-Bass Breakdown (20.64–23.22 s)\nBeats cut: A0 (27.5 Hz) + A1 (55 Hz) Thunder + Swarmatron Tight Unison (6c) + Grid Chime",
+        m: 9, modes: ["lpf", "sat", "hpf", "lfo", "fm", "rvb"],
+        f: "Measure 09/10 · Ares Terminal Execution & A0 Sub-Bass Breakdown (20.64–23.22 s)\nBeats cut: A0 (27.5 Hz) + A1 Thunder + Swarmatron 6c Unison + Cavernous RVB Ring-Out",
       },
       {
-        m: 10, modes: ["lpf", "sat", "hpf", "lfo", "saw", "sine"],
-        f: "Measure 10/10 · Grid Convergence, Pure Silence & Resolution (23.22–25.80 s)\n# ./start_ares_program [COMPLETE] — Final 4800 Hz Zap + A6 (1760) & E7 Starlight Fade",
+        m: 10, modes: ["lpf", "sat", "hpf", "lfo", "sine", "rvb"],
+        f: "Measure 10/10 · Grid Convergence, Pure Silence & Reverb Decay (23.22–25.80 s)\n# ./start_ares_program [COMPLETE] — 4800 Hz Zap + A6/E7 Starlight & Hall RVB Fade",
       },
     ],
     eval(x, pi) {
@@ -2034,29 +2064,46 @@ const DEMOS = [
           break;
         }
       }
-      const ding = (mt < 0.20 && mIdx >= 1 && mIdx <= 7) ? hz(mIdx >= 6 ? 1975.53 : 1760.0) : NaN;
+      // Visible Hall Reverb Decay Tail (exponential damped shimmer after hits, leads, zaps & chimes)
+      const rvbAnchors = [
+        [0.05, 261.63, 1.8], [0.64, 523.25, 1.2], [1.29, 329.63, 1.2], [1.93, 659.25, 0.9],
+        [2.58, 1760.0, 1.4], [5.16, 1760.0, 1.4], [7.74, 1760.0, 1.4],
+        [10.32, 880.0, 2.2], [12.25, 698.46, 1.8], [12.90, 587.33, 2.2], [14.83, 880.0, 1.8],
+        [15.48, 1318.51, 2.4], [18.06, 1567.98, 2.4],
+        [20.64, 440.0, 2.5], [23.22, 659.25, 1.5], [23.80, 1760.0, 1.95],
+      ];
+      let rvbTail = NaN;
+      for (let i = rvbAnchors.length - 1; i >= 0; i--) {
+        const a = rvbAnchors[i];
+        const dt = t - a[0];
+        if (dt >= 0 && dt < a[2]) {
+          // Damped exponential spectral decay curve with hall comb shimmer
+          const decay = exp(-dt / (a[2] * 0.45));
+          rvbTail = clamp(hz(a[1]) - (1 - decay) * 0.85 + 0.045 * decay * sin(2 * PI * 9.5 * dt), -3.0, 3.0);
+          break;
+        }
+      }
 
       if (mIdx === 0) {
         const ped = t < 2.5 ? hz(55.0 * Math.pow(0.98, t / 2.5)) : NaN;
-        const pulse = (t >= 0.64 && t < 1.25) ? hz(261.63) : ((t >= 1.29 && t < 2.20) ? hz(130.81) : NaN);
-        return [zap, kick, ped, swL, swR, sn, pulse];
+        return [zap, kick, ped, swL, swR, sn, rvbTail];
       }
-      if (mIdx === 1) return [kick, bass, sn, zap, swL, ding];
-      if (mIdx === 2) return [kick, bass, sn, zap, ding];
-      if (mIdx === 3) return [lead, kick, bass, sn, swL, swR];
-      if (mIdx === 4) return [lead, kick, bass, sn, swL, ding];
-      if (mIdx === 5) return [lead, kick, bass, sn, swL, swR];
-      if (mIdx === 6) return [leadHi, lead, kick, bass, sn, swL, hz(55.0)];
-      if (mIdx === 7) return [leadHi, lead, kick, bass, sn, swL, zap];
+      if (mIdx === 1) return [kick, bass, sn, zap, swL, rvbTail];
+      if (mIdx === 2) return [kick, bass, sn, zap, rvbTail];
+      if (mIdx === 3) return [lead, kick, bass, sn, swL, rvbTail];
+      if (mIdx === 4) return [lead, kick, bass, sn, swL, rvbTail];
+      if (mIdx === 5) return [lead, kick, bass, sn, swL, rvbTail];
+      if (mIdx === 6) return [leadHi, lead, kick, bass, sn, swL, rvbTail];
+      if (mIdx === 7) return [leadHi, lead, kick, bass, sn, zap, rvbTail];
       if (mIdx === 8) {
         const gridBell = t < 23.0 ? hz(261.63) : NaN;
-        return [-2.95, hz(55.0), zap, swL, swR, gridBell];
+        return [-2.95, hz(55.0), zap, swL, gridBell, rvbTail];
       }
-      // Measure 10 (23.22..25.80): A0/A1 fade -> 4800 Hz zap -> A6 (1760) & E7 Starlight
+      // Measure 10 (23.22..25.80): A0/A1 fade -> 4800 Hz zap -> A6 (1760) & E7 Starlight + Hall RVB fade
       const a0 = t < 25.14 ? -2.95 : NaN;
       const a1 = t < 24.64 ? hz(55.0) : NaN;
       const star = t >= 23.80 ? (t >= 24.45 ? 3.00 : hz(1760.0)) : NaN;
-      return [a0, a1, zap, swL, swR, star];
+      return [a0, a1, zap, swL, star, rvbTail];
     },
   },
 ];
@@ -2090,6 +2137,13 @@ let meterPeakL = 0, meterPeakR = 0;
 let meterRmsL = 0, meterRmsR = 0;
 let meterLimHit = 0;
 let meterBal = 0;
+
+// Static 4-Comb Schroeder Hall Reverb (Orchestra.html §4.3 / Eq. 15 — zero hot-path allocation)
+const RVB_LENS = [1559, 1699, 1847, 1993];
+const rvbBufs = RVB_LENS.map((n) => new Float32Array(n));
+const rvbIdx = new Int32Array(4);
+const rvbLp = new Float32Array(4);
+function clearReverb() { rvbBufs.forEach((b) => b.fill(0)); rvbLp.fill(0); }
 
 function nextNoise() {
   rngState ^= rngState << 13;
@@ -2155,6 +2209,10 @@ function synthBSoundWave(mode, ph, modPh, f, v) {
     // Vibrato-modulated bowed string (5.8 Hz LFO phase shimmer)
     const vph = ph + 0.18 * Math.sin(modPh * 0.015);
     return 0.62 * (Math.sin(vph) - 0.5 * Math.sin(2 * vph) + 0.333 * Math.sin(3 * vph) - 0.25 * Math.sin(4 * vph));
+  }
+  if (mode === "rvb") {
+    // Hall reverb shimmer carrier (soft damped sine + airy comb overtone)
+    return 0.42 * s1 + 0.16 * Math.sin(modPh) * 0.5;
   }
   if (mode === "sat") {
     // Orchestra.html Eq. 14 / MEDIA-SOUND.txt §5.2 WaveShaper saturation (k = 25)
@@ -2236,10 +2294,27 @@ function ensureAudio() {
         }
       }
 
-      // Gentle 1-pole analog warmth filter + soft master limiter (Orchestra.html Eq. 20)
+      // Gentle 1-pole analog warmth filter + optional 4-Comb Hall Reverb (Orchestra Eq. 15) + soft limiter
       lpL += (sL - lpL) * lpAlpha;
       lpR += (sR - lpR) * lpAlpha;
-      const preL = lpL * 1.15, preR = lpR * 1.15;
+      let mixL = lpL, mixR = lpR;
+      const rvbWet = demo.reverb || 0;
+      if (rvbWet > 0) {
+        const monoIn = 0.5 * (lpL + lpR);
+        let wL = 0, wR = 0;
+        for (let c = 0; c < 4; c++) {
+          const buf = rvbBufs[c];
+          const idx = rvbIdx[c];
+          const rd = buf[idx];
+          rvbLp[c] += (rd - rvbLp[c]) * 0.28; // Hall high-frequency damping
+          buf[idx] = monoIn + rvbLp[c] * 0.78;
+          rvbIdx[c] = (idx + 1) % buf.length;
+          if (c & 1) wR += rd; else wL += rd;
+        }
+        mixL += wL * 0.5 * rvbWet;
+        mixR += wR * 0.5 * rvbWet;
+      }
+      const preL = mixL * 1.15, preR = mixR * 1.15;
       if (Math.abs(preL) > 0.85 || Math.abs(preR) > 0.85) limTrig = 1;
       const oL = Math.tanh(preL) * 0.42;
       const oR = Math.tanh(preR) * 0.42;
@@ -2329,6 +2404,7 @@ function selectDemo(i, p = 0) {
   partIdx = clamp(p, 0, DEMOS[demoIdx].parts.length - 1);
   curX = X_MIN;
   vEnv.fill(0);
+  clearReverb();
   needChromeUpdate = true;
 }
 
@@ -2656,6 +2732,15 @@ function draw() {
       ctx.moveTo(cx - r * 1.05, cy);
       ctx.quadraticCurveTo(cx - r * 0.5, cy - r * 1.1, cx, cy);
       ctx.quadraticCurveTo(cx + r * 0.5, cy + r * 1.1, cx + r * 1.05, cy);
+      ctx.stroke();
+      return;
+    } else if (mode === "rvb") {
+      // Concentric Hall Reverb / Echo wave icon ◎
+      ctx.arc(cx, cy, r * 1.05, 0, PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.48, 0, PI * 2);
+      if (fillCore) ctx.fill();
       ctx.stroke();
       return;
     } else if (mode === "noise" || mode === "nse") {
