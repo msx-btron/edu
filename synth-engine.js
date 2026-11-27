@@ -2328,10 +2328,10 @@ function ensureAudio() {
   procNode.onaudioprocess = (ev) => {
     const outL = ev.outputBuffer.getChannelData(0);
     const outR = ev.outputBuffer.getChannelData(1);
-    const demo = DEMOS[demoIdx];
-    const partModes = demo.parts[partIdx].modes || null;
+    let demo = DEMOS[demoIdx];
+    let partModes = demo.parts[partIdx].modes || null;
     const dt = 1 / sr;
-    const dx = (playing && !scrubbing) ? demo.speed * dt : 0;
+    let dx = (playing && !scrubbing) ? demo.speed * dt : 0;
     let blkPkL = 0, blkPkR = 0, blkSqL = 0, blkSqR = 0, limTrig = 0;
 
     for (let i = 0; i < bufSize; i++) {
@@ -2417,8 +2417,14 @@ function ensureAudio() {
             if (partIdx + 1 < demo.parts.length) {
               partIdx++;
             } else {
+              demoIdx = (demoIdx + 1) % DEMOS.length;
               partIdx = 0;
+              demo = DEMOS[demoIdx];
+              dx = (playing && !scrubbing) ? demo.speed * dt : 0;
+              vEnv.fill(0);
+              clearReverb();
             }
+            partModes = demo.parts[partIdx].modes || null;
             needChromeUpdate = true;
           }
         }
@@ -2635,7 +2641,14 @@ function draw() {
     if (curX >= X_MAX) {
       curX = X_MIN;
       if (autoParts) {
-        partIdx = (partIdx + 1) % demo.parts.length;
+        if (partIdx + 1 < demo.parts.length) {
+          partIdx++;
+        } else {
+          demoIdx = (demoIdx + 1) % DEMOS.length;
+          partIdx = 0;
+          vEnv.fill(0);
+          clearReverb();
+        }
         needChromeUpdate = true;
       }
     }
