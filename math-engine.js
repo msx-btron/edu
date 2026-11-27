@@ -53,18 +53,20 @@ for (const k in RAW) {
 const canvas = document.getElementById("c");
 const gl = canvas.getContext("webgl", { alpha: false, antialias: true, preserveDrawingBuffer: false });
 const ctx2d = gl ? null : canvas.getContext("2d");
-const MAXV = 480000;
+const MAXV = 1500000;
 const vbuf = new Float32Array(MAXV * 6);
 let vn = 0, cssW = 1280, cssH = 800, aspect = 1.6;
 const segs = [], fills = [], cmds2d = [];
 
 // 3D CAD Camera, Hidden-Line Occlusion & Wire-Mesh Discretization State
-const MESH_LEVELS = [0.75, 1.0, 1.5, 2.0, 3.0, 4.0];
-let meshIdx = 4; // default 3.0x (crisp high-resolution wireframe)
+const MESH_LEVELS = [0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0];
+let meshIdx = 5; // default 3.0x (crisp calibrated wireframe)
 let hlrOn = true; // Painter's Algorithm Hidden-Line Removal (occlude lines shadowed behind peaks)
 const COL_OCCLUDE = [0.020, 0.024, 0.035, 1.0];
 const meshMul = () => MESH_LEVELS[meshIdx];
-const meshW = (base) => Math.max(0.70, (base || 1.15) / Math.pow(meshMul(), 0.30));
+// Unified perceptual surface-scaling factor (1.0 at 3.0x, monotonic from 0.5x to 10.0x)
+const surfScale = () => Math.pow(meshMul() / 3.0, 0.62);
+const meshW = (base) => Math.max(0.55, (base || 1.15) / Math.pow(meshMul(), 0.30));
 const CAM = { yaw: 0, pitch: 0, zoom: 1.0, panU: 0, panV: 0, panX: 0, panY: 0, userOrbited: false, dragMode: null, lastX: 0, lastY: 0, effYaw: 0.6 };
 function resetCam() {
   CAM.yaw = 0; CAM.pitch = 0; CAM.zoom = 1.0; CAM.panU = 0; CAM.panV = 0; CAM.panX = 0; CAM.panY = 0; CAM.userOrbited = false;
@@ -452,9 +454,9 @@ function drawHiddenWireGrid(V, grid, nu, nv, lw, highlightColIdx, hasContour) {
 
 // Edge-to-edge 3D surface wireframe: dynamically recalculated infinite plane bounded ONLY by 2D host CLIP rect!
 function drawOpenSurface3D(V, evalFn, Nu, Nv, yaw, pitch, sc, highlightU, contourFn) {
-  const m = meshMul();
-  const nu = Math.max(18, Math.min(180, Math.round(Math.max(Nu, 44) * m)));
-  const nv = Math.max(18, Math.min(180, Math.round(Math.max(Nv, 44) * m)));
+  const s = surfScale();
+  const nu = Math.max(16, Math.min(240, Math.round(Math.max(Nu, 48) * 2.25 * s)));
+  const nv = Math.max(16, Math.min(240, Math.round(Math.max(Nv, 48) * 2.25 * s)));
   const { R } = openBounds(V, pitch, sc);
   const stepU = (2 * R) / nu, stepV = (2 * R) / nv;
   // Phase-lock grid lines to world coordinates so panning slides smoothly without swimming!
@@ -806,7 +808,8 @@ function drawSphericalHarmonics3D(V, sim, t, dt, part) {
   const modes = [[2, 0], [3, 2], [4, 2], [5, 3], [6, 4]];
   const [l, m] = modes[p];
   const yaw = 0.55 + t * 0.28, pitch = 0.42 + 0.12 * Math.sin(t * 0.36);
-  const Nth = Math.max(14, Math.round(30 * meshMul())), Nph = Math.max(20, Math.round(44 * meshMul())), pts = [];
+  const s = surfScale();
+  const Nth = Math.max(12, Math.min(96, Math.round(40 * s))), Nph = Math.max(18, Math.min(140, Math.round(58 * s))), pts = [];
   const lw = meshW(1.15);
   for (let j = 0; j <= Nth; j++) {
     const th = (j / Nth) * Math.PI, c = Math.cos(th), s = Math.sin(th), c2 = c * c, s2 = s * s;
@@ -846,8 +849,9 @@ function drawEllipticRiemann3D(V, sim, t, dt, part) {
   } else {
     const { R } = openBounds(V, pitch, 0.64);
     const rMax = Math.max(5.2, R * 1.15 + Math.hypot(CAM.panU, CAM.panV));
-    const Nr = Math.max(12, Math.min(72, Math.round(24 * meshMul())));
-    const Nth = Math.max(32, Math.min(180, Math.round(76 * meshMul())));
+    const s = surfScale();
+    const Nr = Math.max(10, Math.min(64, Math.round(28 * s)));
+    const Nth = Math.max(28, Math.min(196, Math.round(88 * s)));
     const lw = meshW(1.2), pts = [];
     for (let j = 0; j <= Nr; j++) {
       const r = 0.08 + (j / Nr) * rMax;
@@ -961,7 +965,8 @@ function drawSpecialZoo3D(V, sim, t, dt, part) {
 function drawMinimalSurfaces3D(V, sim, t, dt, part) {
   const p = (part || 0) % 3;
   const yaw = 0.4 + t * 0.30, pitch = 0.42 + 0.12 * Math.sin(t * 0.4);
-  const Nu = Math.max(16, Math.round(32 * meshMul())), Nv = Math.max(14, Math.round(28 * meshMul())), pts = [];
+  const s = surfScale();
+  const Nu = Math.max(14, Math.min(108, Math.round(46 * s))), Nv = Math.max(12, Math.min(96, Math.round(40 * s))), pts = [];
   const lw = meshW(1.15);
 
   if (p === 0) {
@@ -1033,8 +1038,8 @@ function drawCalabiYau3D(V, sim, t, dt, part) {
   const alpha = 0.65 + 0.55 * Math.sin(t * 0.45); // 4D -> 3D slice angle
   const ca = Math.cos(alpha), sa = Math.sin(alpha);
   const psiMod = cfg.dwork ? 0.58 * (0.5 + 0.5 * Math.sin(t * 0.7)) : 0; // Dwork mirror conifold parameter
-  const baseN = n >= 6 ? 7 : 9;
-  const Nu = Math.max(4, Math.min(n >= 6 ? 13 : 17, Math.round(baseN * meshMul()))), Nv = Nu;
+  const baseN = n >= 6 ? 5 : n >= 5 ? 6 : 8;
+  const Nu = Math.max(3, Math.min(n >= 6 ? 12 : 16, Math.round(baseN * surfScale()))), Nv = Nu;
   const lw = meshW(n >= 6 ? 0.95 : 1.05);
   // Exact complex patches: z1 = e^{2pi i k1/n} cosh(u+iv)^{2/n}, z2 = e^{2pi i k2/n} (-i sinh(u+iv))^{2/n}
   for (let k1 = 0; k1 < n; k1++) {
@@ -1167,7 +1172,8 @@ function drawLieSurfaces3D(V, sim, t, dt, part) {
   if (p === 0) {
     // Part 1: Dupin Cyclide / SO(3) Maximal Torus & Lie Geodesic Flow
     const a = 1.05, b = 0.96, c = Math.sqrt(a * a - b * b), d = 0.52 + 0.16 * Math.sin(t * 0.65);
-    const Nu = Math.max(16, Math.round(32 * meshMul())), Nv = Math.max(12, Math.round(24 * meshMul())), pts = [];
+    const s = surfScale();
+    const Nu = Math.max(14, Math.min(112, Math.round(48 * s))), Nv = Math.max(10, Math.min(76, Math.round(32 * s))), pts = [];
     const lw = meshW(1.15);
     for (let j = 0; j <= Nv; j++) {
       const v = (j / Nv) * Math.PI * 2;
@@ -1185,7 +1191,8 @@ function drawLieSurfaces3D(V, sim, t, dt, part) {
     return [["MANIFOLD", "DUPIN CYCLIDE"], ["INVERSION D", d.toFixed(3)], ["MESH", meshMul().toFixed(1) + "X"]];
   } else {
     // Part 2: (2,3) Trefoil Lie Knot & Twisted Seifert Ribbon in SU(2) = S^3
-    const N = Math.max(64, Math.round(120 * meshMul())), Nr = Math.max(4, Math.round(8 * meshMul()));
+    const s = surfScale();
+    const N = Math.max(64, Math.min(320, Math.round(140 * s))), Nr = Math.max(4, Math.min(20, Math.round(9 * s)));
     const lw = meshW(1.15);
     for (let rI = 0; rI <= Nr; rI++) {
       const w = -0.22 + (0.44 * rI) / Nr;
@@ -1273,8 +1280,9 @@ function drawComplexAnalysis3D(V, sim, t, dt, part) {
     return [["SINGULARITY", "ESSENTIAL E^(1/Z)"], ["PHASE", rot.toFixed(2) + " RAD"], ["MESH", meshMul().toFixed(1) + "X"]];
   } else {
     // Part 4: 3D Multi-Sheeted Complex Logarithm Helico-Riemann Surface w = log(z)
-    const Nr = Math.max(12, Math.min(48, Math.round(18 * meshMul())));
-    const Nth = Math.max(36, Math.min(168, Math.round(64 * meshMul())));
+    const s = surfScale();
+    const Nr = Math.max(10, Math.min(56, Math.round(24 * s)));
+    const Nth = Math.max(32, Math.min(196, Math.round(84 * s)));
     const lw = meshW(1.15), pts = [];
     for (let j = 0; j <= Nr; j++) {
       const r = 0.14 + (j / Nr) * 1.55;
@@ -1331,7 +1339,8 @@ function drawConformalRiemann3D(V, sim, t, dt, part) {
     return [["FUNCTION", "BLASCHKE B5(Z)"], ["ROOT R", (0.56 + 0.14 * Math.sin(t * 0.7)).toFixed(2)], ["ORBIT", ((t * 0.32) % (Math.PI * 2)).toFixed(2) + " RAD"]];
   } else {
     // Part 3: 3D Riemann Sphere C-hat = C U {infty} under PSL(2,C) Mobius Flow
-    const Nth = Math.max(16, Math.round(28 * meshMul())), Nph = Math.max(24, Math.round(44 * meshMul()));
+    const s = surfScale();
+    const Nth = Math.max(14, Math.min(96, Math.round(40 * s))), Nph = Math.max(20, Math.min(140, Math.round(60 * s)));
     const lw = meshW(1.15), pts = [];
     const shift = [0.45 * Math.cos(t * 0.5), 0.45 * Math.sin(t * 0.5)];
     for (let j = 0; j <= Nth; j++) {
@@ -1383,8 +1392,9 @@ function drawLogarithms3D(V, sim, t, dt, part) {
 
   if (p === 0) {
     // Part 1: 3-Sheeted Complex Logarithm w = ln(z) with Climbing 3D Path Observer
-    const Nr = Math.max(14, Math.min(48, Math.round(18 * meshMul())));
-    const Nth = Math.max(48, Math.min(180, Math.round(72 * meshMul())));
+    const s = surfScale();
+    const Nr = Math.max(12, Math.min(60, Math.round(26 * s)));
+    const Nth = Math.max(40, Math.min(210, Math.round(96 * s)));
     const lw = meshW(1.12), pts = [];
     for (let j = 0; j <= Nr; j++) {
       const r = 0.16 + (j / Nr) * 1.65;
@@ -1469,182 +1479,340 @@ function drawLogarithms3D(V, sim, t, dt, part) {
   }
 }
 
+function drawLogarithmsWithSqrt3D(V, sim, t, dt, part) {
+  const p = (part || 0) % 5;
+  if (p < 4) return drawLogarithms3D(V, sim, t, dt, p);
+  return drawEllipticRiemann3D(V, sim, t, dt, 1);
+}
+
 // ============================================================================
-// CATALOGUE (12 Pure 3D Math Gems: 3D Special Functions, 3D Topological/CY/YM/Lie, 3D Complex Analysis)
+// CATALOGUE — JAHNKE–EMDE–LÖSCH SPECIAL FUNCTIONS (I–XIV) & PURE MATH (XV–XXI)
 // ============================================================================
+const CAT_DEFS = [
+  { id: "I. ELEMENTARY & COMPLEX TRANSCENDENTALS", short: "I. TRIG & HYP" },
+  { id: "II. GAMMA, INTEGRAL & ZETA FUNCTIONS", short: "II. GAMMA · INT · ZETA" },
+  { id: "III. ELLIPTIC INTEGRALS & FUNCTIONS", short: "III. ELLIPTIC" },
+  { id: "IV. ORTHOGONAL POLYNOMIALS & SPHERICAL", short: "IV. POLY & SPHERICAL" },
+  { id: "V. BESSEL, MATHIEU, CONFLUENT & PHYSICS", short: "V. BESSEL · MATHIEU · PHYS" },
+  { id: "VI. COMPLEX ANALYSIS & RIEMANN SURFACES", short: "VI. COMPLEX ANALYSIS" },
+  { id: "VII. TOPOLOGICAL, CALABI–YAU, YM & LIE", short: "VII. TOPOLOGY · CY · LIE" },
+];
+const CATS = CAT_DEFS.map((c) => c.id);
+
 const STATIONS = [
+  // ── CATEGORY I: ELEMENTARY & COMPLEX TRANSCENDENTALS (1–3) ────────────────
   {
-    roman: "I", cat: "3D SPECIAL FUNCTIONS", disc: "3D GAMMA FUNCTION", parts: 2,
-    title: "3D Complex Gamma |Γ(z)| and Entire 1/Γ(z)",
-    sub: "Unbounded 3D domain-colored relief bounded solely by the 2D host clipping rect (↑/↓ or 1–2).",
-    formula: "Γ(z) Γ(1 − z) = π / sin(πz)      Γ(n + 1) = n!",
-    note: "Drag to orbit, Shift/Right-drag to pan infinite poles, Wheel to zoom, [ / ] for mesh density.",
+    roman: "I", cat: CATS[0], disc: "TRIGONOMETRIC FUNCTIONS", badge: "3D + 2D · 3P", parts: 3,
+    title: "Trigonometric Functions: Circular Waves & Inverse Branches",
+    sub: "3D panoramic trigonometric relief plus 2D circular & inverse trigonometric map studies (↑/↓ or 1–3).",
+    formula: "sin²x + cos²x = 1      tan x = sin x / cos x      arcsin x + arccos x = π/2",
+    note: "Press ↓ or keys 1–3 to switch between 3D Relief, 2D Circular Curves, and 2D Inverse Branches.",
     partMeta: [
-      { title: "3D Complex Gamma Function |Γ(z)|", sub: "Lanczos continuation showing poles at z = 0, −1, −2, −3 shooting upward across the host viewport.", formula: "Γ(z) = ∫₀^∞ t^(z−1) e^(−t) dt", note: "Part 1/2 — Press ↓ for the entire reciprocal 1/Γ(z)." },
-      { title: "3D Entire Reciprocal |1 / Γ(z)|", sub: "Inverting Γ(z) removes all poles and turns them into smooth zeros at z = 0, −1, −2, −3.", formula: "1 / Γ(z) = z e^(γz) Π (1 + z/n) e^(−z/n)", note: "Part 2/2 — 1/Γ(z) is holomorphic on the entire complex plane ℂ." },
+      { tag: "3D Wave Relief", title: "3D Panoramic Trigonometric Relief sin(x+t) cos(y)", sub: "Unbounded 3D harmonic wave relief with glowing nodal zero contours and peak elevation pins.", formula: "z(x, y) = sin(x + t) cos(y) + 0.18 sin(2x − y)", note: "Part 1/3 (3D) — Press ↓ for 2D Circular Functions Study." },
+      { tag: "2D Circular", is2d: true, title: "2D Circular Map Study: sin, cos, tan & sec(x)", sub: "Full 2π periodic family showing vertical asymptotes at (n + 1/2)π and live phase cursor.", formula: "sec x = 1 / cos x      tan(x + π) = tan x", note: "Part 2/3 (2D) — Press ↓ for 2D Inverse Trigonometric Branches." },
+      { tag: "2D Inverses", is2d: true, title: "2D Inverse Trigonometric Study: arcsin, arccos, arctan, arccot", sub: "Principal branches on [−1, 1] and (−∞, ∞) with ±π/2 horizontal asymptotes.", formula: "arcsin x + arccos x = π/2      arctan x + arccot x = π/2", note: "Part 3/3 (2D) — Principal branch geometry of inverse circular functions." },
     ],
-    draw: drawGamma3D,
+    draw: drawTrigSection,
   },
   {
-    roman: "II", cat: "3D SPECIAL FUNCTIONS", disc: "3D RIEMANN ZETA",
-    title: "3D Riemann Zeta |ζ(s)| over the Critical Strip",
-    sub: "Edge-to-edge 3D analytic continuation of ζ(s) bounded only by the host rect; white trace = Re(s) = 1/2.",
-    formula: "ζ(s) = (1 − 2^(1−s))⁻¹ Σ (−1)^(n−1) n⁻ˢ      Re(s) = 1/2",
-    note: "Watch the bright white Critical Line plunge to zero at γ₁ = 14.13, γ₂ = 21.02, γ₃ = 25.01.",
-    draw: drawZeta3D,
-  },
-  {
-    roman: "III", cat: "3D SPECIAL FUNCTIONS", disc: "3D BESSEL & AIRY", parts: 2,
-    title: "3D Bessel Wavefields and Complex Airy Caustic Ai(z)",
-    sub: "Edge-to-edge 3D cylindrical Bessel wavefields and Complex Airy Stokes caustics (↑/↓ or 1–2).",
-    formula: "Jₘ(kr) cos(mθ)      Ai''(z) − z Ai(z) = 0",
-    note: "Canonical eigenfunctions of cylindrical Helmholtz and optical caustic wave equations.",
+    roman: "II", cat: CATS[0], disc: "HYPERBOLIC FUNCTIONS", badge: "3D + 2D · 3P", parts: 3,
+    title: "Hyperbolic Functions: Catenary, Inverses & Gudermannian",
+    sub: "3D hyperbolic saddle/sech relief plus 2D catenary, inverse hyperbolic, and Gudermannian studies (↑/↓ or 1–3).",
+    formula: "cosh²x − sinh²x = 1      gd(x) = 2 arctan(eˣ) − π/2",
+    note: "Press ↓ or keys 1–3 to switch between 3D Relief, 2D Hyperbolic Family, and 2D Gudermannian Bridge.",
     partMeta: [
-      { title: "3D Bessel Wave Surface Jₘ(kr) cos(mθ)", sub: "Unbounded 3D cylindrical Helmholtz eigenmodes vibrating across the host viewport.", formula: "x² y'' + x y' + (x² − m²) y = 0", note: "Part 1/2 — Press ↓ for Complex Airy Ai(z)." },
-      { title: "3D Complex Airy Caustic |Ai(z)|", sub: "Oscillatory caustic on the negative real axis transitioning to exponential Stokes sectors.", formula: "Ai''(z) − z Ai(z) = 0", note: "Part 2/2 — Governs optical rainbows, quantum tunneling, and fold catastrophes." },
+      { tag: "3D Saddle", title: "3D Panoramic Hyperbolic Saddle & Sech(r) Relief", sub: "3D hyperbolic curvature landscape with embedded hyperbola contour u² − v² = const.", formula: "sinh x = (eˣ − e⁻ˣ)/2      cosh x = (eˣ + e⁻ˣ)/2", note: "Part 1/3 (3D) — Press ↓ for 2D Catenary & Hyperbolic Curves." },
+      { tag: "2D Catenary", is2d: true, title: "2D Hyperbolic Study: cosh (Catenary), sinh, tanh & sech", sub: "Hanging-chain catenary cosh(x), odd sinh(x), logistic tanh(x) → ±1, and soliton sech(x).", formula: "cosh²x − sinh²x = 1      sech²x + tanh²x = 1", note: "Part 2/3 (2D) — Press ↓ for Inverse Hyperbolic & Gudermannian gd(x)." },
+      { tag: "2D Inv & gd(x)", is2d: true, title: "2D Inverse Hyperbolic & Gudermannian Bridge gd(x)", sub: "arsinh, arcosh, artanh alongside the Gudermannian gd(x) connecting hyperbolic & circular geometry.", formula: "tan(gd(x)) = sinh(x)      sin(gd(x)) = tanh(x)", note: "Part 3/3 (2D) — Mercator projection latitude = Gudermannian of map y-coordinate." },
     ],
-    draw: drawBesselAiry3D,
+    draw: drawHyperbolicSection,
   },
   {
-    roman: "IV", cat: "3D SPECIAL FUNCTIONS", disc: "3D SPHERICAL HARMONICS", parts: 5,
-    title: "3D Spherical Harmonics Yₗᵐ(θ, φ) (5 Eigenmodes)",
-    sub: "Exact Laplace–Beltrami eigenfunctions on S² divided into 5 selectable angular-momentum orbitals (↑/↓ or 1–5).",
-    formula: "∇²_S² Yₗᵐ(θ, φ) = −l(l + 1) Yₗᵐ(θ, φ)",
-    note: "Press ↓ or keys 1–5 to step through Y₂⁰, Y₃², Y₄², Y₅³, and Y₆⁴ orbitals.",
+    roman: "III", cat: CATS[0], disc: "COMPLEX TRIG & HYPERBOLIC", badge: "3D + 2D · 4P", parts: 4,
+    title: "Complex Trigonometric & Hyperbolic Reliefs (sin z, tan z, cosh z)",
+    sub: "Unbounded 3D complex reliefs of |sin z|, |tan z|, |cosh z| and 2D Jahnke–Emde Höhenkarte conformal net (↑/↓ or 1–4).",
+    formula: "sin(iz) = i sinh(z)      cos(iz) = cosh(z)      tan(z + π) = tan(z)",
+    note: "Press ↓ or keys 1–4 for |sin z|, |tan z|, |cosh z|, and 2D Altitude/Phase Map (Höhenkarte).",
     partMeta: [
-      { title: "Spherical Harmonic Y₂⁰ (d_z² Quadrupole Orbital)", sub: "Axially symmetric l = 2, m = 0 quadrupole harmonic with two polar lobes and an equatorial torus.", formula: "Y₂⁰(θ, φ) ∝ 3 cos²θ − 1      λ = −6", note: "Part 1/5 — Press ↓ for Y₃² Tetrahedral Octupole." },
-      { title: "Spherical Harmonic Y₃² (f_xyz Tetrahedral Octupole)", sub: "l = 3, m = 2 eight-lobe harmonic displaying alternating phase sign across three nodal planes.", formula: "Y₃²(θ, φ) ∝ sin²θ cosθ cos(2φ)      λ = −12", note: "Part 2/5 — Press ↓ for Y₄² Hexadecapole." },
-      { title: "Spherical Harmonic Y₄² (g-Orbital Hexadecapole)", sub: "l = 4, m = 2 harmonic combining two azimuthal nodal planes with two latitudinal nodal cones.", formula: "Y₄²(θ, φ) ∝ sin²θ (7 cos²θ − 1) cos(2φ)      λ = −20", note: "Part 3/5 — Press ↓ for Y₅³ 32-Pole." },
-      { title: "Spherical Harmonic Y₅³ (h-Orbital 32-Pole)", sub: "l = 5, m = 3 six-fold azimuthal harmonic with rich alternating phase symmetry.", formula: "Y₅³(θ, φ) ∝ sin³θ (9 cos²θ − 1) cos(3φ)      λ = −30", note: "Part 4/5 — Press ↓ for Y₆⁴ Cubic Harmonic." },
-      { title: "Spherical Harmonic Y₆⁴ (i-Orbital 64-Pole)", sub: "High-degree l = 6, m = 4 harmonic spanning the cubic symmetry basis of S².", formula: "Y₆⁴(θ, φ) ∝ sin⁴θ (11 cos²θ − 1) cos(4φ)      λ = −42", note: "Part 5/5 — Orthogonal basis of L²(S²) and cosmic microwave multipoles." },
+      { tag: "3D |sin(z)|", title: "3D Complex Sine Relief |sin(z)|", sub: "Periodic zeros along the real axis at z = nπ rising into exponential cosh(y) walls along Im(z).", formula: "|sin(x + iy)|² = sin²x + sinh²y", note: "Part 1/4 (3D) — Press ↓ for the infinite pole picket-fence of |tan(z)|." },
+      { tag: "3D |tan(z)|", title: "3D Complex Tangent Relief |tan(z)| (Simple Poles)", sub: "Alternating zeros at nπ and simple poles at (n + 1/2)π flattening smoothly to ±i as Im(z) → ±∞.", formula: "tan(z) = sin(z) / cos(z)      Res(π/2) = −1", note: "Part 2/4 (3D) — Press ↓ for 90°-rotated Complex Hyperbolic |cosh(z)|." },
+      { tag: "3D |cosh(z)|", title: "3D Complex Hyperbolic Cosine Relief |cosh(z)|", sub: "Exact 90° complex rotation of cos(z): periodic zeros at i(n + 1/2)π and exponential walls in Re(z).", formula: "cosh(z) = cos(iz)      |cosh(x+iy)|² = sinh²x + cos²y", note: "Part 3/4 (3D) — Press ↓ for the 2D Jahnke–Emde Höhenkarte Conformal Net." },
+      { tag: "2D Höhenkarte", is2d: true, title: "2D Altitude & Phase Map (Höhenkarte) of w = sin(z)", sub: "Orthogonal constant-modulus |sin z| = R and constant-phase arg(sin z) = φ conformal curves.", formula: "sin²x + sinh²y = R²      tanh y = tan φ · tan x", note: "Part 4/4 (2D) — Classic Jahnke–Emde conformal altitude chart." },
     ],
-    draw: drawSphericalHarmonics3D,
+    draw: drawComplexTrigHypSection,
   },
+
+  // ── CATEGORY II: GAMMA, INTEGRAL & ZETA FUNCTIONS (4–6, J-E-L Ch. I–IV) ──
   {
-    roman: "V", cat: "3D SPECIAL FUNCTIONS", disc: "3D ELLIPTIC & RIEMANN", parts: 2,
-    title: "3D Weierstrass Elliptic ℘(z) and Riemann Surfaces",
-    sub: "Doubly-periodic elliptic torus lattice ℘(z) and two-sheeted 3D Riemann surface w = √z (↑/↓ or 1–2).",
-    formula: "(℘')² = 4℘³ − g₂℘ − g₃      w² = z  (4π periodicity)",
-    note: "Elliptic periodicity and multi-sheeted branching rendered in full 3D.",
+    roman: "IV", cat: CATS[1], disc: "GAMMA · DIGAMMA · BETA (CH. I)", badge: "3D + 2D · 5P", parts: 5,
+    title: "Gamma Γ(z), Reciprocal 1/Γ(z), Digamma ψ(z) & Euler Beta B(z,w)",
+    sub: "Jahnke–Emde–Lösch Ch. I: 3D reliefs of Γ, 1/Γ, ψ, Beta plus 2D real & incomplete γ(a,x) study (↑/↓ or 1–5).",
+    formula: "Γ(z) Γ(1−z) = π / sin(πz)      ψ(z) = Γ'(z)/Γ(z)      B(z,w) = Γ(z)Γ(w)/Γ(z+w)",
+    note: "Press ↓ or keys 1–5 for |Γ(z)|, |1/Γ(z)|, |ψ(z)|, |B(z,w)|, and 2D Real/Incomplete Gamma Study.",
     partMeta: [
-      { title: "3D Weierstrass Elliptic Lattice |℘(z)|", sub: "Doubly-periodic meromorphic relief on ℂ / Λ extending cleanly to the 2D host clipping rect.", formula: "℘(z + ω₁) = ℘(z + ω₂) = ℘(z)", note: "Part 1/2 — Press ↓ for the 3D Riemann Surface of √z." },
-      { title: "3D Two-Sheeted Riemann Surface w = √z", sub: "Walking 4π around the branch point z = 0 smoothly traverses both sheets without a cut.", formula: "w(r e^(iθ)) = √r e^(iθ/2)      θ ∈ [0, 4π]", note: "Part 2/2 — Unfolds multi-valued complex functions into smooth manifolds." },
+      { tag: "3D |Γ(z)|", title: "3D Complex Gamma Relief |Γ(z)| (J-E-L Fig. 1)", sub: "Lanczos continuation showing simple poles at z = 0, −1, −2, −3 with residues (−1)ⁿ/n!.", formula: "Γ(z) = ∫₀^∞ t^(z−1) e^(−t) dt      Γ(n + 1) = n!", note: "Part 1/5 (3D) — Press ↓ for the entire reciprocal |1/Γ(z)| (Fig. 2)." },
+      { tag: "3D |1/Γ(z)|", title: "3D Entire Reciprocal Gamma |1 / Γ(z)| (J-E-L Fig. 2)", sub: "Inverting Γ(z) removes all poles and creates smooth simple zeros at z = 0, −1, −2, −3.", formula: "1 / Γ(z) = z e^(γz) Π (1 + z/n) e^(−z/n)", note: "Part 2/5 (3D) — Press ↓ for the Logarithmic Derivative Digamma |ψ(z)|." },
+      { tag: "3D |ψ(z)|", title: "3D Digamma Function |ψ(z)| = |Γ'(z)/Γ(z)| (Ch. I.B)", sub: "Meromorphic logarithmic derivative with simple poles at z = 0, −1, −2... and zero at x = 1.4616.", formula: "ψ(z + 1) = ψ(z) + 1/z      ψ(1) = −γ = −0.5772", note: "Part 3/5 (3D) — Press ↓ for Euler Beta / Veneziano Amplitude |B(z, w)|." },
+      { tag: "3D |B(z,w)|", title: "3D Euler Beta Function |B(z, w)| (Ch. I.A.4)", sub: "Euler's integral of the 1st kind & Veneziano dual-resonance amplitude with poles at z = 0, −1, −2...", formula: "B(z, w) = ∫₀¹ t^(z−1)(1−t)^(w−1) dt = Γ(z)Γ(w)/Γ(z+w)", note: "Part 4/5 (3D) — Press ↓ for 2D Real Γ(x), 1/Γ(x), ψ(x) & Incomplete γ(a,x)." },
+      { tag: "2D Real & γ", is2d: true, title: "2D Map Study: Γ(x), 1/Γ(x), ψ(x) & Incomplete γ(a, x)", sub: "Jahnke–Emde Figs. 4–5: real branches, minimum Γ(1.4616) = 0.8856, and lower incomplete γ(a, x).", formula: "γ(a, x) = ∫₀^x t^(a−1) e^(−t) dt      Γ(1/2) = √π", note: "Part 5/5 (2D) — Live parameter sweep of incomplete Gamma order a." },
     ],
-    draw: drawEllipticRiemann3D,
+    draw: drawGammaFullSection,
   },
   {
-    roman: "VI", cat: "3D SPECIAL FUNCTIONS", disc: "3D MODULAR · THETA · BETA · ERF", parts: 4,
-    title: "Modular Dedekind η(τ), Jacobi θ₃, Euler Beta & Erf(z)",
-    sub: "Unbounded 3D reliefs of modular forms, theta functions, Veneziano Beta amplitudes, and complex Erf(z) (↑/↓ or 1–4).",
-    formula: "η(τ) = q^(1/24) Π(1−qⁿ)      θ₃(z,q) = Σ q^(n²) e^(2inz)      B(z,w) = Γ(z)Γ(w)/Γ(z+w)",
-    note: "Press ↓ or keys 1–4 to explore Dedekind η(τ), Jacobi θ₃, Euler Beta, and Complex Erf(z).",
+    roman: "V", cat: CATS[1], disc: "INTEGRAL FUNCTIONS (CH. II–III)", badge: "3D + 2D · 5P", parts: 5,
+    title: "Integral Functions: Ei, li, Si, Ci, Error Erf(z) & Fresnel Cornu",
+    sub: "Jahnke–Emde–Lösch Ch. II & III: 3D complex Erf & E₁ reliefs plus 2D Ei/li, Si/Ci, and Cornu studies (↑/↓ or 1–5).",
+    formula: "Ei(x) = ∫ eᵗ/t dt      Si(x) = ∫ (sin t)/t dt      erf(z) = (2/√π) ∫ e^(−t²) dt",
+    note: "Press ↓ or keys 1–5 for 3D |erf(z)|, 3D |E₁(z)|, 2D Ei/li, 2D Si/Ci, and 2D Erf + Cornu Spiral.",
     partMeta: [
-      { title: "3D Dedekind Eta Modular Form |η(τ)| on ℍ", sub: "Weight-1/2 modular form under SL(2,ℤ) revealing fractal cusp cascades near the real axis.", formula: "η(τ) = q^(1/24) Π_{n=1}^∞ (1 − qⁿ)      q = e^(2πiτ)", note: "Part 1/4 — Press ↓ for Jacobi Elliptic Theta θ₃(z, q)." },
-      { title: "3D Jacobi Elliptic Theta Function |θ₃(z, q)|", sub: "Doubly quasi-periodic heat-kernel solution on the complex torus with breathing nome q.", formula: "θ₃(z, q) = 1 + 2 Σ_{n=1}^∞ q^(n²) cos(2nz)", note: "Part 2/4 — Press ↓ for Euler Beta / Veneziano String Amplitude." },
-      { title: "3D Euler Beta Function |B(z, w)| (Veneziano Amplitude)", sub: "Meromorphic string scattering amplitude displaying dual-resonance poles at z = 0, −1, −2...", formula: "B(z, w) = Γ(z) Γ(w) / Γ(z + w) = ∫₀¹ t^(z−1)(1−t)^(w−1) dt", note: "Part 3/4 — Press ↓ for the Complex Error Function erf(z)." },
-      { title: "3D Complex Error Function |erf(z)| (Stokes Rays)", sub: "Flattens to ±1 along the real axis while exploding exponentially across the ±45° Stokes sectors.", formula: "erf(z) = (2/√π) ∫₀^z e^(−t²) dt", note: "Part 4/4 — Canonical example of the Stokes phenomenon in asymptotics." },
+      { tag: "3D |erf(z)|", title: "3D Complex Error Function |erf(z)| (Ch. III.1 Stokes Rays)", sub: "Flattens to ±1 along the real axis while exploding exponentially across the ±45° Stokes sectors.", formula: "erf(z) = (2/√π) ∫₀^z e^(−t²) dt", note: "Part 1/5 (3D) — Press ↓ for 3D Complex Exponential Integral |E₁(z)|." },
+      { tag: "3D |E₁(z)|", title: "3D Complex Exponential Integral |E₁(z)| (Ch. II.1)", sub: "Logarithmic singularity at z = 0 with a 2πi branch-cut jump along the negative real axis.", formula: "E₁(z) = ∫_z^∞ (e^(−t) / t) dt = −γ − ln z − Σ (−z)ⁿ/(n·n!)", note: "Part 2/5 (3D) — Press ↓ for 2D Exponential & Logarithmic Integrals." },
+      { tag: "2D Ei & li", is2d: true, title: "2D Integral Study: Ei*(x), E₁(x) = −Ei(−x) & li(x) (Table 4)", sub: "Cauchy principal-value Ei*(x), positive decay E₁(x), and prime-counting logarithmic integral li(x).", formula: "li(x) = ∫₀^x dt / ln t = Ei*(ln x)      (Pole at x = 1)", note: "Part 3/5 (2D) — Press ↓ for 2D Sine & Cosine Integrals Si(x), Ci(x)." },
+      { tag: "2D Si & Ci", is2d: true, title: "2D Integral Study: Sine & Cosine Integrals Si(x), Ci(x) (Tables 5–6)", sub: "Oscillatory convergence Si(x) → π/2 with Gibbs overshoot Si(π) = 1.8519 and Ci(x) → 0.", formula: "Si(x) = ∫₀^x (sin t / t) dt      Ci(x) = −∫_x^∞ (cos t / t) dt", note: "Part 4/5 (2D) — Press ↓ for 2D Error Function & Fresnel Cornu Spiral." },
+      { tag: "2D Erf+Cornu", is2d: true, title: "2D Integral Study: Erf(x), Gaussian & Fresnel Cornu Spiral", sub: "Standard probability integral Φ(x) paired with optical diffraction Fresnel spiral (C(u), S(u)).", formula: "C(u) = ∫₀^u cos(πt²/2) dt      S(u) = ∫₀^u sin(πt²/2) dt", note: "Part 5/5 (2D) — Cornu spiral winds asymptotically into foci (±1/2, ±1/2)." },
     ],
-    draw: drawSpecialZoo3D,
+    draw: drawIntegralFunctionsSection,
   },
   {
-    roman: "VII", cat: "3D TOPOLOGICAL · CALABI–YAU · YM · LIE", disc: "3D MINIMAL SURFACES", parts: 3,
-    title: "Minimal & Non-Orientable Surfaces: Enneper, Klein, Bonnet",
-    sub: "Zero-mean-curvature Enneper saddle, Figure-8 Klein Bottle, and Catenoid ↔ Helicoid isometric morph (↑/↓ or 1–3).",
-    formula: "H = (κ₁ + κ₂) / 2 = 0      χ(Klein) = 0",
-    note: "Soap films minimize area (H = 0); Catenoid and Helicoid are locally isometric.",
+    roman: "VI", cat: CATS[1], disc: "RIEMANN ZETA (CH. IV)", badge: "3D + 2D · 4P", parts: 4,
+    title: "Riemann Zeta Function ζ(s): Critical Strip, Pole & Prime Formula",
+    sub: "Jahnke–Emde–Lösch Ch. IV: 3D critical strip & full-plane functional continuation + 2D spiral & primes (↑/↓ or 1–4).",
+    formula: "ζ(s) = Σ n⁻ˢ = Π (1 − p⁻ˢ)⁻¹      ζ(s) = 2ˢ π^(s−1) sin(πs/2) Γ(1−s) ζ(1−s)",
+    note: "Press ↓ or keys 1–4 for 3D Critical Strip, 3D Pole/Trivial Zeros, 2D Spiral, and 2D Prime ψ(x).",
     partMeta: [
-      { title: "Enneper Minimal Surface (Mean Curvature H = 0)", sub: "Self-intersecting algebraic minimal surface parameterized by Weierstrass–Enneper data.", formula: "x = u − u³/3 + uv²      y = v − v³/3 + vu²      z = u² − v²", note: "Part 1/3 — Press ↓ for the Figure-8 Klein Bottle." },
-      { title: "Figure-8 Klein Bottle (Non-Orientable Surface)", sub: "Closed one-sided manifold with Euler characteristic χ = 0 embedded in 3D via self-intersection.", formula: "π₁(K) = ⟨a, b | aba⁻¹b = 1⟩", note: "Part 2/3 — Press ↓ for the Catenoid ↔ Helicoid morph." },
-      { title: "Bonnet Isometric Morph: Catenoid ↔ Helicoid", sub: "Continuous isometric bending preserving H = 0 and Gaussian curvature K at every angle α.", formula: "X(α) = cos(α) X_cat + sin(α) X_hel      (H ≡ 0)", note: "Part 3/3 — Zero stretching throughout the entire transformation." },
+      { tag: "3D Strip", title: "3D Riemann Zeta |ζ(s)| over the Critical Strip", sub: "Edge-to-edge 3D relief with glowing Re(s) = 1/2 critical line plunging to zeros γ₁=14.13, γ₂=21.02.", formula: "ζ(s) = (1 − 2^(1−s))⁻¹ Σ (−1)^(n−1) n⁻ˢ      Re(s) = 1/2", note: "Part 1/4 (3D) — Press ↓ for Full-Plane Pole s=1 & Trivial Zeros s=−2, −4." },
+      { tag: "3D Pole & 0s", title: "3D Full-Plane |ζ(s)|: Simple Pole s = 1 & Trivial Zeros", sub: "Analytic continuation via Riemann's functional equation revealing the pole at s = 1 and zeros at −2, −4.", formula: "ζ(s) = 2ˢ π^(s−1) sin(πs/2) Γ(1−s) ζ(1−s)", note: "Part 2/4 (3D) — Press ↓ for 2D Critical-Line Spiral & First 10 Zeros." },
+      { tag: "2D Spiral", is2d: true, title: "2D Map Study: Critical-Line Spiral ζ(1/2 + it) & |ζ(1/2 + it)|", sub: "J-E-L Table 13: parametric trajectory passing through origin at γ₁ = 14.1347, γ₂ = 21.0220...", formula: "ζ(1/2 + iγₙ) = 0      γ₁ = 14.1347, γ₂ = 21.0220, γ₃ = 25.0109", note: "Part 3/4 (2D) — Press ↓ for Riemann–von Mangoldt Prime Explicit Formula." },
+      { tag: "2D Primes", is2d: true, title: "2D Map Study: Explicit Prime-Counting Formula ψ(x) from Zeros", sub: "Summing oscillatory waves over the first 10 non-trivial zeros reconstructs the prime-power staircase.", formula: "ψ(x) = x − Σ_ρ x^ρ / ρ − ln(2π) − ½ ln(1 − x⁻²)", note: "Part 4/4 (2D) — Each zero sharpens the prime jumps of Chebyshev's ψ(x)." },
     ],
-    draw: drawMinimalSurfaces3D,
+    draw: drawZetaFullSection,
   },
+
+  // ── CATEGORY III: ELLIPTIC INTEGRALS & FUNCTIONS (7–8, J-E-L Ch. V–VI) ───
   {
-    roman: "VIII", cat: "3D TOPOLOGICAL · CALABI–YAU · YM · LIE", disc: "3D CALABI–YAU SPACES", parts: 5,
-    title: "Calabi–Yau Spaces: Quintic, K3, Sextic, Dwork Conifold & Cubic",
-    sub: "Five canonical Ricci-flat Kähler Calabi–Yau manifolds across dimensions 1, 2, and 3 (↑/↓ or 1–5).",
-    formula: "z₁ⁿ + z₂ⁿ − 5ψ z₁z₂ = 1      Ric(g) = 0      c₁(M) = 0",
-    note: "Press ↓ or keys 1–5 to step through Quintic, K3, Sextic, Dwork Conifold, and Cubic CY manifolds.",
+    roman: "VII", cat: CATS[2], disc: "ELLIPTIC INTEGRALS (CH. V)", badge: "3D + 2D · 4P", parts: 4,
+    title: "Elliptic Integrals (All Kinds): F(φ,k), E(φ,k), Π(n;φ,k), K(k), E(k)",
+    sub: "Jahnke–Emde–Lösch Ch. V: 3D incomplete F & Π surfaces plus 2D complete K/E/K'/E' & modular families (↑/↓ or 1–4).",
+    formula: "F(φ,k) = ∫ dθ/√(1−k²sin²θ)      E(φ,k) = ∫ √(1−k²sin²θ) dθ      KE' + K'E − KK' = π/2",
+    note: "Press ↓ or keys 1–4 for 3D F(φ,k), 3D Π(n;φ,k), 2D Complete K/E, and 2D Incomplete Family.",
     partMeta: [
-      { title: "Calabi–Yau 3-Fold: Quintic Hypersurface (n = 5, 25 Patches)", sub: "Iconic Type IIB string-theory quintic in ℂP⁴ with Hodge numbers h¹'¹ = 1, h²'¹ = 101, χ = −200.", formula: "z₁⁵ + z₂⁵ = 1      SU(3) Holonomy      χ = −200", note: "Part 1/5 — Press ↓ for the K3 Quartic Surface (CY2)." },
-      { title: "Calabi–Yau 2-Fold: K3 Quartic Surface (n = 4, 16 Patches)", sub: "Unique compact simply-connected Calabi–Yau 2-fold with SU(2) holonomy and Euler χ = +24.", formula: "z₁⁴ + z₂⁴ = 1      SU(2) Holonomy      χ = +24", note: "Part 2/5 — Press ↓ for the Sextic Calabi–Yau (n = 6)." },
-      { title: "Calabi–Yau 3-Fold: Sextic Hypersurface (n = 6, 36 Patches)", sub: "Six-fold degree-6 Calabi–Yau slice in weighted projective space 𝕎ℙ⁴(1,1,1,1,2) (χ = −204).", formula: "z₁⁶ + z₂⁶ = 1      36 Complex Patches      χ = −204", note: "Part 3/5 — Press ↓ for the Dwork Pencil Mirror Conifold." },
-      { title: "Dwork Pencil Mirror Conifold (z₁⁵ + z₂⁵ − 5ψ z₁z₂ = 1)", sub: "Modulus ψ(t) deforms the quintic throat toward the conifold singularity of mirror symmetry.", formula: "z₁⁵ + z₂⁵ − 5ψ(t) z₁ z₂ = 1      (Mirror Symmetry)", note: "Part 4/5 — Press ↓ for the Elliptic Cubic Torus (CY1)." },
-      { title: "Calabi–Yau 1-Fold: Elliptic Cubic Torus (n = 3, 9 Patches)", sub: "Flat 3-fold algebraic slice z₁³ + z₂³ = 1 in ℂP² with U(1) holonomy and χ = 0.", formula: "z₁³ + z₂³ = 1      U(1) Holonomy      χ = 0", note: "Part 5/5 — Every compact Calabi–Yau 1-fold is a flat elliptic torus T²." },
+      { tag: "3D F(φ,k)", title: "3D Panorama: Incomplete Elliptic Integral 1st Kind F(φ, k)", sub: "Smooth integral surface rising into a logarithmic wall as k → 1 and φ → π/2 (pendulum period).", formula: "F(φ, k) = ∫₀^φ dθ / √(1 − k² sin²θ)      K(k) = F(π/2, k)", note: "Part 1/4 (3D) — Press ↓ for 3rd-Kind Incomplete Integral Π(n; φ, k)." },
+      { tag: "3D Π(n;φ,k)", title: "3D Panorama: Elliptic Integral 3rd Kind Π(n; φ, k)", sub: "Three-parameter elliptic integral with live characteristic sweep n(t), reducing to F(φ, k) at n = 0.", formula: "Π(n; φ, k) = ∫₀^φ dθ / ((1 − n sin²θ) √(1 − k² sin²θ))", note: "Part 2/4 (3D) — Press ↓ for 2D Complete Integrals K(k), E(k), K', E'." },
+      { tag: "2D Complete", is2d: true, title: "2D Integral Study: Complete K(k), E(k), K'(k), E'(k) (Tables 16–17)", sub: "Computed via Gauss's Arithmetic–Geometric Mean (AGM), verifying Legendre's exact identity = π/2.", formula: "K(k) = π / (2 AGM(1, k'))      KE' + K'E − KK' = π/2", note: "Part 3/4 (2D) — Press ↓ for 2D Incomplete F(φ, sin α) & E(φ, sin α) Family." },
+      { tag: "2D Family", is2d: true, title: "2D Integral Study: Incomplete F(φ, sin α) & E(φ, sin α) (Tables 14–15)", sub: "Family curves for modular angles α = 0°, 30°, 60°, 75°, 85° spanning linear φ to logarithmic K(k).", formula: "k = sin α      E(φ, 0) = φ      E(φ, 1) = sin φ", note: "Part 4/4 (2D) — Arc length of an ellipse of eccentricity k is 4a E(k)." },
     ],
-    draw: drawCalabiYau3D,
+    draw: drawEllipticIntegralsSection,
   },
   {
-    roman: "IX", cat: "3D TOPOLOGICAL · CALABI–YAU · YM · LIE", disc: "3D YANG–MILLS & HOPF", parts: 2,
-    title: "Yang–Mills Instanton and SU(2) Hopf Fibration",
-    sub: "BPST SU(2) Yang–Mills topological action density Tr(F²) and linked S³ → S² Hopf gauge fibers (↑/↓ or 1–2).",
-    formula: "F = dA + A ∧ A      S = (1/4g²) ∫ Tr(F ∧ *F) = 8π²|Q|/g²",
-    note: "Self-dual Yang–Mills instantons tunnel between topological vacua labeled by Chern class Q.",
+    roman: "VIII", cat: CATS[2], disc: "ELLIPTIC FUNCTIONS (CH. VI)", badge: "3D + 2D · 5P", parts: 5,
+    title: "Elliptic Functions: Jacobi sn/cn/dn, Weierstrass ℘, Theta θ₃ & η(τ)",
+    sub: "Jahnke–Emde–Lösch Ch. VI: 3D doubly-periodic reliefs of sn, ℘, θ₃, η plus 2D Jacobi curves (↑/↓ or 1–5).",
+    formula: "sn²u + cn²u = 1      (℘')² = 4℘³ − g₂℘ − g₃      θ₃(z,q) = 1 + 2 Σ q^(n²) cos(2nz)",
+    note: "Press ↓ or keys 1–5 for 3D |sn|, 3D |℘|, 3D |θ₃|, 3D |η(τ)|, and 2D Real Jacobi sn/cn/dn.",
     partMeta: [
-      { title: "BPST SU(2) Yang–Mills Instanton–Anti-Instanton Density", sub: "3D topological action density Tr(F_μν F^μν) ∝ ρ⁴/(r² + ρ²)⁴ bounded only by the host rect.", formula: "Tr(F_μν F^μν) = 48 ρ⁴ / (r² + ρ²)⁴      Q = ±1", note: "Part 1/2 — Press ↓ for the SU(2) = S³ → S² Hopf Fibration." },
-      { title: "SU(2) ≅ S³ → S² Hopf Fibration (Gauge Bundle)", sub: "Stereographic projection of linked S¹ gauge fibers on nested Villarceau tori (Chern number c₁ = 1).", formula: "S¹ ↪ SU(2) ≅ S³ → S²      Lk(F₁, F₂) = 1", note: "Part 2/2 — The canonical non-trivial U(1) principal bundle over S² (Dirac monopole)." },
+      { tag: "3D |sn(z,k)|", title: "3D Complex Jacobi Elliptic |sn(z, k)| (Ch. VI.A)", sub: "Doubly-periodic meromorphic checkerboard of simple zeros and poles with periods 4K and 2iK'.", formula: "sn(u + 4K, k) = sn(u, k)      sn(u + 2iK', k) = sn(u, k)", note: "Part 1/5 (3D) — Press ↓ for Weierstrass Elliptic Lattice |℘(z)|." },
+      { tag: "3D |℘(z)|", title: "3D Weierstrass Elliptic Lattice |℘(z)| (Ch. VI.B)", sub: "Doubly-periodic torus relief with double poles on Λ = ℤω₁ + ℤω₂ satisfying (℘')² = 4℘³ − g₂℘ − g₃.", formula: "℘(z + ω₁) = ℘(z + ω₂) = ℘(z)", note: "Part 2/5 (3D) — Press ↓ for Jacobi Elliptic Theta |θ₃(z, q)|." },
+      { tag: "3D |θ₃(z,q)|", title: "3D Jacobi Elliptic Theta Function |θ₃(z, q)| (Ch. VI.C)", sub: "Doubly quasi-periodic heat-kernel solution on the complex torus with breathing nome q = e^(iπτ).", formula: "θ₃(z, q) = 1 + 2 Σ_{n=1}^∞ q^(n²) cos(2nz)", note: "Part 3/5 (3D) — Press ↓ for Modular Dedekind |η(τ)| on ℍ." },
+      { tag: "3D |η(τ)|", title: "3D Dedekind Eta Modular Form |η(τ)| on ℍ (Ch. VI.C.4)", sub: "Weight-1/2 modular form under SL(2,ℤ) revealing fractal cusp cascades near the real axis.", formula: "η(τ) = q^(1/24) Π_{n=1}^∞ (1 − qⁿ)      q = e^(2πiτ)", note: "Part 4/5 (3D) — Press ↓ for 2D Real Jacobi sn, cn, dn Curves." },
+      { tag: "2D sn/cn/dn", is2d: true, title: "2D Map Study: Real Jacobi sn(u, k), cn(u, k), dn(u, k)", sub: "Nonlinear pendulum oscillations morphing smoothly from sin/cos (k = 0) to tanh/sech (k → 1).", formula: "sn²u + cn²u = 1      k² sn²u + dn²u = 1", note: "Part 5/5 (2D) — Computed to machine precision via Descending Landen Transform." },
     ],
-    draw: drawYangMills3D,
+    draw: drawEllipticFunctionsSection,
   },
+
+  // ── CATEGORY IV: ORTHOGONAL POLYNOMIALS & SPHERICAL (9–10, J-E-L Ch. VII–VIII)
   {
-    roman: "X", cat: "3D TOPOLOGICAL · CALABI–YAU · YM · LIE", disc: "3D LIE MANIFOLDS", parts: 2,
-    title: "Lie Group Manifolds: Dupin Cyclide & SU(2) Trefoil",
-    sub: "Conformal Lie Dupin Cyclide torus and (2,3)-Trefoil Seifert surface embedded in SU(2) ≅ S³ (↑/↓ or 1–2).",
-    formula: "SU(2) ≅ S³      [Tₐ, T_b] = i f_abc T_c      K(2,3) ⊂ S³",
-    note: "Smooth Lie group symmetries generate conformal cyclides and knotted minimal Seifert ribbons.",
+    roman: "IX", cat: CATS[3], disc: "ORTHOGONAL POLYNOMIALS (CH. VII)", badge: "3D + 2D · 5P", parts: 5,
+    title: "Orthogonal Polynomials: Chebyshev, Laguerre & Hermite",
+    sub: "Jahnke–Emde–Lösch Ch. VII: 3D Complex Chebyshev & 2D Hermite-Gaussian + 2D T_n, L_n, H_n studies (↑/↓ or 1–5).",
+    formula: "Tₙ(cos θ) = cos(nθ)      lₙ(x) = e^(−x/2) Lₙ(x)      φₙ(x) ∝ e^(−x²/2) Hₙ(x)",
+    note: "Press ↓ or keys 1–5 for 3D |Tₙ(z)|, 3D Hermite Carpet, 2D Chebyshev, 2D Laguerre, and 2D Hermite.",
     partMeta: [
-      { title: "Conformal Lie Dupin Cyclide (T² Inversion Manifold)", sub: "Inversion of a maximal torus under the Möbius/Lie sphere-geometry group.", formula: "x(u,v) = (d(c − a cos u cos v) + b² cos u) / (a − c cos u cos v)", note: "Part 1/2 — Press ↓ for the (2,3) Trefoil Seifert Surface in SU(2)." },
-      { title: "(2,3) Trefoil Knot & Seifert Surface in SU(2) ≅ S³", sub: "Twisted Seifert ribbon bounded by the (2,3)-torus knot inside the Lie group manifold SU(2).", formula: "z₁² + z₂³ = 0  ∩  S³      (Milnor Fibration)", note: "Part 2/2 — The trefoil is the link of the cusp singularity z₁² + z₂³ = 0." },
+      { tag: "3D |Tₙ(z)|", title: "3D Complex Chebyshev Relief |Tₙ(z)| (Bernstein Ellipses)", sub: "All n zeros lie cleanly inside [−1, 1] while level contours form confocal Bernstein ellipses in ℂ.", formula: "Tₙ(z) = cos(n arccos z)      Tₙ₊₁ = 2z Tₙ − Tₙ₋₁", note: "Part 1/5 (3D) — Press ↓ for 3D 2D-Oscillator Hermite–Gaussian Carpet." },
+      { tag: "3D Hermite", title: "3D Quantum Parabolic-Cylinder Carpet φₘ(x) φₙ(y)", sub: "2D quantum harmonic oscillator eigenmodes built from Hermite polynomials & Gaussian envelopes.", formula: "ψₘₙ(x,y) ∝ Hₘ(x) Hₙ(y) e^(−(x²+y²)/2)      E = (m+n+1)ℏω", note: "Part 2/5 (3D) — Press ↓ for 2D Chebyshev Tₙ(x) & Uₙ(x) Study." },
+      { tag: "2D Chebyshev", is2d: true, title: "2D Chebyshev Study: Tₙ(x) & Uₙ(x) on [−1, 1] (Ch. VII.A)", sub: "Minimax equioscillation property |Tₙ(x)| ≤ 1 with yellow Chebyshev–Gauss interpolation nodes.", formula: "Tₙ(x) = cos(n arccos x)      xₖ = cos((2k−1)π / 2n)", note: "Part 3/5 (2D) — Press ↓ for 2D Laguerre Functions lₙ(x) (Table 20)." },
+      { tag: "2D Laguerre", is2d: true, title: "2D Laguerre Study: Damped Functions lₙ(x) = e^(−x/2) Lₙ(x) (Table 20)", sub: "Orthonormal Laguerre functions on [0, ∞) governing hydrogen radial decay & Laplace inversion.", formula: "(k+1) Lₖ₊₁ = (2k+1−x) Lₖ − k Lₖ₋₁      ∫₀^∞ lₘ lₙ dx = δₘₙ", note: "Part 4/5 (2D) — Press ↓ for 2D Hermite / Parabolic Cylinder φₙ(x) (Table 21)." },
+      { tag: "2D Hermite", is2d: true, title: "2D Hermite & Parabolic Cylinder Study φₙ(x) (Table 21)", sub: "Stacked quantum harmonic oscillator eigenstates φ₀..φ₅ with exact nodal zero counts.", formula: "φₙ(x) = (2ⁿ n! √π)^(−1/2) e^(−x²/2) Hₙ(x)", note: "Part 5/5 (2D) — Eigenfunctions of the continuous Fourier transform." },
     ],
-    draw: drawLieSurfaces3D,
+    draw: drawOrthogonalPolySection,
   },
   {
-    roman: "XI", cat: "3D COMPLEX ANALYSIS", disc: "3D TAYLOR · LAURENT · LOG", parts: 4,
+    roman: "X", cat: CATS[3], disc: "SPHERICAL & LEGENDRE (CH. VIII)", badge: "3D + 2D · 5P", parts: 5,
+    title: "Spherical Harmonics Yₗᵐ(θ,φ) & Legendre Functions Pₙ, Qₙ",
+    sub: "Jahnke–Emde–Lösch Ch. VIII: 3D Laplace–Beltrami orbitals Yₗᵐ plus 2D Legendre 1st & 2nd kind Pₙ, Qₙ (↑/↓ or 1–5).",
+    formula: "∇²_S² Yₗᵐ = −l(l+1) Yₗᵐ      (1−x²) y'' − 2x y' + n(n+1) y = 0",
+    note: "Press ↓ or keys 1–5 for 3D Y₃², Y₄², Y₆⁴, Y₂⁰ orbitals and 2D Legendre Pₙ(x) & Qₙ(x) Study.",
+    partMeta: [
+      { tag: "3D Y₃²", title: "3D Spherical Harmonic Y₃² (f_xyz Tetrahedral Octupole)", sub: "l = 3, m = 2 eight-lobe harmonic displaying alternating phase sign across three nodal planes.", formula: "Y₃²(θ, φ) ∝ sin²θ cosθ cos(2φ)      λ = −12", note: "Part 1/5 (3D) — Press ↓ for Y₄² Hexadecapole." },
+      { tag: "3D Y₄²", title: "3D Spherical Harmonic Y₄² (g-Orbital Hexadecapole)", sub: "l = 4, m = 2 harmonic combining two azimuthal nodal planes with two latitudinal nodal cones.", formula: "Y₄²(θ, φ) ∝ sin²θ (7 cos²θ − 1) cos(2φ)      λ = −20", note: "Part 2/5 (3D) — Press ↓ for Y₆⁴ Cubic 64-Pole." },
+      { tag: "3D Y₆⁴", title: "3D Spherical Harmonic Y₆⁴ (i-Orbital 64-Pole)", sub: "High-degree l = 6, m = 4 harmonic spanning the cubic symmetry basis of S².", formula: "Y₆⁴(θ, φ) ∝ sin⁴θ (11 cos²θ − 1) cos(4φ)      λ = −42", note: "Part 3/5 (3D) — Press ↓ for Y₂⁰ Zonal Quadrupole." },
+      { tag: "3D Y₂⁰", title: "3D Spherical Harmonic Y₂⁰ (d_z² Zonal Quadrupole)", sub: "Axially symmetric l = 2, m = 0 zonal Legendre harmonic P₂(cos θ) = (3 cos²θ − 1)/2.", formula: "Y₂⁰(θ, φ) ∝ 3 cos²θ − 1      λ = −6", note: "Part 4/5 (3D) — Press ↓ for 2D Legendre Pₙ(x) & Qₙ(x) (Tables 22–25)." },
+      { tag: "2D Pₙ & Qₙ", is2d: true, title: "2D Map Study: Legendre 1st Kind Pₙ(x) & 2nd Kind Qₙ(x)", sub: "J-E-L Tables 22–25: orthogonal polynomials P₁..P₅ paired with logarithmically singular Qₙ(x) at x = ±1.", formula: "Q₀(x) = ½ ln((1+x)/(1−x))      (k+1)Pₖ₊₁ = (2k+1)xPₖ − kPₖ₋₁", note: "Part 5/5 (2D) — Fundamental multipole expansion basis on [−1, 1]." },
+    ],
+    draw: drawLegendreSphericalSection,
+  },
+
+  // ── CATEGORY V: BESSEL, MATHIEU, CONFLUENT & PHYSICS (11–14, J-E-L Ch. IX–XII)
+  {
+    roman: "XI", cat: CATS[4], disc: "BESSEL · KELVIN · STRUVE (CH. IX)", badge: "3D + 2D · 5P", parts: 5,
+    title: "Bessel Functions: Cylinder J, Y, Complex J₀, Airy, Modified I/K & Kelvin",
+    sub: "Jahnke–Emde–Lösch Ch. IX: 3D wavefields, |J₀(z)|, |Ai(z)| plus 2D J/Y/Struve & Modified/Kelvin studies (↑/↓ or 1–5).",
+    formula: "z² y'' + z y' + (z² − ν²) y = 0      ber(x) + i bei(x) = J₀(x e^(3πi/4))",
+    note: "Press ↓ or keys 1–5 for 3D Wavefield, 3D |J₀(z)|, 3D |Ai(z)|, 2D J/Y/H₀, and 2D I/K/Kelvin.",
+    partMeta: [
+      { tag: "3D Wavefield", title: "3D Cylindrical Bessel Wavefield Jₘ(kr) cos(mθ) (Ch. IX.A)", sub: "Unbounded 3D Helmholtz eigenmodes of a circular drum vibrating across the host viewport.", formula: "x² y'' + x y' + (x² − m²) y = 0", note: "Part 1/5 (3D) — Press ↓ for 3D Complex Bessel Relief |J₀(z)|." },
+      { tag: "3D |J₀(z)|", title: "3D Complex Bessel Relief |J₀(z)| (Jahnke–Emde Iconic Relief)", sub: "Real-axis zeros at ±2.4048, ±5.5201... rising exponentially into I₀(y) along the imaginary axis.", formula: "J₀(z) = Σ (−1)ᵏ (z/2)^(2k) / (k!)²      J₀(iy) = I₀(y)", note: "Part 2/5 (3D) — Press ↓ for 3D Complex Airy Caustic |Ai(z)|." },
+      { tag: "3D |Ai(z)|", title: "3D Complex Airy Caustic |Ai(z)| (Ch. IX.A.7)", sub: "Order-1/3 Bessel caustic oscillating on x < 0 and decaying exponentially across Stokes sectors.", formula: "Ai''(z) − z Ai(z) = 0      Ai(z) = (1/π)√(z/3) K_{1/3}(⅔ z^(3/2))", note: "Part 3/5 (3D) — Press ↓ for 2D Cylinder Jₙ, Neumann Y₀ & Struve H₀." },
+      { tag: "2D J, Y, H₀", is2d: true, title: "2D Map Study: Bessel J₀..J₂, Neumann Y₀ & Struve H₀(x)", sub: "J-E-L Ch. IX.A & C: cylindrical oscillations, marked J₀ zeros, logarithmic pole of Y₀, and Struve H₀.", formula: "J₀(x) ~ √(2/πx) cos(x − π/4)      H₀(x) − Y₀(x) ~ 2/(πx)", note: "Part 4/5 (2D) — Press ↓ for 2D Modified Bessel I, K & Kelvin ber/bei." },
+      { tag: "2D I, K, ber", is2d: true, title: "2D Map Study: Modified Bessel I₀, I₁, K₀, K₁ & Kelvin ber/bei", sub: "J-E-L Ch. IX.B: exponential growth Iₙ, Macdonald decay Kₙ, and AC skin-effect Kelvin curves.", formula: "ber(x) + i bei(x) = J₀(x e^(3πi/4))      I₀(x) K₁(x) + I₁(x) K₀(x) = 1/x", note: "Part 5/5 (2D) — Governs cylindrical heat conduction and AC wire skin depth." },
+    ],
+    draw: drawBesselFullSection,
+  },
+  {
+    roman: "XII", cat: CATS[4], disc: "MATHIEU FUNCTIONS (CH. X)", badge: "3D + 2D · 4P", parts: 4,
+    title: "Mathieu Functions ceₙ, seₙ & Ince–Strutt Stability Chart",
+    sub: "Jahnke–Emde–Lösch Ch. X: 3D elliptic drum & Floquet instability relief + 2D stability chart & ce/se (↑/↓ or 1–4).",
+    formula: "y'' + (a − 2q cos 2z) y = 0      |Tr M(π)| ≤ 2  (Stable)",
+    note: "Press ↓ or keys 1–4 for 3D Elliptic Drum, 3D Floquet Relief, 2D Ince–Strutt Chart, and 2D ce/se.",
+    partMeta: [
+      { tag: "3D Elliptic", title: "3D Elliptic-Membrane Mathieu Wavefield ceₘ(η,q) Ceₘ(ξ,q)", sub: "Confocal elliptic-coordinate Helmholtz eigenmodes vibrating around twin foci (±c, 0).", formula: "y'' + (a − 2q cos 2z) y = 0      (Confocal Elliptic Drum)", note: "Part 1/4 (3D) — Press ↓ for 3D Floquet Parametric Instability Relief." },
+      { tag: "3D Stability", title: "3D Ince–Strutt Floquet Instability Relief over (q, a)", sub: "Flat blue valleys mark stable bounded orbits (|Tr M| ≤ 2); rising peaks mark parametric resonance tongues.", formula: "μ(a, q) = (1/π) arccosh(|Tr M(π)| / 2)", note: "Part 2/4 (3D) — Press ↓ for 2D Ince–Strutt Stability Chart aₙ(q), bₙ(q)." },
+      { tag: "2D Chart", is2d: true, title: "2D Map Study: Ince–Strutt Stability Chart aₙ(q), bₙ(q) (Ch. X.2)", sub: "Characteristic eigenvalue curves separating stable Paul-trap / Kapitza-pendulum zones from instability.", formula: "a₀(q) = −q²/2 + 7q⁴/128 ...      a₁, b₁ = 1 ± q − q²/8 ...", note: "Part 3/4 (2D) — Press ↓ for 2D Periodic Mathieu Functions ceₙ, seₙ." },
+      { tag: "2D ceₙ & seₙ", is2d: true, title: "2D Map Study: Periodic Mathieu Functions ce₀..ce₂, se₁..se₂ (Ch. X.3)", sub: "Fourier-series eigenfunctions deforming smoothly from cos(nz), sin(nz) as parameter q(t) sweeps.", formula: "ce₂ₙ(z, q) = Σ A₂ᵣ cos(2rz)      se₂ₙ₊₁(z, q) = Σ B₂ᵣ₊₁ sin((2r+1)z)", note: "Part 4/4 (2D) — Even & odd 2π-periodic solutions of Mathieu's equation." },
+    ],
+    draw: drawMathieuSection,
+  },
+  {
+    roman: "XIII", cat: CATS[4], disc: "CONFLUENT & WHITTAKER (CH. XI)", badge: "3D + 2D · 4P", parts: 4,
+    title: "Confluent Hypergeometric M(a,c;z) & Whittaker M_{κ,μ}(z)",
+    sub: "Jahnke–Emde–Lösch Ch. XI: 3D complex Kummer & Whittaker reliefs + 2D Kummer family & Hydrogen radial (↑/↓ or 1–4).",
+    formula: "z y'' + (c − z) y' − a y = 0      M(a, c; z) = Σ (a)ₖ zᵏ / ((c)ₖ k!)",
+    note: "Press ↓ or keys 1–4 for 3D |M(a,c;z)|, 3D Whittaker, 2D Kummer Family, and 2D Hydrogen Orbitals.",
+    partMeta: [
+      { tag: "3D |M(a,c;z)|", title: "3D Complex Kummer Relief |M(a, c; z)| = |₁F₁(a; c; z)| (Ch. XI.1)", sub: "Confluent hypergeometric relief with live parameter a(t) sweeping across polynomial & exponential regimes.", formula: "M(a, c; z) = e^z M(c − a, c; −z)      (Kummer Transformation)", note: "Part 1/4 (3D) — Press ↓ for 3D Complex Whittaker |M_{κ,μ}(z)|." },
+      { tag: "3D Whittaker", title: "3D Complex Whittaker Function |M_{κ,μ}(z)| (Ch. XI.3)", sub: "Symmetric Coulomb-wave normal form of the confluent ODE with live parameter κ(t).", formula: "M_{κ,μ}(z) = e^(−z/2) z^(μ+1/2) M(μ − κ + 1/2, 2μ + 1; z)", note: "Part 2/4 (3D) — Press ↓ for 2D Kummer M(a, 1; x) Family." },
+      { tag: "2D Kummer", is2d: true, title: "2D Map Study: Kummer M(a, 1; x) & Laguerre Limits (Ch. XI.1 & 4)", sub: "Negative integer a = −n truncates to Laguerre polynomials Lₙ(x), while a = 1 recovers eˣ.", formula: "M(−n, 1; x) = Lₙ(x)      M(1, 1; x) = eˣ", note: "Part 3/4 (2D) — Press ↓ for 2D Hydrogen Radial Probability Densities." },
+      { tag: "2D Hydrogen", is2d: true, title: "2D Map Study: Hydrogen Radial Density r² |Rₙₗ(r)|² (Ch. XI.4)", sub: "Exact 1s, 2s, 2p, 3s, 3p, 3d atomic radial probability densities computed via confluent M(−(n−l−1), 2l+2; 2r/n).", formula: "Rₙₗ(r) ∝ e^(−r/n) (2r/n)ˡ M(l + 1 − n, 2l + 2; 2r/n)", note: "Part 4/4 (2D) — Exact bound states of the quantum Coulomb problem." },
+    ],
+    draw: drawConfluentSection,
+  },
+  {
+    roman: "XIV", cat: CATS[4], disc: "PHYSICS FUNCTIONS (CH. XII)", badge: "3D + 2D · 5P", parts: 5,
+    title: "Special Functions of Physics: Planck, Langevin, Debye & Heat Kernel",
+    sub: "Jahnke–Emde–Lösch Ch. XII: 3D Planck & Heat Kernel reliefs + 2D Planck, Langevin/Brillouin, Debye/Einstein (↑/↓ or 1–5).",
+    formula: "B(λ,T) ∝ λ⁻⁵/(e^(hc/λkT)−1)      L(x) = coth x − 1/x      G(x,t) = e^(−x²/4t)/√(4πt)",
+    note: "Press ↓ or keys 1–5 for 3D Planck, 3D Heat Kernel, 2D Planck, 2D Langevin, and 2D Debye/Einstein.",
+    partMeta: [
+      { tag: "3D Planck", title: "3D Planck Blackbody Surface B(λ, T) + Wien Ridge (Ch. XII.A)", sub: "Quantum spectral radiance over wavelength & temperature with glowing yellow Wien displacement ridge λT = b.", formula: "B(λ, T) = (2hc² / λ⁵) / (e^(hc / λkT) − 1)", note: "Part 1/5 (3D) — Press ↓ for 3D Heat-Conduction Source Kernel G(x, t)." },
+      { tag: "3D Heat G(x,t)", title: "3D Heat-Conduction Source Kernel G(x, t) (Ch. XII.D)", sub: "Fundamental Gaussian Green's function of ∂u/∂t = D ∂²u/∂x² spreading from a Dirac delta peak at t → 0.", formula: "G(x, t) = (4πDt)^(−1/2) exp(−x² / 4Dt)      ∫ G dx = 1", note: "Part 2/5 (3D) — Press ↓ for 2D Planck Spectrum Curves." },
+      { tag: "2D Planck", is2d: true, title: "2D Map Study: Planck Radiation Spectrum & Wien Peak (Ch. XII.A)", sub: "Blackbody spectral curves across five temperatures highlighting the shifting Wien peak λ_max ∝ 1/T.", formula: "λ_max T = 2.8978 × 10⁻³ m·K      ∫ B dλ ∝ T⁴", note: "Part 3/5 (2D) — Press ↓ for 2D Langevin & Brillouin Paramagnetism." },
+      { tag: "2D Langevin", is2d: true, title: "2D Map Study: Langevin L(x) & Brillouin B_J(x) (Ch. XII.B)", sub: "Classical dipole magnetization L(x) = coth x − 1/x compared with quantum spin-J Brillouin curves.", formula: "L(x) = coth x − 1/x ~ x/3  (x → 0)      B_{1/2}(x) = tanh(x)", note: "Part 4/5 (2D) — Press ↓ for 2D Planck–Einstein vs Debye Specific Heat." },
+      { tag: "2D Debye", is2d: true, title: "2D Map Study: Debye D₃(Θ/T) vs Planck–Einstein Specific Heat (Ch. XII.C)", sub: "Solid-state molar heat capacity C_V/3Nk showing Debye's exact low-T T³ law vs Dulong–Petit limit 1.", formula: "D₃(x) = (3/x³) ∫₀^x t⁴ eᵗ / (eᵗ − 1)² dt      C_V ~ (12π⁴/5)(T/Θ)³", note: "Part 5/5 (2D) — Resolves the low-temperature specific heat anomaly of crystals." },
+    ],
+    draw: drawPhysicsSpecialSection,
+  },
+
+  // ── CATEGORY VI: COMPLEX ANALYSIS & RIEMANN SURFACES (XV–XVII) ───────────
+  {
+    roman: "XV", cat: CATS[5], disc: "3D TAYLOR · LAURENT · LOG", badge: "3D · 4P", parts: 4,
     title: "3D Taylor Convergence, Laurent Residues, e^(1/z) & Log(z)",
     sub: "Complex Taylor convergence wall, 3D Cauchy residue contour, essential singularity e^(1/z), and Log(z) helix (↑/↓ or 1–4).",
     formula: "S_N(z) = Σ (−1)ⁿ z^(2n)      ∮ f(z) dz = 2πi Σ Res      e^(1/z)      log(z)",
     note: "Press ↓ or keys 1–4 to explore Taylor Series, Laurent Residues, Essential Singularities, and Log(z).",
     partMeta: [
-      { title: "3D Complex Taylor Series Convergence Wall (R = 1)", sub: "Partial sums of 1/(1 + z²) lock onto poles ±i inside the amber unit disk |z| = 1 and erupt outside.", formula: "S_N(z) = Σ_{n=0}^N (−1)ⁿ z^(2n)      (|z| < 1)", note: "Part 1/4 — Press ↓ for 3D Laurent Series & Cauchy Residues." },
-      { title: "3D Laurent Poles & Floating Cauchy Residue Contour", sub: "Simple poles (Res +1, −2) and a 2nd-order pole (4π winding, Res 0) swept by a 3D Cauchy contour γ.", formula: "f(z) = 1/(z−z₁) − 2/(z−z₂) + 1/(z−z₃)²      ∮ f dz = 2πi Σ Res", note: "Part 2/4 — Press ↓ for the Essential Singularity exp(1/z)." },
-      { title: "3D Essential Singularity |exp(1/z)| (Great Picard Theorem)", sub: "Explodes toward 0⁺, vanishes toward 0⁻, and oscillates through every complex phase along the imaginary axis.", formula: "e^(1/z) = Σ_{n=0}^∞ 1 / (n! zⁿ)      (Essential Singularity at 0)", note: "Part 3/4 — Press ↓ for the 3D Complex Logarithm Helix." },
-      { title: "3D Complex Logarithm Riemann Surface w = log(z)", sub: "Infinite helical staircase climbing by 2πi on every loop around the branch point z = 0.", formula: "log(r e^(iθ)) = ln(r) + i(θ + 2πk)      k ∈ ℤ", note: "Part 4/4 — Drag to orbit the multi-sheeted helical sheets." },
+      { tag: "3D Taylor", title: "3D Complex Taylor Series Convergence Wall (R = 1)", sub: "Partial sums of 1/(1 + z²) lock onto poles ±i inside the amber unit disk |z| = 1 and erupt outside.", formula: "S_N(z) = Σ_{n=0}^N (−1)ⁿ z^(2n)      (|z| < 1)", note: "Part 1/4 — Press ↓ for 3D Laurent Series & Cauchy Residues." },
+      { tag: "3D Laurent", title: "3D Laurent Poles & Floating Cauchy Residue Contour", sub: "Simple poles (Res +1, −2) and a 2nd-order pole (4π winding, Res 0) swept by a 3D Cauchy contour γ.", formula: "f(z) = 1/(z−z₁) − 2/(z−z₂) + 1/(z−z₃)²      ∮ f dz = 2πi Σ Res", note: "Part 2/4 — Press ↓ for the Essential Singularity exp(1/z)." },
+      { tag: "3D e^(1/z)", title: "3D Essential Singularity |exp(1/z)| (Great Picard Theorem)", sub: "Explodes toward 0⁺, vanishes toward 0⁻, and oscillates through every complex phase along the imaginary axis.", formula: "e^(1/z) = Σ_{n=0}^∞ 1 / (n! zⁿ)      (Essential Singularity at 0)", note: "Part 3/4 — Press ↓ for the 3D Complex Logarithm Helix." },
+      { tag: "3D Log(z)", title: "3D Complex Logarithm Riemann Surface w = log(z)", sub: "Infinite helical staircase climbing by 2πi on every loop around the branch point z = 0.", formula: "log(r e^(iθ)) = ln(r) + i(θ + 2πk)      k ∈ ℤ", note: "Part 4/4 — Drag to orbit the multi-sheeted helical sheets." },
     ],
     draw: drawComplexAnalysis3D,
   },
   {
-    roman: "XII", cat: "3D COMPLEX ANALYSIS", disc: "3D CONFORMAL & RIEMANN SPHERE", parts: 3,
+    roman: "XVI", cat: CATS[5], disc: "3D CONFORMAL & RIEMANN SPHERE", badge: "3D · 3P", parts: 3,
     title: "3D Joukowski Map, Blaschke Products & Riemann Sphere ℂ̂",
     sub: "Conformal 3D Joukowski relief, 5-fold Blaschke zero/pole mirror, and PSL(2,ℂ) Möbius Riemann Sphere (↑/↓ or 1–3).",
     formula: "w = z + a²/z      B(z) = Π (z−aₖ)/(1−āₖz)      ℂ̂ = ℂ ∪ {∞} ≅ S²",
     note: "Press ↓ or keys 1–3 to explore Joukowski, Blaschke Products, and the Riemann Sphere.",
     partMeta: [
-      { title: "3D Complex Joukowski Conformal Relief |z + a²/z|", sub: "Central simple pole at z = 0 flanked by twin conformal saddle zeros at z = ±ia.", formula: "w(z) = z + a² / z      dw/dz = 0 at z = ±a", note: "Part 1/3 — Press ↓ for 3D Blaschke Products." },
-      { title: "3D Blaschke Product B₅(z): Unit-Circle Zero/Pole Mirror", sub: "Five orbiting zeros inside |z| < 1 mirror into five towering poles outside |z| > 1 with |B| = 1 on S¹.", formula: "B(z) = Π_{k=1}^5 (z − aₖ) / (1 − āₖ z)      |B(e^(iθ))| ≡ 1", note: "Part 2/3 — Press ↓ for the 3D Riemann Sphere ℂ̂." },
-      { title: "3D Riemann Sphere ℂ̂ ≅ S² under Möbius Flow PSL(2,ℂ)", sub: "Stereographic compactification of ℂ ∪ {∞} showing cubic rational poles and zeros flowing across S².", formula: "f(z) = ((z−a)³ − 1) / ((z−a)³ + 1)      M ∈ PSL(2, ℂ)", note: "Part 3/3 — Drag to inspect both hemispheres with full HLR occlusion." },
+      { tag: "3D Joukowski", title: "3D Complex Joukowski Conformal Relief |z + a²/z|", sub: "Central simple pole at z = 0 flanked by twin conformal saddle zeros at z = ±ia.", formula: "w(z) = z + a² / z      dw/dz = 0 at z = ±a", note: "Part 1/3 — Press ↓ for 3D Blaschke Products." },
+      { tag: "3D Blaschke", title: "3D Blaschke Product B₅(z): Unit-Circle Zero/Pole Mirror", sub: "Five orbiting zeros inside |z| < 1 mirror into five towering poles outside |z| > 1 with |B| = 1 on S¹.", formula: "B(z) = Π_{k=1}^5 (z − aₖ) / (1 − āₖ z)      |B(e^(iθ))| ≡ 1", note: "Part 2/3 — Press ↓ for the 3D Riemann Sphere ℂ̂." },
+      { tag: "3D ℂ̂ Sphere", title: "3D Riemann Sphere ℂ̂ ≅ S² under Möbius Flow PSL(2,ℂ)", sub: "Stereographic compactification of ℂ ∪ {∞} showing cubic rational poles and zeros flowing across S².", formula: "f(z) = ((z−a)³ − 1) / ((z−a)³ + 1)      M ∈ PSL(2, ℂ)", note: "Part 3/3 — Drag to inspect both hemispheres with full HLR occlusion." },
     ],
     draw: drawConformalRiemann3D,
   },
   {
-    roman: "XIII", cat: "3D COMPLEX ANALYSIS", disc: "3D COMPLEX & GEN LOGARITHMS", parts: 4,
-    title: "3D Complex Logarithm, q-Log, Polylog Liₛ & Lambert W(z)",
-    sub: "Multi-sheeted ln(z) with 3D Path Observer, Tsallis q-Logarithm, Polylogarithm Liₛ(z), and Lambert W(z) (↑/↓ or 1–4).",
-    formula: "ln(z) = ln|z| + i(θ+2πk)      ln_q(z) = (z^(1−q)−1)/(1−q)      Liₛ(z) = Σ zⁿ/nˢ      W(z)e^W = z",
-    note: "Press ↓ or keys 1–4 to explore ln(z), Tsallis q-Log, Polylog Liₛ(z), and Lambert W(z) with on-surface pins.",
+    roman: "XVII", cat: CATS[5], disc: "3D LOGARITHMS · LAMBERT W · √Z", badge: "3D · 5P", parts: 5,
+    title: "3D Complex Log, Tsallis q-Log, Polylog Liₛ, Lambert W & √z",
+    sub: "Multi-sheeted ln(z) with Path Observer, q-Log, Polylog Liₛ, Lambert W(z), and 2-sheet √z Riemann surface (↑/↓ or 1–5).",
+    formula: "ln(z)      ln_q(z) = (z^(1−q)−1)/(1−q)      Liₛ(z) = Σ zⁿ/nˢ      W(z)e^W = z      w² = z",
+    note: "Press ↓ or keys 1–5 to explore ln(z), q-Log, Polylog Liₛ, Lambert W(z), and √z Riemann sheets.",
     partMeta: [
-      { title: "3D Multi-Sheeted Complex Logarithm w = ln(z) + Path Observer", sub: "Three helical Riemann sheets (−3π..+3π) with a glowing 3D Path Observer climbing continuously around z = 0.", formula: "ln(r e^(iθ)) = ln(r) + i(θ + 2πk)      k ∈ ℤ", note: "Part 1/4 — Press ↓ for the Generalized Tsallis q-Logarithm." },
-      { title: "3D Generalized q-Logarithm ln_q(z) (Tsallis Non-Extensive)", sub: "Deforms smoothly across the classical Boltzmann–Shannon limit q = 1 while bending the branch cut.", formula: "ln_q(z) = (z^(1−q) − 1) / (1 − q)      lim_{q→1} ln_q(z) = ln(z)", note: "Part 2/4 — Press ↓ for the Complex Polylogarithm Liₛ(z)." },
-      { title: "3D Complex Polylogarithm Liₛ(z) (Dilogarithm & Trilogarithm)", sub: "Order s(t) sweeps between Li₁, Li₂, and Li₃ with embedded |z| = 1 circle and path observer at z = 1.", formula: "Liₛ(z) = Σ_{n=1}^∞ zⁿ / nˢ      Liₛ(1) = ζ(s)", note: "Part 3/4 — Press ↓ for the Complex Lambert W(z) Product Logarithm." },
-      { title: "3D Complex Lambert W(z) (Product Logarithm: W e^W = z)", sub: "Principal branch W₀(z) solved via complex Halley iteration, pinning the branch point z = −1/e.", formula: "W(z) e^(W(z)) = z      Branch Point: z = −1/e ≈ −0.3679", note: "Part 4/4 — Inverse of f(w) = w e^w governing delay equations and tree combinatorics." },
+      { tag: "3D ln(z)", title: "3D Multi-Sheeted Complex Logarithm w = ln(z) + Path Observer", sub: "Three helical Riemann sheets (−3π..+3π) with a glowing 3D Path Observer climbing continuously around z = 0.", formula: "ln(r e^(iθ)) = ln(r) + i(θ + 2πk)      k ∈ ℤ", note: "Part 1/5 — Press ↓ for the Generalized Tsallis q-Logarithm." },
+      { tag: "3D q-Log", title: "3D Generalized q-Logarithm ln_q(z) (Tsallis Non-Extensive)", sub: "Deforms smoothly across the classical Boltzmann–Shannon limit q = 1 while bending the branch cut.", formula: "ln_q(z) = (z^(1−q) − 1) / (1 − q)      lim_{q→1} ln_q(z) = ln(z)", note: "Part 2/5 — Press ↓ for the Complex Polylogarithm Liₛ(z)." },
+      { tag: "3D Liₛ(z)", title: "3D Complex Polylogarithm Liₛ(z) (Dilogarithm & Trilogarithm)", sub: "Order s(t) sweeps between Li₁, Li₂, and Li₃ with embedded |z| = 1 circle and path observer at z = 1.", formula: "Liₛ(z) = Σ_{n=1}^∞ zⁿ / nˢ      Liₛ(1) = ζ(s)", note: "Part 3/5 — Press ↓ for the Complex Lambert W(z) Product Logarithm." },
+      { tag: "3D Lambert W", title: "3D Complex Lambert W(z) (Product Logarithm: W e^W = z)", sub: "Principal branch W₀(z) solved via complex Halley iteration, pinning the branch point z = −1/e.", formula: "W(z) e^(W(z)) = z      Branch Point: z = −1/e ≈ −0.3679", note: "Part 4/5 — Press ↓ for the 2-Sheeted Riemann Surface w = √z." },
+      { tag: "3D w = √z", title: "3D Two-Sheeted Riemann Surface w = √z", sub: "Walking 4π around the branch point z = 0 smoothly traverses both sheets without a cut.", formula: "w(r e^(iθ)) = √r e^(iθ/2)      θ ∈ [0, 4π]", note: "Part 5/5 — Unfolds multi-valued complex functions into smooth manifolds." },
     ],
-    draw: drawLogarithms3D,
+    draw: drawLogarithmsWithSqrt3D,
+  },
+
+  // ── CATEGORY VII: TOPOLOGICAL, CALABI–YAU, YANG–MILLS & LIE (XVIII–XXI) ──
+  {
+    roman: "XVIII", cat: CATS[6], disc: "3D MINIMAL SURFACES", badge: "3D · 3P", parts: 3,
+    title: "Minimal & Non-Orientable Surfaces: Enneper, Klein, Bonnet",
+    sub: "Zero-mean-curvature Enneper saddle, Figure-8 Klein Bottle, and Catenoid ↔ Helicoid isometric morph (↑/↓ or 1–3).",
+    formula: "H = (κ₁ + κ₂) / 2 = 0      χ(Klein) = 0",
+    note: "Soap films minimize area (H = 0); Catenoid and Helicoid are locally isometric.",
+    partMeta: [
+      { tag: "3D Enneper", title: "Enneper Minimal Surface (Mean Curvature H = 0)", sub: "Self-intersecting algebraic minimal surface parameterized by Weierstrass–Enneper data.", formula: "x = u − u³/3 + uv²      y = v − v³/3 + vu²      z = u² − v²", note: "Part 1/3 — Press ↓ for the Figure-8 Klein Bottle." },
+      { tag: "3D Klein", title: "Figure-8 Klein Bottle (Non-Orientable Surface)", sub: "Closed one-sided manifold with Euler characteristic χ = 0 embedded in 3D via self-intersection.", formula: "π₁(K) = ⟨a, b | aba⁻¹b = 1⟩", note: "Part 2/3 — Press ↓ for the Catenoid ↔ Helicoid morph." },
+      { tag: "3D Bonnet", title: "Bonnet Isometric Morph: Catenoid ↔ Helicoid", sub: "Continuous isometric bending preserving H = 0 and Gaussian curvature K at every angle α.", formula: "X(α) = cos(α) X_cat + sin(α) X_hel      (H ≡ 0)", note: "Part 3/3 — Zero stretching throughout the entire transformation." },
+    ],
+    draw: drawMinimalSurfaces3D,
+  },
+  {
+    roman: "XIX", cat: CATS[6], disc: "3D CALABI–YAU SPACES", badge: "3D · 5P", parts: 5,
+    title: "Calabi–Yau Spaces: Quintic, K3, Sextic, Dwork Conifold & Cubic",
+    sub: "Five canonical Ricci-flat Kähler Calabi–Yau manifolds across dimensions 1, 2, and 3 (↑/↓ or 1–5).",
+    formula: "z₁ⁿ + z₂ⁿ − 5ψ z₁z₂ = 1      Ric(g) = 0      c₁(M) = 0",
+    note: "Press ↓ or keys 1–5 to step through Quintic, K3, Sextic, Dwork Conifold, and Cubic CY manifolds.",
+    partMeta: [
+      { tag: "3D Quintic", title: "Calabi–Yau 3-Fold: Quintic Hypersurface (n = 5, 25 Patches)", sub: "Iconic Type IIB string-theory quintic in ℂP⁴ with Hodge numbers h¹'¹ = 1, h²'¹ = 101, χ = −200.", formula: "z₁⁵ + z₂⁵ = 1      SU(3) Holonomy      χ = −200", note: "Part 1/5 — Press ↓ for the K3 Quartic Surface (CY2)." },
+      { tag: "3D K3", title: "Calabi–Yau 2-Fold: K3 Quartic Surface (n = 4, 16 Patches)", sub: "Unique compact simply-connected Calabi–Yau 2-fold with SU(2) holonomy and Euler χ = +24.", formula: "z₁⁴ + z₂⁴ = 1      SU(2) Holonomy      χ = +24", note: "Part 2/5 — Press ↓ for the Sextic Calabi–Yau (n = 6)." },
+      { tag: "3D Sextic", title: "Calabi–Yau 3-Fold: Sextic Hypersurface (n = 6, 36 Patches)", sub: "Six-fold degree-6 Calabi–Yau slice in weighted projective space 𝕎ℙ⁴(1,1,1,1,2) (χ = −204).", formula: "z₁⁶ + z₂⁶ = 1      36 Complex Patches      χ = −204", note: "Part 3/5 — Press ↓ for the Dwork Pencil Mirror Conifold." },
+      { tag: "3D Conifold", title: "Dwork Pencil Mirror Conifold (z₁⁵ + z₂⁵ − 5ψ z₁z₂ = 1)", sub: "Modulus ψ(t) deforms the quintic throat toward the conifold singularity of mirror symmetry.", formula: "z₁⁵ + z₂⁵ − 5ψ(t) z₁ z₂ = 1      (Mirror Symmetry)", note: "Part 4/5 — Press ↓ for the Elliptic Cubic Torus (CY1)." },
+      { tag: "3D Cubic", title: "Calabi–Yau 1-Fold: Elliptic Cubic Torus (n = 3, 9 Patches)", sub: "Flat 3-fold algebraic slice z₁³ + z₂³ = 1 in ℂP² with U(1) holonomy and χ = 0.", formula: "z₁³ + z₂³ = 1      U(1) Holonomy      χ = 0", note: "Part 5/5 — Every compact Calabi–Yau 1-fold is a flat elliptic torus T²." },
+    ],
+    draw: drawCalabiYau3D,
+  },
+  {
+    roman: "XX", cat: CATS[6], disc: "3D YANG–MILLS & HOPF", badge: "3D · 2P", parts: 2,
+    title: "Yang–Mills Instanton and SU(2) Hopf Fibration",
+    sub: "BPST SU(2) Yang–Mills topological action density Tr(F²) and linked S³ → S² Hopf gauge fibers (↑/↓ or 1–2).",
+    formula: "F = dA + A ∧ A      S = (1/4g²) ∫ Tr(F ∧ *F) = 8π²|Q|/g²",
+    note: "Self-dual Yang–Mills instantons tunnel between topological vacua labeled by Chern class Q.",
+    partMeta: [
+      { tag: "3D BPST", title: "BPST SU(2) Yang–Mills Instanton–Anti-Instanton Density", sub: "3D topological action density Tr(F_μν F^μν) ∝ ρ⁴/(r² + ρ²)⁴ bounded only by the host rect.", formula: "Tr(F_μν F^μν) = 48 ρ⁴ / (r² + ρ²)⁴      Q = ±1", note: "Part 1/2 — Press ↓ for the SU(2) = S³ → S² Hopf Fibration." },
+      { tag: "3D Hopf S³", title: "SU(2) ≅ S³ → S² Hopf Fibration (Gauge Bundle)", sub: "Stereographic projection of linked S¹ gauge fibers on nested Villarceau tori (Chern number c₁ = 1).", formula: "S¹ ↪ SU(2) ≅ S³ → S²      Lk(F₁, F₂) = 1", note: "Part 2/2 — The canonical non-trivial U(1) principal bundle over S² (Dirac monopole)." },
+    ],
+    draw: drawYangMills3D,
+  },
+  {
+    roman: "XXI", cat: CATS[6], disc: "3D LIE MANIFOLDS", badge: "3D · 2P", parts: 2,
+    title: "Lie Group Manifolds: Dupin Cyclide & SU(2) Trefoil",
+    sub: "Conformal Lie Dupin Cyclide torus and (2,3)-Trefoil Seifert surface embedded in SU(2) ≅ S³ (↑/↓ or 1–2).",
+    formula: "SU(2) ≅ S³      [Tₐ, T_b] = i f_abc T_c      K(2,3) ⊂ S³",
+    note: "Smooth Lie group symmetries generate conformal cyclides and knotted minimal Seifert ribbons.",
+    partMeta: [
+      { tag: "3D Dupin", title: "Conformal Lie Dupin Cyclide (T² Inversion Manifold)", sub: "Inversion of a maximal torus under the Möbius/Lie sphere-geometry group.", formula: "x(u,v) = (d(c − a cos u cos v) + b² cos u) / (a − c cos u cos v)", note: "Part 1/2 — Press ↓ for the (2,3) Trefoil Seifert Surface in SU(2)." },
+      { tag: "3D Trefoil", title: "(2,3) Trefoil Knot & Seifert Surface in SU(2) ≅ S³", sub: "Twisted Seifert ribbon bounded by the (2,3)-torus knot inside the Lie group manifold SU(2).", formula: "z₁² + z₂³ = 0  ∩  S³      (Milnor Fibration)", note: "Part 2/2 — The trefoil is the link of the cusp singularity z₁² + z₂³ = 0." },
+    ],
+    draw: drawLieSurfaces3D,
   },
 ];
 
 // ============================================================================
 // RUNTIME, CHROME, CATEGORIZED INDEX & CONTROLS
 // ============================================================================
-const CATS = ["3D SPECIAL FUNCTIONS", "3D TOPOLOGICAL · CALABI–YAU · YM · LIE", "3D COMPLEX ANALYSIS"];
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 let index = 0, partIdx = 0, sim = {}, simTime = 0, dwell = 0, paused = false, indexOpen = false;
 let last = performance.now(), lastDom = 0;
@@ -1666,7 +1834,7 @@ function stepMesh(delta) {
   meshIdx = Math.max(0, Math.min(MESH_LEVELS.length - 1, meshIdx + delta));
   updateMeshLabel();
 }
-function resetMesh() { meshIdx = 4; updateMeshLabel(); }
+function resetMesh() { meshIdx = 5; updateMeshLabel(); }
 
 function renderChrome() {
   const s = STATIONS[index], nParts = s.parts || 1, pm = s.partMeta && s.partMeta[partIdx];
@@ -1711,8 +1879,9 @@ function togglePause() {
 }
 function buildIndex() {
   let activeCat = "ALL";
+  const totalParts = STATIONS.reduce((acc, s) => acc + (s.parts || 1), 0);
   const h = document.createElement("h2");
-  h.textContent = "HAL 9000 // PURE MATHEMATICS CATALOGUE (" + STATIONS.length + " STATIONS)";
+  h.textContent = "HAL 9000 // JAHNKE–EMDE–LÖSCH & PURE MATH TOC (" + STATIONS.length + " STATIONS · " + totalParts + " PARTS)";
   const filters = document.createElement("div"); filters.className = "idx-filters";
   const body = document.createElement("div");
 
@@ -1725,24 +1894,39 @@ function buildIndex() {
       ch.textContent = cat + "  (" + items.length + ")";
       const grid = document.createElement("div"); grid.className = "idx-grid";
       items.forEach(({ s, i }) => {
-        const b = document.createElement("button"); b.type = "button";
-        b.className = "idx-item" + (i === index ? " on" : ""); b.dataset.idx = String(i);
+        const card = document.createElement("div");
+        card.className = "idx-item" + (i === index ? " on" : ""); card.dataset.idx = String(i);
+        const head = document.createElement("div"); head.className = "head-row";
         const num = document.createElement("div"); num.className = "num"; num.textContent = s.roman + " · " + s.disc;
+        const badge = document.createElement("div"); badge.className = "badge"; badge.textContent = s.badge || ((s.parts || 1) + "P");
+        head.append(num, badge);
         const ttl = document.createElement("div"); ttl.className = "ttl"; ttl.textContent = s.title;
         const pts = document.createElement("div"); pts.className = "pts"; pts.textContent = s.formula;
-        b.append(num, ttl, pts);
-        b.addEventListener("click", (e) => { e.stopPropagation(); enter(i); toggleIndex(false); });
-        grid.append(b);
+        card.append(head, ttl, pts);
+        if (s.partMeta && s.partMeta.length > 1) {
+          const pRow = document.createElement("div"); pRow.className = "idx-parts";
+          s.partMeta.forEach((pm, pi) => {
+            const pb = document.createElement("button"); pb.type = "button";
+            pb.className = "idx-part-btn" + (pm.is2d ? " is2d" : "");
+            pb.textContent = (pi + 1) + ": " + (pm.tag || pm.title);
+            pb.title = pm.title;
+            pb.addEventListener("click", (e) => { e.stopPropagation(); enter(i, pi); toggleIndex(false); });
+            pRow.append(pb);
+          });
+          card.append(pRow);
+        }
+        card.addEventListener("click", (e) => { e.stopPropagation(); enter(i, 0); toggleIndex(false); });
+        grid.append(card);
       });
       body.append(ch, grid);
     });
   }
-  ["ALL", ...CATS].forEach((cat) => {
+  [{ id: "ALL", short: "ALL (" + STATIONS.length + ")" }, ...CAT_DEFS].forEach((cd) => {
     const p = document.createElement("button"); p.type = "button"; p.className = "pill";
-    p.textContent = cat === "ALL" ? "ALL (" + STATIONS.length + ")" : cat.split(" ")[0] + " " + cat.split(" ")[1];
-    p.setAttribute("aria-pressed", cat === "ALL" ? "true" : "false");
+    p.textContent = cd.short;
+    p.setAttribute("aria-pressed", cd.id === "ALL" ? "true" : "false");
     p.addEventListener("click", (e) => {
-      e.stopPropagation(); activeCat = cat;
+      e.stopPropagation(); activeCat = cd.id;
       filters.querySelectorAll(".pill").forEach((elP) => elP.setAttribute("aria-pressed", elP === p ? "true" : "false"));
       renderList();
     });
@@ -1906,7 +2090,7 @@ window.addEventListener("keydown", (e) => {
   else if (e.key === "i" || e.key === "I" || e.key === "Tab") { e.preventDefault(); toggleIndex(); }
   else if (e.key === "?" || e.key === "h" || e.key === "H") { e.preventDefault(); toggleLegend(); }
   else if (e.key === "Escape") { toggleIndex(false); toggleLegend(false); }
-  else if (e.key >= "1" && e.key <= "8") {
+  else if (e.key >= "1" && e.key <= "9") {
     const p = parseInt(e.key, 10) - 1;
     if (p < (STATIONS[index].parts || 1)) selectPart(p);
   }

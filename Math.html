@@ -180,17 +180,33 @@
   }
   .idx-cat:first-of-type { margin-top: 4px; }
   .idx-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 9px;
   }
   .idx-item {
-    text-align: left; background: rgba(12,15,22,0.8); color: var(--paper);
+    text-align: left; background: rgba(12,15,22,0.82); color: var(--paper);
     border: 1px solid rgba(230,225,214,0.12); padding: 10px 12px; cursor: pointer;
-    font-family: inherit;
+    font-family: inherit; display: flex; flex-direction: column; gap: 3px;
   }
   .idx-item:hover, .idx-item.on { border-color: var(--amber); background: rgba(232,164,84,0.1); }
-  .idx-item .num { font-size: 10px; color: var(--amber); letter-spacing: 0.16em; }
-  .idx-item .ttl { font-family: var(--display); font-size: 11px; margin-top: 3px; letter-spacing: 0.08em; line-height: 1.35; }
-  .idx-item .pts { font-size: 10px; color: var(--cyan); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .idx-item .head-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .idx-item .num { font-size: 10px; color: var(--amber); letter-spacing: 0.14em; }
+  .idx-item .badge {
+    font-size: 9px; letter-spacing: 0.1em; color: var(--cyan);
+    border: 1px solid rgba(127,212,204,0.28); padding: 1px 5px; border-radius: 2px;
+    white-space: nowrap;
+  }
+  .idx-item .ttl { font-family: var(--display); font-size: 11px; margin-top: 2px; letter-spacing: 0.08em; line-height: 1.35; }
+  .idx-item .pts { font-size: 10px; color: var(--cyan); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
+  .idx-parts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(230,225,214,0.08); }
+  .idx-part-btn {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
+    background: rgba(5,8,12,0.75); color: var(--paper);
+    border: 1px solid rgba(230,225,214,0.14); padding: 2px 6px; border-radius: 2px;
+    cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .idx-part-btn:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(127,212,204,0.10); }
+  .idx-part-btn.is2d { border-color: rgba(232,164,84,0.32); color: var(--amber); }
+  .idx-part-btn.is2d:hover { border-color: var(--amber); background: rgba(232,164,84,0.16); }
 
   @media (max-width: 720px) { .hal-id span.brand-txt { display: none; } .status .pill.portal-link { display: none; } }
   @media (prefers-reduced-motion: reduce) { .lamp { animation: none; } .scan { display: none; } }
@@ -241,8 +257,8 @@
   <aside id="legend" aria-label="Controls Legend">
     <div class="card">
       <h2>HAL 9000 // PURE MATH INPUT MATRIX</h2>
-      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Station (I–XII)</span></div>
-      <div class="krow"><span class="k">↑ / ↓  or  1–8</span><span class="d">Previous / Next / Jump Part</span></div>
+      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Station (I–XXI)</span></div>
+      <div class="krow"><span class="k">↑ / ↓  or  1–9</span><span class="d">Previous / Next / Jump Part (3D & 2D)</span></div>
       <div class="krow"><span class="k">LEFT DRAG</span><span class="d">3D CAD Orbit (Yaw / Pitch)</span></div>
       <div class="krow"><span class="k">RIGHT / SHIFT+DRAG</span><span class="d">3D CAD Pan (Infinite Domain)</span></div>
       <div class="krow"><span class="k">WHEEL</span><span class="d">3D CAD Zoom (Recalculates Bounds)</span></div>
@@ -258,6 +274,7 @@
 
   <nav id="index" aria-label="Catalogue"></nav>
 </div>
+<script src="math-special.js"></script>
 <script src="math-engine.js"></script>
 </body>
 </html>
