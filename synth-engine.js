@@ -2190,33 +2190,66 @@ const DEMOS = [
     },
   },
 
-  // 25 — Composition 5: Apollo 440 "Electro Glide in Blue" (1997) — 1:1 PCM Transcription (478 ms Stereo Echo) + A440 Finale
+  // 25 — Composition 5: Apollo 440 "Electro Glide in Blue" (1997) — 1:1 PCM Transcription + Per-Voice Stereo Echo + A440 Finale
   {
-    id: "25", name: "TRACK 5: ELECTRO GLIDE IN BLUE", src: "APOLLO 440 · 478ms STEREO ECHO · A440 FINALE", speed: 16 / 12.36, bsound: true, reverb: 0.42, echo: { sec: 0.478, spread: 0.016, fb: 0.58, wet: 0.44 },
+    id: "25", name: "TRACK 5: ELECTRO GLIDE IN BLUE", src: "APOLLO 440 · PER-VOICE ECHO · A440 FINALE", speed: 16 / 12.36, bsound: true, reverb: 0.38,
     parts: [
       {
-        m: 1, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.78, 0.50],
-        f: "Part 1/6 · Opening Piano Drops (0:08–0:20 PCM · Exact 478 ms Stereo Echo)\nDry Struck Drops (C4·A4·G4·A4·F4·E4 → F4·A4·F4·E4) over D3/D2 Bass — Pure 478 ms Echo Tail",
+        m: 1, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.78, 0.56],
+        echoes: [
+          { sec: 0.478, spread: 0.016, fb: 0.60, wet: 0.48, damp: 0.40 },
+          { sec: 0.478, spread: 0.022, fb: 0.54, wet: 0.36, damp: 0.28 },
+          null,
+        ],
+        f: "Part 1/6 · Opening Piano Drops (0:08–0:20 PCM · Per-Voice 478 ms Echo · Dry Bass)\nDry Struck Drops (C4·A4·G4·A4·F4·E4 → F4·A4·F4·E4) + 478 ms Stereo Piano Echo · Clean Dry D3/D2 Bass",
       },
       {
-        m: 2, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.80, 0.54],
-        f: "Part 2/6 · Iconic Solo Piano-Drop Riff (0:20.7–0:33.1 PCM · Exact 6.18 s Cycle × 2)\nDry Strikes Only (D5/G4·A4·G5/D5·D5/D4·A4 · F4·A4·C4·G4·E4) → 3.5 s Pure 478 ms Stereo Echo",
+        m: 2, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.80, 0.60],
+        echoes: [
+          { sec: 0.478, spread: 0.016, fb: 0.62, wet: 0.50, damp: 0.40 },
+          { sec: 0.478, spread: 0.022, fb: 0.55, wet: 0.38, damp: 0.28 },
+          null,
+        ],
+        f: "Part 2/6 · Iconic Solo Piano-Drop Riff (0:20.7–0:33.1 PCM · Exact 6.18 s Cycle × 2)\nPiano Drops Only in 478 ms Stereo Echo (3.5 s Pure Decay) · Dry C3/D3/D2 Bass",
       },
       {
-        m: 3, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.78, 0.52],
-        f: "Part 3/6 · Solo Piano Bloom (0:33.1–0:45.4 PCM · Exact 1:1 Transcription)\nG4·A4·E5·C4·A4·F4·E4 → D5·F5·F4·E4·C4 → D5·E5·C4·D5·F4·E5·E4·C4·D5·A4·E5·E4·C4",
+        m: 3, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.78, 0.58],
+        echoes: [
+          { sec: 0.478, spread: 0.016, fb: 0.58, wet: 0.46, damp: 0.40 },
+          { sec: 0.478, spread: 0.022, fb: 0.52, wet: 0.34, damp: 0.28 },
+          null,
+        ],
+        f: "Part 3/6 · Solo Piano Bloom (0:33.1–0:45.4 PCM · Per-Voice 478 ms Echo · Dry Bass)\nG4·A4·E5·C4·A4·F4·E4 → D5·F5·F4·E4·C4 → D5·E5·C4·D5·F4·E5·E4·C4·D5·A4·E5·E4·C4",
       },
       {
-        m: 4, modes: ["pno", "pno", "lpf", "sine"], gains: [1.0, 0.75, 0.68, 0.56],
-        f: "Part 4/6 · Full Groove & Piano-Drop Call-and-Response (1:02–1:14.4 PCM · Clean, No NSE)\nD5·F5·F4·E4·A4·G5·D5 → F5·E4·C4·E5·D5·E5·A4 → G5·C5·D5·F4·E5·E4·C5·D5·E5 + D3/C3 Bass & Kick",
+        m: 4, modes: ["pno", "pno", "lpf", "sine"], gains: [1.0, 0.76, 0.74, 0.64],
+        echoes: [
+          { sec: 0.478, spread: 0.016, fb: 0.56, wet: 0.44, damp: 0.42 },
+          { sec: 0.478, spread: 0.022, fb: 0.48, wet: 0.30, damp: 0.28 },
+          null,
+          null,
+        ],
+        f: "Part 4/6 · Full Groove & Piano-Drop Call-and-Response (1:02–1:14.4 PCM · Dry Bass & Kick)\n478 ms Echo on Piano Voices Only · Razor-Tight Dry D3/C3 Bass & Sub Kick",
       },
       {
-        m: 5, modes: ["pno", "pno", "lpf", "sine"], gains: [0.92, 0.72, 0.72, 0.58],
-        f: "Part 5/6 · Main Climax High Synth-Piano Theme (2:50–3:02.4 PCM · Exact 1:1 Transcription)\nC6·B5·C6·A5·G5·D5·E5·G5·C5·E5·A5·D5 → C6·B5·C6·G5·E5·C5·D5·C6 + Rolling D3/C3/D2 Bass & Kick",
+        m: 5, modes: ["pno", "pno", "lpf", "sine"], gains: [0.94, 0.74, 0.76, 0.66],
+        echoes: [
+          { sec: 0.478, spread: 0.016, fb: 0.54, wet: 0.42, damp: 0.38 },
+          { sec: 0.239, spread: 0.014, fb: 0.44, wet: 0.28, damp: 0.28, pingpong: true },
+          null,
+          null,
+        ],
+        f: "Part 5/6 · Main Climax High Synth-Piano Theme (2:50–3:02.4 PCM · Dual 478/239 ms Echo)\nV1 Lead 478 ms Stereo Echo + V2 Mid 239 ms Ping-Pong Echo · Dry Rolling D3/C3 Bass & Kick",
       },
       {
-        m: 6, modes: ["pno", "pno", "pno", "lpf"], gains: [1.0, 0.88, 0.78, 0.76],
-        f: "Part 6/6 · A440 Signature Finale — Fading Drops into Strong Recognizable A = 440 Hz Accord\nClosing Riff Echo (D2 → C2 → A1) Fading into Resonant A440 Accord (A2 · E4 · A4 = 440 Hz · A5)",
+        m: 6, modes: ["pno", "pno", "pno", "lpf"], gains: [1.0, 0.88, 0.78, 0.80],
+        echoes: [
+          { sec: 0.478, spread: 0.016, fb: 0.68, wet: 0.52, damp: 0.38 },
+          { sec: 0.478, spread: 0.024, fb: 0.66, wet: 0.46, damp: 0.32 },
+          { sec: 0.239, spread: 0.014, fb: 0.52, wet: 0.32, damp: 0.26, pingpong: true },
+          null,
+        ],
+        f: "Part 6/6 · A440 Signature Finale — Fading Drops into Strong Recognizable A = 440 Hz Accord\n478/239 ms Layered Piano Echoes on A5·A4(440 Hz)·E4 over Clean Dry A2→A1 Bass Foundation",
       },
     ],
     eval(x, pi) {
@@ -2637,7 +2670,7 @@ let meterRmsL = 0, meterRmsR = 0;
 let meterLimHit = 0;
 let meterBal = 0;
 
-// Static 4-Comb Schroeder Hall Reverb + Stereo Ping-Pong Tape Echo (zero hot-path allocation)
+// Static 4-Comb Schroeder Hall Reverb + Global & Per-Voice Stereo Delay Buffers (zero hot-path allocation)
 const RVB_LENS = [1559, 1699, 1847, 1993];
 const rvbBufs = RVB_LENS.map((n) => new Float32Array(n));
 const rvbIdx = new Int32Array(4);
@@ -2646,6 +2679,11 @@ const ECHO_MAX = 48000;
 const echoBufL = new Float32Array(ECHO_MAX);
 const echoBufR = new Float32Array(ECHO_MAX);
 let echoIdx = 0, echoLpL = 0, echoLpR = 0;
+const vEchoL = Array.from({ length: MAX_VOICES }, () => new Float32Array(ECHO_MAX));
+const vEchoR = Array.from({ length: MAX_VOICES }, () => new Float32Array(ECHO_MAX));
+const vEchoIdx = new Int32Array(MAX_VOICES);
+const vEchoLpL = new Float32Array(MAX_VOICES);
+const vEchoLpR = new Float32Array(MAX_VOICES);
 function clearReverb() {
   rvbBufs.forEach((b) => b.fill(0));
   rvbLp.fill(0);
@@ -2654,6 +2692,13 @@ function clearReverb() {
   echoIdx = 0;
   echoLpL = 0;
   echoLpR = 0;
+  for (let v = 0; v < MAX_VOICES; v++) {
+    vEchoL[v].fill(0);
+    vEchoR[v].fill(0);
+  }
+  vEchoIdx.fill(0);
+  vEchoLpL.fill(0);
+  vEchoLpR.fill(0);
   vNoteAge.fill(0);
   vPrevActive.fill(0);
 }
@@ -2773,6 +2818,7 @@ function ensureAudio() {
     let demo = DEMOS[demoIdx];
     let partModes = demo.parts[partIdx].modes || null;
     let partGains = demo.parts[partIdx].gains || null;
+    let partEchoes = demo.parts[partIdx].echoes || null;
     const dt = 1 / sr;
     let dx = (playing && !scrubbing) ? demo.speed * dt : 0;
     let blkPkL = 0, blkPkR = 0, blkSqL = 0, blkSqR = 0, limTrig = 0;
@@ -2800,6 +2846,7 @@ function ensureAudio() {
         } else {
           vPrevActive[v] = 0;
         }
+        let vDryL = 0, vDryR = 0;
         if (vEnv[v] > 1e-4) {
           const f = vFreq[v];
           vPhase[v] += 2 * PI * f * dt;
@@ -2826,8 +2873,33 @@ function ensureAudio() {
           const sample = wave * vEnv[v] * vGain * norm;
           // Equal-power / subtle stereo spread across voices (Orchestra.html Eq. 8)
           const pan = nv > 1 ? ((v / (nv - 1)) - 0.5) * 0.45 : 0;
-          sL += sample * (0.5 - pan);
-          sR += sample * (0.5 + pan);
+          vDryL = sample * (0.5 - pan);
+          vDryR = sample * (0.5 + pan);
+          sL += vDryL;
+          sR += vDryR;
+        }
+        // Per-voice custom stereo delay & echo (keeps ringing smoothly even when dry gate closes)
+        const veCfg = partEchoes ? partEchoes[v] : null;
+        if (veCfg && veCfg.wet > 0) {
+          const bL = vEchoL[v], bR = vEchoR[v];
+          const wIdx = vEchoIdx[v];
+          const dL = clamp(Math.round(veCfg.sec * sr), 1, ECHO_MAX - 1);
+          const dR = clamp(Math.round((veCfg.sec + (veCfg.spread || 0)) * sr), 1, ECHO_MAX - 1);
+          const rdL = bL[(wIdx - dL + ECHO_MAX) % ECHO_MAX];
+          const rdR = bR[(wIdx - dR + ECHO_MAX) % ECHO_MAX];
+          const dmp = veCfg.damp || 0.36;
+          vEchoLpL[v] += (rdL - vEchoLpL[v]) * dmp;
+          vEchoLpR[v] += (rdR - vEchoLpR[v]) * dmp;
+          if (veCfg.pingpong) {
+            bL[wIdx] = vDryL + vEchoLpR[v] * veCfg.fb;
+            bR[wIdx] = vDryR + vEchoLpL[v] * veCfg.fb;
+          } else {
+            bL[wIdx] = vDryL + vEchoLpL[v] * veCfg.fb;
+            bR[wIdx] = vDryR + vEchoLpR[v] * veCfg.fb;
+          }
+          vEchoIdx[v] = (wIdx + 1) % ECHO_MAX;
+          sL += vEchoLpL[v] * veCfg.wet;
+          sR += vEchoLpR[v] * veCfg.wet;
         }
       }
 
@@ -2835,7 +2907,7 @@ function ensureAudio() {
       lpL += (sL - lpL) * lpAlpha;
       lpR += (sR - lpR) * lpAlpha;
       let mixL = lpL, mixR = lpR;
-      const echoCfg = demo.echo || null;
+      const echoCfg = demo.parts[partIdx].echo !== undefined ? demo.parts[partIdx].echo : (demo.echo || null);
       if (echoCfg && echoCfg.wet > 0) {
         const dSampL = clamp(Math.round(echoCfg.sec * sr), 1, ECHO_MAX - 1);
         const dSampR = clamp(Math.round((echoCfg.sec + (echoCfg.spread || 0)) * sr), 1, ECHO_MAX - 1);
@@ -2896,6 +2968,7 @@ function ensureAudio() {
             }
             partModes = demo.parts[partIdx].modes || null;
             partGains = demo.parts[partIdx].gains || null;
+            partEchoes = demo.parts[partIdx].echoes || null;
             needChromeUpdate = true;
           }
         }
@@ -3228,15 +3301,65 @@ function draw() {
   ctx.fillText("x", box.x + box.w - 10, axY - 8);
   ctx.fillText("y (oct)", axX + 8, box.y + 12);
 
-  // Plot all voices up to current playhead curX (with subtle ghost preview ahead)
+  // Plot all voices up to current playhead curX (with subtle ghost preview ahead + per-voice or global shifted echo trails)
   const demo = DEMOS[demoIdx];
+  const partObj = demo.parts[partIdx];
   const cache = ensureCurveCache(demo, partIdx);
   const { SAMPLES, nv, ys } = cache;
   const headIdx = clamp(Math.floor(((curX - X_MIN) / (X_MAX - X_MIN)) * (SAMPLES - 1)), 0, SAMPLES - 1);
+  const globalEchoDraw = partObj.echo !== undefined ? partObj.echo : (demo.echo || null);
+  const partEchoesDraw = partObj.echoes || null;
 
   for (let v = 0; v < nv; v++) {
     const col = V_COLS[v % V_COLS.length];
     const arr = ys[v];
+    const vEco = (partEchoesDraw ? partEchoesDraw[v] : null) || globalEchoDraw;
+
+    // Shifted ghost echo trails (k = 1..4 repeats at exact +k * speed * vEco.sec for this voice)
+    if (vEco && vEco.wet > 0) {
+      const echoStepIdx = Math.max(1, Math.round((demo.speed * vEco.sec / (X_MAX - X_MIN)) * (SAMPLES - 1)));
+      ctx.strokeStyle = col;
+      ctx.setLineDash([4, 3]);
+      for (let k = 1; k <= 4; k++) {
+        const sh = k * echoStepIdx;
+        if (sh >= SAMPLES) break;
+        const aTraced = clamp(vEco.wet * Math.pow(vEco.fb, k - 1) * 1.10, 0.06, 0.52);
+        ctx.lineWidth = Math.max(0.75, 1.35 - 0.16 * k);
+
+        // Faint echo preview ahead of playhead
+        ctx.globalAlpha = aTraced * 0.28;
+        ctx.beginPath();
+        let pen = false, prevY = 0;
+        for (let i = Math.max(sh, headIdx); i < SAMPLES; i++) {
+          const y = arr[i - sh];
+          if (!Number.isFinite(y) || y < Y_MIN - 0.5 || y > Y_MAX + 0.5) { pen = false; continue; }
+          const px = box.x + (i / (SAMPLES - 1)) * box.w;
+          const py = toY(y);
+          if (!pen || abs(y - prevY) > 0.55) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+          pen = true; prevY = y;
+        }
+        ctx.stroke();
+
+        // Active echo trail behind playhead
+        if (headIdx >= sh) {
+          ctx.globalAlpha = aTraced;
+          ctx.beginPath();
+          pen = false; prevY = 0;
+          for (let i = sh; i <= headIdx; i++) {
+            const y = arr[i - sh];
+            if (!Number.isFinite(y) || y < Y_MIN - 0.5 || y > Y_MAX + 0.5) { pen = false; continue; }
+            const px = box.x + (i / (SAMPLES - 1)) * box.w;
+            const py = toY(y);
+            if (!pen || abs(y - prevY) > 0.55) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+            pen = true; prevY = y;
+          }
+          ctx.stroke();
+        }
+      }
+      ctx.setLineDash([]);
+    }
 
     // Faint ghost curve ahead of playhead
     ctx.strokeStyle = col;
@@ -3351,6 +3474,24 @@ function draw() {
         chip.innerHTML = `${dspMarkerSvg(tag, col)}<span>${lbl}</span>`;
         elDspVoices.appendChild(chip);
         dspChipEls.push(chip);
+      }
+      // HUD Echo Pill: shows per-voice custom echo times or global echo settings
+      const echoTags = [];
+      if (partEchoesDraw) {
+        for (let v = 0; v < nv; v++) {
+          const ve = partEchoesDraw[v];
+          if (ve && ve.wet > 0) echoTags.push(`V${v + 1}:${Math.round(ve.sec * 1000)}MS`);
+        }
+      } else if (globalEchoDraw && globalEchoDraw.wet > 0) {
+        echoTags.push(`${Math.round(globalEchoDraw.sec * 1000)}MS · FB ${Math.round(globalEchoDraw.fb * 100)}%`);
+      }
+      if (echoTags.length) {
+        const echoChip = document.createElement("span");
+        echoChip.className = "f-vchip live";
+        echoChip.style.borderColor = "rgba(127,212,204,0.45)";
+        echoChip.style.color = "var(--cyan)";
+        echoChip.innerHTML = `${dspMarkerSvg("rvb", "#7fd4cc")}<span>ECHO ${echoTags.join(" · ")}</span>`;
+        elDspVoices.appendChild(echoChip);
       }
     }
     for (let v = 0; v < dspChipEls.length; v++) {
