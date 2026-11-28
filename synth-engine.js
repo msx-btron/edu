@@ -3016,6 +3016,7 @@ const elIndex = document.getElementById("index");
 let dspChipsKey = "";
 let dspChipEls = [];
 let dspEchoChipEls = [];
+let dspRvbChipEl = null;
 
 function dspMarkerSvg(mode, col) {
   const s = `stroke="${col}" stroke-width="1.45" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
@@ -3493,8 +3494,11 @@ function draw() {
       elDspVoices.innerHTML = "";
       dspChipEls = [];
       dspEchoChipEls = [];
+      dspRvbChipEl = null;
+      let hasVoiceRvb = false;
       for (let v = 0; v < nv; v++) {
         const tag = modeForVoice(v, curVals[v]);
+        if (tag === "rvb") hasVoiceRvb = true;
         const lbl = tag === "noise" ? "NSE" : tag.toUpperCase();
         const col = V_COLS[v % V_COLS.length];
         const chip = document.createElement("span");
@@ -3519,9 +3523,18 @@ function draw() {
         elDspVoices.appendChild(eChip);
         dspEchoChipEls.push({ v: -1, el: eChip });
       }
+      if (demo.reverb > 0 && !hasVoiceRvb) {
+        const rChip = document.createElement("span");
+        rChip.className = "f-vchip";
+        rChip.innerHTML = `${dspMarkerSvg("rvb", "#9bc5ff")}<span>RVB ${Math.round(demo.reverb * 100)}%</span>`;
+        elDspVoices.appendChild(rChip);
+        dspRvbChipEl = rChip;
+      }
     }
+    let anyVoiceLive = false;
     for (let v = 0; v < dspChipEls.length; v++) {
       const isLive = Number.isFinite(curVals[v]) && curVals[v] >= Y_MIN - 0.5 && curVals[v] <= Y_MAX + 0.5;
+      if (isLive) anyVoiceLive = true;
       dspChipEls[v].classList.toggle("live", isLive);
     }
     let anyEchoLive = false;
@@ -3529,6 +3542,9 @@ function draw() {
     for (let i = 0; i < dspEchoChipEls.length; i++) {
       const item = dspEchoChipEls[i];
       item.el.classList.toggle("live", item.v < 0 ? anyEchoLive : !!echoLiveByVoice[item.v]);
+    }
+    if (dspRvbChipEl) {
+      dspRvbChipEl.classList.toggle("live", anyVoiceLive || anyEchoLive || meterRmsL + meterRmsR > 0.004);
     }
   }
 

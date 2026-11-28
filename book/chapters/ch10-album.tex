@@ -1,20 +1,22 @@
-\chapter{Case Study: The Canonical Four-Track Procedural Album}
+\chapter{Case Study: The Canonical Six-Track Procedural Album}
 \label{ch:album}
 
-To prove that zero-byte procedural synthesis, group-theoretic harmony, and a $632\,\mu\text{s}$ RTOS DAW can produce complete, stylistically diverse musical works, B-System ships a four-track canonical album. Crucially, the four \texttt{.orch} and \texttt{.mid} files in \texttt{/SYS/} are \emph{never hand-edited}: the host build target \texttt{album\_encode} executes \texttt{lc\_score\_schedule()} directly from the synthesis engine, validates each container via \texttt{orch\_session\_load\_buf()}, exports SMF, reloads SMF, and asserts exact event-count round-trip equality.
+To prove that zero-byte procedural synthesis, group-theoretic harmony, per-voice stereo echo, and a $632\,\mu\text{s}$ RTOS DAW can produce complete, stylistically diverse musical works, B-System ships a six-track canonical procedural repertoire. Tracks~1--4 compile directly into \texttt{/SYS/*.orch} and \texttt{.mid} containers via \texttt{album\_encode} (validating exact round-trip event-count equality), while Tracks~5--6 extend the B-Sound Virtual DSP in \texttt{Music.html} with the acoustic piano-drop (\texttt{PNO}) and per-voice stereo feedback echo (\texttt{ECHO}) primitives.
 
 \begin{table}[htbp]
 \centering
-\caption{The four canonical B-Sound procedural compositions.}
+\caption{The six canonical B-Sound procedural compositions and original composer credits.}
 \scriptsize
 \begin{tabular}{@{}rllllll@{}}
 \toprule
-\# & Title & Meter & BPM & Key & Dur. & Primary Shims \\
+\# & Title (Original Composer / Artist) & Meter & BPM & Key & Dur. & Primary Shims / DSP \\
 \midrule
-1 & \emph{Carol of the Bells} & $3/4$ & $168$ & E min & $27.36\,\text{s}$ & \texttt{Ding}, \texttt{PulseBell}, \texttt{Waddle}, \texttt{Dance} \\
-2 & \emph{Green Caterpillar} & $4/4$ & $98/120$ & D min & $24.49\,\text{s}$ & \texttt{Float}, \texttt{Guitar}, \texttt{Waddle}, \texttt{FrogCroak} \\
-3 & \emph{House of the Rising Sun} & $6/8$ & $76/125$ & A min & $25.92\,\text{s}$ & \texttt{GrandPiano}, \texttt{PedalBass}, \texttt{SaxFlute} \\
-4 & \emph{TRON Init} & $4/4$ & $93/132$ & A/F$\sharp$m & $25.80\,\text{s}$ & \texttt{Ind.Bass}, \texttt{Swarmatron}, \texttt{CyberLead} \\
+1 & \emph{Carol of the Bells} (M.\ Leontovych) & $3/4$ & $168$ & E min & $27.36\,\text{s}$ & \texttt{Ding}, \texttt{PulseBell}, \texttt{Waddle}, \texttt{Dance} \\
+2 & \emph{Green Caterpillar} (M.\ Imada) & $4/4$ & $98/120$ & D min & $24.49\,\text{s}$ & \texttt{Float}, \texttt{Guitar}, \texttt{Waddle}, \texttt{FrogCroak} \\
+3 & \emph{House of the Rising Sun} (Trad.\ / T.\ Kr\"uger) & $6/8$ & $76/125$ & A min & $25.92\,\text{s}$ & \texttt{GrandPiano}, \texttt{PedalBass}, \texttt{SaxFlute} \\
+4 & \emph{TRON Init} (after Nine Inch Nails) & $4/4$ & $93/132$ & A/F$\sharp$m & $25.80\,\text{s}$ & \texttt{Ind.Bass}, \texttt{Swarmatron}, \texttt{CyberLead} \\
+5 & \emph{Electro Glide in Blue} (Apollo 440, 1997) & $4/4$ & $78/156$ & D Dor. & $74.16\,\text{s}$ & \texttt{PNO}, \texttt{ECHO} ($800/478/239\,\text{ms}$), \texttt{LPF} \\
+6 & \emph{440} (Carla Bley, 1978) & $4/4, 6/4$ & $138$ & A (440) & $83.48\,\text{s}$ & \texttt{PNO}, \texttt{LPF}, \texttt{SINE}, \texttt{NSE}, \texttt{RVB} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -40,3 +42,22 @@ Arranged after Thomas Kr\"uger's concert grand interpretation ($6/8$ rolling arp
 \section{Track 4: \emph{TRON Init} — Non-Linear Saturation and Swarm Synthesis}
 
 Inspired by Nine Inch Nails' industrial cyber-grid aesthetic ($10$ exact measures at $2.58\,\text{s/bar}$, $25.80\,\text{s}$ total), Track~4 stress-tests B-Sound's non-linear and multi-oscillator primitives: \texttt{shimGlitchZap} high-pass telemetry bursts, \texttt{shimIndustrialKick} saturated $160 \to 42\,\text{Hz}$ sub-drops, \texttt{shimIndustrialSnare} distorted trash-can clanks, \texttt{shimIndustrialBass} WaveShaper ($k = 25$, Eq.~\ref{eq:waveshaper}) driving 16th-note saw/square basslines, \texttt{shimCyberLead} unison brass melodies, and the 8-oscillator \texttt{shimSwarmatron} ribbon glissando dissolving into Schroeder hall reverb.
+
+\section{Track 5: \emph{Electro Glide in Blue} (Apollo 440) — Per-Voice Stereo Echo and Piano Drops}
+
+Crediting \textbf{Apollo~440} (Howard Gray, Trevor Gray, and Noko; \emph{Electro Glide in Blue}, Stealth Sonic / Sony Music, 1997), Track~5 demonstrates B-Sound's acoustic piano-drop primitive \texttt{PNO} (Definition~\ref{def:pno}) paired with independent per-voice stereo feedback echoes \texttt{ECHO} (Definition~\ref{def:echo}). Transcribed directly from the original 48\,kHz stereo PCM stream and modal sheet voicings ($\mathrm{C} \leftrightarrow \mathrm{Dm9} \leftrightarrow \mathrm{Dadd9}$, $78/156\,\text{BPM}$, $6.18\,\text{s}$ two-bar cycle across $6$ parts totaling $74.16\,\text{s}$), Track~5 separates wet ambient reflections from dry low-end transients:
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Parts 1--3 (Opening Drops, Iconic Riff, Solo Bloom):} Dry struck \texttt{PNO} voices feed independent stereo delay lines—Voice~1 at $\tau_1 = 800\,\text{ms}$ ($\delta_1 = 16\,\text{ms}$ Haas spread, $g_1 = 0.60$, $\alpha_1 = 0.40$) and Voice~2 at $\tau_2 = 478\,\text{ms}$ ($\delta_2 = 22\,\text{ms}$, $g_2 = 0.54$, $\alpha_2 = 0.28$)—over a 100\% dry \texttt{LPF} $\mathrm{D}_3/\mathrm{D}_2$ bassline.
+  \item \textbf{Parts 4--5 (Groove \& Climax):} Adds a dry \texttt{SINE} sub-kick and splits Voice~2 onto a half-time $\tau_2 = 239\,\text{ms}$ ping-pong echo ($\mathbf{P}_{\mathrm{pp}}$) beneath the high climax theme ($\mathrm{C}_6 \cdot \mathrm{B}_5 \cdot \mathrm{G}_5 \cdot \mathrm{D}_5$).
+  \item \textbf{Part 6 (A440 Signature Finale):} Fades the closing motif into a resonant $\mathrm{A}440$ accord ($\mathrm{A}_5 = 880\,\text{Hz}$, $\mathrm{A}_4 = 440\,\text{Hz}$, $\mathrm{E}_4 = 329.63\,\text{Hz}$ over dry $\mathrm{A}_2 \to \mathrm{A}_1$ bass) with layered $800 / 478 / 239\,\text{ms}$ echoes, bridging directly into Track~6.
+\end{itemize}
+
+\section{Track 6: \emph{440} (Carla Bley) — Polychords over ISO~16 Concert Pitch}
+
+Crediting composer and pianist \textbf{Carla Bley} (\emph{440}, ALRAC Music, 1978), Track~6 is a six-part transcription of the four-page published score ($138\,\text{BPM}$, $4/4$ with $6/4$ coda, $83.48\,\text{s}$ total) celebrating ISO~16 concert pitch $\mathrm{A}_4 = 440\,\text{Hz}$ as a structural harmonic pedal:
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Parts 1--2 (Crossing-Hands Opening \& Chromatic Break, Page~1):} Anchors a low $\mathrm{A}_1$ ($55\,\text{Hz}$) \texttt{LPF} pedal beneath shifting inner voicings ($\mathrm{Am} \to \mathrm{E/A} \to \mathrm{B}\flat/\mathrm{A} \to \mathrm{Gm/A} \to \mathrm{G/A}$) punctuated by the signature left-hand crossover pickup $\mathrm{A}_4 \to \mathrm{A}_5$ ($440 \to 880\,\text{Hz}$) and $\mathrm{A}_6$ octave exclamation.
+  \item \textbf{Part 3 (Polychord Jazz-Rock Theme~A, Pages~2--3):} Sets the eight-bar polychord cycle $\mathrm{C/A} \mid \mathrm{B/A} \mid \mathrm{E}\flat/\mathrm{A} \mid \mathrm{D/A} \mid \mathrm{B}\flat/\mathrm{A} \mid \mathrm{G/A} \mid \mathrm{F/A}\text{--}\mathrm{G/A} \mid \mathrm{A}$—including the ascending $\mathrm{E}\flat/\mathrm{A}$ flourish—over syncopated \texttt{A}-pedal bass and jazz-rock \texttt{SINE}/\texttt{NSE} drums.
+  \item \textbf{Parts 4--5 (Legato Chromatic B-Section \& $8\mathrm{va}$ Groove, Pages~3--4):} Pulsing legato \texttt{PNO} triads descend over the chromatic bassline $\mathrm{F/A} \mid \mathrm{G/A} \mid \mathrm{Fm/E} \mid \mathrm{Em/E}\flat \mid \mathrm{Fm/D} \mid \mathrm{A}\flat\mathrm{m}\text{--}\mathrm{A}\flat\mathrm{m/F}\sharp \mid \mathrm{Fm/E} \mid \mathrm{Em}$, first quiet and then an octave higher with full rhythm section.
+  \item \textbf{Part 6 (Coda, Page~4):} Escalates $\mathrm{F/A}\text{--}\mathrm{G/A}\to\mathrm{A}$, $\mathrm{F/A}\text{--}\mathrm{B/A}\to\mathrm{A}$, and $\mathrm{F/A}\text{--}\mathrm{E}\flat/\mathrm{A}\to\mathrm{A}$ ($6/4$) into the unison bluesy descent $\mathrm{E}\flat\text{--}\mathrm{D}\text{--}\mathrm{C}\text{--}\mathrm{A}$ and a final four-octave staccato $\mathrm{A}$.
+\end{itemize}
