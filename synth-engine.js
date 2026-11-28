@@ -2189,6 +2189,377 @@ const DEMOS = [
       return [a0, a1, zap, swL, star, rvbTail];
     },
   },
+
+  // 25 — Composition 5: Apollo 440 "Electro Glide in Blue" (1997) — PCM-Aligned to YouTube Recording (QRI548QaGVc, 78/156 BPM)
+  {
+    id: "25", name: "TRACK 5: ELECTRO GLIDE IN BLUE", src: "APOLLO 440 · 78/156 BPM · PCM", speed: 16 / 12.3077, bsound: true, reverb: 0.34, echo: { sec: 0.3846, fb: 0.48, wet: 0.42 },
+    parts: [
+      {
+        m: 1, modes: ["pno", "pno", "tri", "sine"],
+        f: "Part 1/6 · Apollo 440『Electro Glide in Blue』(0:00–0:20 PCM) — Atmospheric Drone & Opening Drops\nD2/D3 Sub Drone + Quiet F4·A3·C4 & G3·E4 Piano Drops into 385 ms Stereo Ping-Pong Echo",
+      },
+      {
+        m: 2, modes: ["pno", "pno", "pno", "sine"],
+        f: "Part 2/6 · Iconic Piano-Drop Riff (0:20–0:40 PCM · Exact 6.15 s Cycle @ 78 BPM)\nG4/D5 → A4 → C4 → D4/D3 · F4/A4 → E5 → D4 → E4/C4/G3 Echo Tail (385 ms Taps)",
+      },
+      {
+        m: 3, modes: ["pno", "pno", "lpf", "sine", "nse", "tri"],
+        f: "Part 3/6 · Piano-Drop Answer & Breakbeat Entrance (1:02–1:15 PCM · 156 BPM Double-Time)\nG4/D5 Riff + A4/E5 → D5 → F4/A4 → E4 Answer + D3/D2 Bass + Rolling Breakbeat + Pad",
+      },
+      {
+        m: 4, modes: ["pno", "pno", "lpf", "sine", "nse", "tri"],
+        f: "Part 4/6 · Full Rolling Groove & Dorian D ↔ C Bassline (1:30–2:10 PCM)\nSignature Piano Drops + Syncopated D3/C3/A2 Bass + Tight 156 BPM Breakbeat + Lush String Pad",
+      },
+      {
+        m: 5, modes: ["pno", "pno", "lpf", "sine", "nse", "tri"],
+        f: "Part 5/6 · Main Climax Synth-Piano Theme (2:50–3:03 PCM · 170s–182s)\nHigh Theme (A4·D5·C6·B5·G5·D5 / E5·C5·F5·C5·B4·D5) + Piano Drops + Full Breakbeat",
+      },
+      {
+        m: 6, modes: ["pno", "pno", "lpf", "tri"],
+        f: "Part 6/6 · Deep Sub-Bass Drop (4:50 PCM: D2 → C2 → A1 → D2 + F#4) & Echo Outro\nIconic Sub-Bass Riff + High C5/A4 Bell + Final G4/D5 → A4 → D4 Piano Drops into Echo",
+      },
+    ],
+    eval(x, pi) {
+      // Exact YouTube PCM tempo: 78.0 BPM half-time / 156.0 BPM breakbeat
+      // 1 beat @ 78 BPM = 0.76923 s · 1 bar = 3.07692 s · 2-bar riff = 6.15385 s · 4 bars = 12.3077 s
+      // Stereo echo = 0.3846 s (exact 8th-note tap spacing observed at 23.00, 23.38, 23.75, 24.13, 24.50 s!)
+      const DUR = 12.3077;
+      const t = ((x + 8) / 16) * DUR;
+      const barDur = DUR / 4; // 3.07692 s
+      const bar = clamp(fl(t / barDur), 0, 3);
+      const bt = t - bar * barDur;
+      const t2 = mod(t, barDur * 2); // 2-bar (6.15385 s) riff cycle
+      const st16 = clamp(fl(bt / (barDur / 16)), 0, 15);
+      const sf16 = (bt - st16 * (barDur / 16)) / (barDur / 16);
+
+      // 1) Part 1 (0:00–0:20 PCM): Sparse atmospheric drops (F4·A3·C4 then G3·E4) over D2/D3 drone
+      const introTop = [
+        [0.75, 293.66, 0.38], [1.54, 349.23, 0.45], [2.31, 349.23, 0.40], [3.08, 261.63, 0.45],
+        [4.62, 349.23, 0.42], [6.15, 329.63, 0.48], [7.69, 329.63, 0.45], [9.23, 392.00, 0.48],
+        [10.77, 329.63, 0.48],
+      ];
+      const introMid = [
+        [0.00, 146.83, 0.85], [1.54, 220.00, 0.65], [3.08, 146.83, 0.85], [4.62, 261.63, 0.65],
+        [6.15, 196.00, 0.85], [7.69, 220.00, 0.65], [9.23, 196.00, 0.85], [10.77, 146.83, 0.90],
+      ];
+
+      // 2) Exact Signature Piano-Drop Riff (20.75s–26.90s & 26.90s–33.05s PCM — 6.1538 s cycle!)
+      // Top voice: G4/D5 (+0.00) -> A4 (+0.25) -> D5 (+0.50) -> A4 (+0.88) -> A4 (+1.50) -> E5 (+1.75) -> E4 (+2.25)
+      const riffTop = [
+        [0.00, 587.33, 0.24], [0.25, 440.00, 0.24], [0.50, 587.33, 0.26], [0.88, 440.00, 0.24],
+        [1.50, 440.00, 0.26], [1.75, 659.25, 0.28], [2.25, 329.63, 0.36],
+      ];
+      // Mid voice: G4 (+0.00) -> A3 (+0.25) -> C4 (+0.38) -> D4 (+0.63) -> F4 (+1.50) -> D4 (+2.00) -> C4 (+2.38)
+      const riffMid = [
+        [0.00, 392.00, 0.24], [0.25, 220.00, 0.20], [0.38, 261.63, 0.24], [0.63, 293.66, 0.34],
+        [1.50, 349.23, 0.32], [2.00, 293.66, 0.28], [2.38, 261.63, 0.38],
+      ];
+      // Low piano voice: D3 (+0.75) -> A3 (+1.50) -> G3 (+2.38)
+      const riffLow = [
+        [0.75, 146.83, 0.65], [1.50, 220.00, 0.45], [2.38, 196.00, 0.45],
+      ];
+
+      // 3) Part 3 (62s–74.5s PCM): 4-bar call-and-response piano drops
+      // Bars 1–2: Signature G4/D5 riff; Bars 3–4: Answering A4/E5 -> D5 -> F4/A4 -> E4 -> G4/D5
+      const p3Top = [
+        // Bar 1–2 (0.00..6.15): Exact G4/D5 riff
+        [0.00, 587.33, 0.24], [0.25, 440.00, 0.24], [0.50, 587.33, 0.26],
+        [1.50, 440.00, 0.26], [1.75, 659.25, 0.28], [2.25, 329.63, 0.36],
+        [3.08, 440.00, 0.34], [3.46, 587.33, 0.34], [4.62, 440.00, 0.32], [5.00, 329.63, 0.36],
+        // Bar 3–4 (6.15..12.31): Exact 67s–74s PCM answer (G4/G5 -> C5 -> F4/A4 -> E4 -> A4/E5 -> D5)
+        [6.15, 783.99, 0.28], [6.54, 523.25, 0.28], [7.69, 440.00, 0.28], [8.08, 329.63, 0.32],
+        [9.23, 659.25, 0.34], [9.62, 587.33, 0.36], [10.38, 440.00, 0.34], [11.15, 587.33, 0.42],
+      ];
+      const p3Mid = [
+        [0.00, 392.00, 0.24], [0.38, 261.63, 0.24], [0.63, 293.66, 0.34], [1.50, 349.23, 0.32], [2.38, 261.63, 0.36],
+        [3.08, 329.63, 0.34], [3.46, 440.00, 0.34], [4.62, 349.23, 0.32], [5.00, 220.00, 0.36],
+        [6.15, 392.00, 0.28], [6.54, 392.00, 0.28], [7.69, 349.23, 0.28], [8.08, 220.00, 0.32],
+        [9.23, 440.00, 0.34], [9.62, 440.00, 0.36], [10.38, 329.63, 0.34], [11.15, 440.00, 0.42],
+      ];
+
+      // 4) Part 5 (170s–182.5s PCM): Main Climax High Synth-Piano Theme
+      const p5Theme = [
+        // Bar 1–2 (170s–176s): A4 -> B5/C6 -> G5 -> D5 -> C5 -> A4 -> G4 -> A4
+        [0.00, 440.00, 0.34], [0.38, 987.77, 0.34], [0.77, 1046.50, 0.34], [1.15, 783.99, 0.38],
+        [1.92, 587.33, 0.38], [2.31, 440.00, 0.34], [3.08, 523.25, 0.38], [3.85, 440.00, 0.36],
+        [4.62, 440.00, 0.38], [5.38, 493.88, 0.34], [5.77, 587.33, 0.34],
+        // Bar 3–4 (176s–182s): C6 -> B5 -> D5 -> E5 -> C5 -> E5 -> F5 -> C5 -> B4 -> D5
+        [6.15, 1046.50, 0.34], [6.54, 987.77, 0.34], [7.31, 587.33, 0.38], [8.08, 659.25, 0.36],
+        [8.46, 783.99, 0.36], [9.23, 659.25, 0.34], [9.62, 523.25, 0.34], [10.00, 659.25, 0.34],
+        [10.77, 698.46, 0.36], [11.15, 523.25, 0.34], [11.54, 493.88, 0.34], [11.92, 587.33, 0.34],
+      ];
+
+      // 5) Rolling 156 BPM Breakbeat (2 cycles per 78 BPM bar = 16th steps on 3.077 s bar)
+      const kickSteps = [0, 3, 8, 11];
+      let kick = NaN;
+      for (let i = 0; i < kickSteps.length; i++) {
+        const dt = bt - kickSteps[i] * (barDur / 16);
+        if (dt >= 0 && dt < 0.14) { kick = shimKickY(dt, 55, 0.14); break; }
+      }
+      const snareSteps = [2, 6, 10, 14, 15];
+      let snare = NaN;
+      for (let i = 0; i < snareSteps.length; i++) {
+        const dt = bt - snareSteps[i] * (barDur / 16);
+        const sd = snareSteps[i] === 15 ? 0.036 : 0.062;
+        if (dt >= 0 && dt < sd) { snare = 2.05 - 1.55 * (dt / sd); break; }
+      }
+
+      // 6) Dorian Bassline (from PCM: D3/D2 -> C3 -> D3 -> A2)
+      const bassBarHz = [73.42, 65.41, 73.42, 55.00][bar];
+      const bassFifthHz = bassBarHz * 1.5;
+      const bassMask = [1, 0, 1, 0, 2, 0, 1, 0, 1, 0, 1, 0, 2, 0, 1, 2][st16];
+      const bass = (bassMask > 0 && sf16 < 0.76) ? hz(bassMask === 2 ? bassFifthHz : bassBarHz) : NaN;
+      const padHz = [220.00, 196.00, 220.00, 261.63][bar];
+      const pad = bt < barDur * 0.96 ? hz(padHz) : NaN;
+
+      if (pi === 0) {
+        const subD = bt < barDur * 0.94 ? hz(73.42) : NaN;
+        return [evalEvents(t, introTop), evalEvents(t, introMid), pad, subD];
+      }
+      if (pi === 1) {
+        const subD = bt < barDur * 0.95 ? hz(73.42) : NaN;
+        return [evalEvents(t2, riffTop), evalEvents(t2, riffMid), evalEvents(t2, riffLow), subD];
+      }
+      if (pi === 2) {
+        return [evalEvents(t, p3Top), evalEvents(t, p3Mid), bass, kick, snare, pad];
+      }
+      if (pi === 3) {
+        return [evalEvents(t2, riffTop), evalEvents(t2, riffMid), bass, kick, snare, pad];
+      }
+      if (pi === 4) {
+        return [evalEvents(t, p5Theme), evalEvents(t2, riffMid), bass, kick, snare, pad];
+      }
+      // Part 6/6 (290s–302.5s PCM Deep Sub-Bass Drop + Echo Outro):
+      // Sub-bass riff per bar: D2 (beat 0) -> C2 (beat 1) -> A1 (beat 2) -> D2 (beat 3)
+      const subEvents = [
+        [0.00, 73.42, 0.62], [0.77, 65.41, 0.58], [1.54, 55.00, 0.62], [2.31, 73.42, 0.62],
+      ];
+      const subDrop = evalEvents(bt, subEvents);
+      // High C5/A4 bell + F#4 shimmer (from 292.69s, 299.23s–302s PCM!) + final piano drop
+      const outroTop = [
+        [0.00, 587.33, 0.30], [0.25, 440.00, 0.30], [2.31, 369.99, 0.45],
+        [3.08, 523.25, 0.42], [3.85, 440.00, 0.42], [5.38, 369.99, 0.45],
+        [6.15, 587.33, 0.30], [6.40, 440.00, 0.30], [6.65, 587.33, 0.35], [7.65, 440.00, 0.40], [7.90, 659.25, 0.45],
+        [9.23, 523.25, 0.48], [10.00, 440.00, 0.52], [10.77, 293.66, 0.78],
+      ];
+      const outroMid = [
+        [0.00, 392.00, 0.30], [2.31, 220.00, 0.50], [3.08, 329.63, 0.48], [5.38, 220.00, 0.50],
+        [6.15, 392.00, 0.30], [7.65, 349.23, 0.45], [9.23, 261.63, 0.52], [10.77, 146.83, 0.85],
+      ];
+      return [evalEvents(t, outroTop), evalEvents(t, outroMid), subDrop, pad];
+    },
+  },
+
+  // 26 — Composition 6: Carla Bley "440" (1978, ALRAC Music) — Transcribed from 440.pdf (4 Pages, ♩ = 138 BPM)
+  {
+    id: "26", name: "TRACK 6: CARLA BLEY — 440", src: "440.PDF · 138 BPM · A=440", speed: 16 / 13.913, bsound: true, reverb: 0.24,
+    parts: [
+      {
+        m: 1, modes: ["pno", "pno", "pno", "lpf"],
+        f: "Part 1/6 · Carla Bley『440』(1978) — Opening A = 440 Hz Crossing-Hands Motif (Page 1, Sys 1)\nAm (2) → E/A (2) → Bb/A (2) → E/A (2) · l.h. A4–A5 (440/880 Hz) Pickup over Deep A1 Pedal",
+      },
+      {
+        m: 2, modes: ["pno", "pno", "pno", "lpf"],
+        f: "Part 2/6 · Chromatic Inner Bass & A6/A0 Octave Break (Page 1, Sys 2–3)\nGm/A (2) → G/A (2) → Am (2) → Syncopated Jazz-Rock Vamp Pickup over Constant A Pedal",
+      },
+      {
+        m: 3, modes: ["pno", "pno", "lpf", "sine", "nse"],
+        f: "Part 3/6 · Polychord Jazz-Rock Theme A (Page 2–3 · Over A = 440 Hz Pedal)\nC/A | B/A | Eb/A | D/A | Bb/A | G/A | F/A–G/A | A · Syncopated Piano + Bass + Jazz-Rock Drums",
+      },
+      {
+        m: 4, modes: ["pno", "pno", "pno", "lpf"],
+        f: "Part 4/6 · Legato Chromatic B-Section (Page 3, Sys 3–5 · Descending Bassline)\nF/A | G/A | Fm/E | Em/Eb | Fm/D | Abm–Abm/F# | Fm/E | Em · Pulsing Legato Triads",
+      },
+      {
+        m: 5, modes: ["pno", "pno", "lpf", "sine", "nse"],
+        f: "Part 5/6 · Full-Groove B-Section 8va & Polychord Drive (Page 4, Sys 1–2)\nF/A | G/A | Fm/E | Em/Eb | Fm/D | Abm–Abm/F# | Fm/E | Em (8va) + Driving Rhythm Section",
+      },
+      {
+        m: 6, modes: ["pno", "pno", "pno", "lpf"],
+        f: "Part 6/6 · Coda (* 2nd time play as written · Page 4, Sys 4–5)\nF/A–G/A→A | F/A–B/A→A | F/A–Eb/A→A (6/4) + Unison Lick Eb–D–C–A → Final 4-Octave Staccato A!",
+      },
+    ],
+    eval(x, pi) {
+      // Exact tempo from 440.pdf: quarter note = 138 BPM
+      // 1 beat = 60/138 = 0.434783 s · 1 bar (4/4) = 1.73913 s · 8 bars = 13.91304 s
+      const B = 60 / 138;
+      const BAR = 4 * B;
+      const DUR = 8 * BAR;
+      const t = ((x + 8) / 16) * DUR;
+      const bar = clamp(fl(t / BAR), 0, 7);
+      const bt = t - bar * BAR;
+      const st8 = clamp(fl(bt / (B * 0.5)), 0, 7);
+      const sf8 = (bt - st8 * (B * 0.5)) / (B * 0.5);
+
+      // Helper: convert beat index & duration (in beats) to seconds inside evalEvents
+      const evB = (list) => {
+        for (let i = 0; i < list.length; i++) {
+          const s = list[i][0] * B, d = list[i][2] * B;
+          if (t >= s && t < s + d) return clamp(hz(list[i][1]), -3.0, 3.0);
+        }
+        return NaN;
+      };
+
+      // PART 1 (Page 1 Sys 1): Am(2) | E/A(2) | Bb/A(2) | E/A(2) — iconic A4 (440 Hz) -> A5 (880 Hz) l.h. crossover!
+      if (pi === 0) {
+        const hi = [
+          [2.0, 440.00, 0.45], [2.5, 880.00, 3.2], [6.0, 440.00, 0.45], [6.5, 880.00, 1.3],
+          [10.0, 415.30, 0.45], [10.5, 440.00, 0.45], [11.0, 880.00, 3.2], [14.5, 880.00, 1.3],
+          [18.0, 440.00, 0.45], [18.5, 466.16, 0.45], [19.0, 880.00, 3.2], [22.5, 880.00, 1.3],
+          [26.0, 415.30, 0.45], [26.5, 440.00, 0.45], [27.0, 880.00, 3.2], [30.5, 880.00, 1.3],
+        ];
+        const mid = [
+          [0.0, 261.63, 3.8], [4.0, 329.63, 3.8],
+          [8.0, 246.94, 3.8], [12.0, 415.30, 3.8],
+          [16.0, 233.08, 3.8], [20.0, 349.23, 3.8],
+          [24.0, 246.94, 3.8], [28.0, 415.30, 3.8],
+        ];
+        const inner = [
+          [0.0, 110.00, 3.8], [4.0, 164.81, 3.8],
+          [8.0, 103.83, 3.8], [12.0, 123.47, 3.8],
+          [16.0, 116.54, 3.8], [20.0, 146.83, 3.8],
+          [24.0, 103.83, 3.8], [28.0, 110.00, 3.8],
+        ];
+        const pedA = bt < BAR * 0.94 ? hz(55.00) : NaN; // Deep A1 = 55 Hz pedal
+        return [evB(hi), evB(mid), evB(inner), pedA];
+      }
+
+      // PART 2 (Page 1 Sys 2–3): Gm/A(2) | G/A(2) | Am(2) | A-octave break & vamp pickup (2)
+      if (pi === 1) {
+        const hi = [
+          [2.0, 440.00, 0.45], [2.5, 880.00, 3.2], [6.5, 880.00, 1.3],
+          [10.0, 440.00, 0.45], [10.5, 880.00, 3.2], [14.5, 880.00, 1.3],
+          [18.0, 440.00, 0.45], [18.5, 880.00, 3.2], [22.0, 880.00, 1.5],
+          // Dramatic A6 exclamation + syncopated rock-jazz pickup
+          [24.0, 1760.00, 1.6], [26.5, 880.00, 0.45], [27.5, 783.99, 0.45],
+          [28.0, 880.00, 0.85], [29.5, 880.00, 0.45], [30.0, 987.77, 0.45], [30.5, 880.00, 0.9],
+        ];
+        const mid = [
+          [0.0, 233.08, 3.8], [4.0, 293.66, 3.8],
+          [8.0, 246.94, 3.8], [12.0, 293.66, 3.8],
+          [16.0, 261.63, 3.8], [20.0, 329.63, 3.8],
+          [24.0, 440.00, 1.8], [28.0, 329.63, 0.9], [29.5, 392.00, 0.9], [30.5, 440.00, 1.2],
+        ];
+        const inner = [
+          [0.0, 98.00, 3.8], [4.0, 146.83, 3.8],
+          [8.0, 110.00, 3.8], [12.0, 146.83, 3.8],
+          [16.0, 110.00, 3.8], [20.0, 164.81, 3.8],
+          [24.0, 220.00, 1.8], [28.0, 110.00, 0.85], [29.0, 123.47, 0.85], [30.0, 138.59, 0.85], [31.0, 146.83, 0.85],
+        ];
+        const pedA = bt < BAR * 0.94 ? hz(55.00) : NaN;
+        return [evB(hi), evB(mid), evB(inner), pedA];
+      }
+
+      // PART 3 (Page 2–3 Polychord Theme A): C/A | B/A | Eb/A | D/A | Bb/A | G/A | F/A–G/A | A
+      if (pi === 2) {
+        const rhTop = [
+          // Bar 1 (C/A):  C5 — E5 · C5 · G4 · C5
+          [0.0, 523.25, 0.85], [1.0, 659.25, 0.45], [1.5, 523.25, 0.85], [3.5, 523.25, 0.45],
+          // Bar 2 (B/A):  B4 — D#5 · B4 · F#4
+          [4.0, 493.88, 0.85], [5.0, 622.25, 0.45], [5.5, 493.88, 0.90], [7.5, 493.88, 0.45],
+          // Bar 3 (Eb/A): Eb5 · G5 · Bb5 · C6 · Bb5 · G5 · F5 (exact Page 3 Sys 2 flourish!)
+          [8.5, 622.25, 0.45], [9.0, 783.99, 0.45], [9.5, 932.33, 0.45], [10.0, 1046.50, 0.45], [10.5, 932.33, 0.45], [11.0, 783.99, 0.45], [11.5, 698.46, 0.45],
+          // Bar 4 (D/A):  A5 — F#4 · A4
+          [12.0, 880.00, 0.90], [13.5, 369.99, 0.45], [14.0, 440.00, 0.90],
+          // Bar 5 (Bb/A): Bb4 — D5 · Bb4 · F5
+          [16.0, 466.16, 0.85], [17.0, 587.33, 0.45], [17.5, 466.16, 0.85], [19.5, 698.46, 0.45],
+          // Bar 6 (G/A):  B4 — D5 · G5
+          [20.0, 493.88, 0.85], [21.0, 587.33, 0.45], [21.5, 783.99, 0.90],
+          // Bar 7 (F/A - G/A): A4 · C5 · F5 | B4 · D5 · G5
+          [24.5, 440.00, 0.45], [25.0, 523.25, 0.45], [25.5, 698.46, 0.85], [26.5, 493.88, 0.45], [27.0, 587.33, 0.45], [27.5, 783.99, 0.45],
+          // Bar 8 (A):    A5 + E5 hold!
+          [28.0, 880.00, 3.6],
+        ];
+        const rhMid = [
+          [0.0, 329.63, 0.85], [1.0, 392.00, 0.85], [3.5, 329.63, 0.45],
+          [4.0, 311.13, 0.85], [5.0, 369.99, 0.85], [7.5, 311.13, 0.45],
+          [8.5, 392.00, 0.90], [10.0, 466.16, 0.90], [11.0, 392.00, 0.85],
+          [12.0, 587.33, 0.90], [13.5, 293.66, 0.90],
+          [16.0, 293.66, 0.85], [17.0, 349.23, 0.85], [19.5, 293.66, 0.45],
+          [20.0, 293.66, 0.85], [21.0, 392.00, 0.85],
+          [24.5, 349.23, 1.2], [26.5, 392.00, 1.2],
+          [28.0, 554.37, 3.6], // C#5 bright A major resolution!
+        ];
+        // Constant A1/A2 jazz-rock syncopated bass
+        const bassMask = [1, 0, 0, 2, 0, 1, 0, 2][st8];
+        const bass = (bassMask > 0 && sf8 < 0.78) ? hz(bassMask === 2 ? 110.00 : 55.00) : NaN;
+        const kick = (st8 === 0 || st8 === 3 || st8 === 5) && sf8 < 0.55 ? shimKickY(sf8 * B * 0.5, 58, 0.12) : NaN;
+        const snr = (st8 === 2 || st8 === 6) && sf8 < 0.28 ? 2.1 - 1.4 * (sf8 / 0.28) : NaN;
+        return [evB(rhTop), evB(rhMid), bass, kick, snr];
+      }
+
+      // PART 4 & PART 5 (Page 3 Sys 3–5 & Page 4 Sys 1–2): Legato Chromatic B-Section
+      // F/A | G/A | Fm/E | Em/Eb | Fm/D | Abm – Abm/F# | Fm/E | Em
+      if (pi === 3 || pi === 4) {
+        const oct = pi === 4 ? 2.0 : 1.0; // Page 4 repeats the B-section 1 octave higher with full groove!
+        // [bassHz, chordLow, chordMid, chordTop]
+        const B_CH = [
+          [110.00, 261.63, 349.23, 440.00], // Bar 1: F/A
+          [110.00, 293.66, 392.00, 493.88], // Bar 2: G/A
+          [ 82.41, 261.63, 311.13, 415.30], // Bar 3: Fm/E (Ab4–F4–C4 over E2)
+          [ 77.78, 246.94, 329.63, 392.00], // Bar 4: Em/Eb (G4–E4–B3 over Eb2)
+          [ 73.42, 261.63, 349.23, 415.30], // Bar 5: Fm/D (Ab4–F4–C4 over D2)
+          [103.83, 246.94, 311.13, 415.30], // Bar 6: Abm (beats 1-2) -> Abm/F# (beats 3-4)
+          [ 82.41, 261.63, 349.23, 415.30], // Bar 7: Fm/E
+          [ 82.41, 246.94, 329.63, 392.00], // Bar 8: Em
+        ];
+        const ch = B_CH[bar];
+        const bassHz = (bar === 5 && bt >= 2 * B) ? 92.50 : ch[0]; // Abm/F# on beat 3 of bar 6!
+        // Signature Carla Bley pulsing legato 8th-note syncopation (beats 1, 2, 2+, tie, 3+, 4, 4+)
+        const pulseOn = (st8 === 0 || st8 === 2 || st8 === 3 || st8 === 5 || st8 === 6 || st8 === 7) && sf8 < 0.84;
+        const topNote = pulseOn ? hz(ch[3] * oct) : NaN;
+        const midNote = pulseOn ? hz(ch[2] * oct) : NaN;
+        const lowNote = pulseOn ? hz(ch[1] * oct) : NaN;
+
+        if (pi === 3) {
+          const legBass = bt < BAR * 0.94 ? hz(bassHz) : NaN;
+          return [topNote, midNote, lowNote, legBass];
+        }
+        // Part 5: Full driving groove 8va
+        const bMask = [1, 0, 1, 0, 2, 0, 1, 0][st8];
+        const driveBass = (bMask > 0 && sf8 < 0.78) ? hz(bMask === 2 ? bassHz * 1.5 : bassHz) : NaN;
+        const kick = (st8 === 0 || st8 === 3 || st8 === 5) && sf8 < 0.55 ? shimKickY(sf8 * B * 0.5, 58, 0.12) : NaN;
+        const snr = (st8 === 2 || st8 === 6) && sf8 < 0.28 ? 2.1 - 1.4 * (sf8 / 0.28) : NaN;
+        return [topNote, midNote, driveBass, kick, snr];
+      }
+
+      // PART 6 (Page 4 Sys 4–5): Coda (* 2nd time play as written)
+      // F/A–G/A -> A | F/A–B/A -> A | F/A–Eb/A -> A(6/4) + Unison Lick Eb–D–C–A -> Final 4-Octave Staccato A!
+      const codaTop = [
+        // Bars 1–2: F/A (C5) -> G/A (D5) -> A (A5)
+        [0.5, 349.23, 0.45], [1.0, 440.00, 0.45], [1.5, 523.25, 0.45], [2.0, 587.33, 1.9], [4.0, 880.00, 3.6],
+        // Bars 3–4: F/A -> B/A (D#5) -> A (A5)
+        [8.5, 349.23, 0.45], [9.0, 440.00, 0.45], [9.5, 523.25, 0.45], [10.0, 622.25, 1.9], [12.0, 880.00, 3.6],
+        // Bars 5–6: F/A -> Eb/A (Eb5) -> Massive A6!
+        [16.5, 349.23, 0.45], [17.0, 440.00, 0.45], [17.5, 523.25, 0.45], [18.0, 622.25, 1.9], [20.0, 1760.00, 3.8],
+        // Bar 7: Descending bluesy unison lick Eb5 -> D5 -> C5 -> A4
+        [24.5, 622.25, 0.45], [25.0, 587.33, 0.45], [25.5, 523.25, 0.45], [26.0, 440.00, 0.90],
+        // Bar 8: Final sharp staccato A5 = 880 Hz on beat 1!
+        [28.0, 880.00, 0.38],
+      ];
+      const codaMid = [
+        [2.0, 392.00, 1.9], [4.0, 440.00, 3.6],
+        [10.0, 369.99, 1.9], [12.0, 440.00, 3.6],
+        [18.0, 392.00, 1.9], [20.0, 440.00, 3.8],
+        [24.5, 311.13, 0.45], [25.0, 293.66, 0.45], [25.5, 261.63, 0.45], [26.0, 220.00, 0.90],
+        [28.0, 440.00, 0.38], // A4 = 440 Hz!
+      ];
+      const codaLow = [
+        [2.0, 293.66, 1.9], [4.0, 329.63, 3.6],
+        [10.0, 246.94, 1.9], [12.0, 329.63, 3.6],
+        [18.0, 311.13, 1.9], [20.0, 329.63, 3.8],
+        [24.5, 155.56, 0.45], [25.0, 146.83, 0.45], [25.5, 130.81, 0.45], [26.0, 110.00, 0.90],
+        [28.0, 220.00, 0.38],
+      ];
+      const codaBass = [
+        [0.0, 55.00, 3.8], [4.0, 55.00, 3.6],
+        [8.0, 55.00, 3.8], [12.0, 55.00, 3.6],
+        [16.0, 55.00, 3.8], [20.0, 55.00, 3.8],
+        [28.0, 55.00, 0.38], // Final staccato A1!
+      ];
+      return [evB(codaTop), evB(codaMid), evB(codaLow), evB(codaBass)];
+    },
+  },
 ];
 
 // ============================================================================
@@ -2212,6 +2583,9 @@ const vEnv = new Float64Array(MAX_VOICES);
 const vFreq = new Float64Array(MAX_VOICES);
 const vNoiseLp = new Float64Array(MAX_VOICES);
 const vFilterLp = new Float64Array(MAX_VOICES);
+const vNoteAge = new Float64Array(MAX_VOICES);
+const vPrevActive = new Uint8Array(MAX_VOICES);
+const vPrevFreq = new Float64Array(MAX_VOICES);
 let rngState = 0x12345678;
 let lpL = 0, lpR = 0;
 
@@ -2221,12 +2595,26 @@ let meterRmsL = 0, meterRmsR = 0;
 let meterLimHit = 0;
 let meterBal = 0;
 
-// Static 4-Comb Schroeder Hall Reverb (Orchestra.html §4.3 / Eq. 15 — zero hot-path allocation)
+// Static 4-Comb Schroeder Hall Reverb + Stereo Ping-Pong Tape Echo (zero hot-path allocation)
 const RVB_LENS = [1559, 1699, 1847, 1993];
 const rvbBufs = RVB_LENS.map((n) => new Float32Array(n));
 const rvbIdx = new Int32Array(4);
 const rvbLp = new Float32Array(4);
-function clearReverb() { rvbBufs.forEach((b) => b.fill(0)); rvbLp.fill(0); }
+const ECHO_MAX = 48000;
+const echoBufL = new Float32Array(ECHO_MAX);
+const echoBufR = new Float32Array(ECHO_MAX);
+let echoIdx = 0, echoLpL = 0, echoLpR = 0;
+function clearReverb() {
+  rvbBufs.forEach((b) => b.fill(0));
+  rvbLp.fill(0);
+  echoBufL.fill(0);
+  echoBufR.fill(0);
+  echoIdx = 0;
+  echoLpL = 0;
+  echoLpR = 0;
+  vNoteAge.fill(0);
+  vPrevActive.fill(0);
+}
 
 function nextNoise() {
   rngState ^= rngState << 13;
@@ -2293,6 +2681,17 @@ function synthBSoundWave(mode, ph, modPh, f, v) {
     const vph = ph + 0.18 * Math.sin(modPh * 0.015);
     return 0.62 * (Math.sin(vph) - 0.5 * Math.sin(2 * vph) + 0.333 * Math.sin(3 * vph) - 0.25 * Math.sin(4 * vph));
   }
+  if (mode === "pno") {
+    // Acoustic Piano-Drop / Hammer Pluck (pure integer harmonics 1f–4f with felt-hammer brightness decay)
+    const age = vNoteAge[v];
+    const bright = Math.exp(-age * 7.5);
+    const body = 0.22 + 0.78 * Math.exp(-age * 2.4);
+    const w = 0.72 * s1
+      + (0.26 + 0.22 * bright) * Math.sin(2 * ph)
+      + (0.09 + 0.16 * bright) * Math.sin(3 * ph)
+      + 0.08 * bright * Math.sin(4 * ph);
+    return w * body * 0.88;
+  }
   if (mode === "rvb") {
     // Hall reverb shimmer carrier (soft damped sine + airy comb overtone)
     return 0.42 * s1 + 0.16 * Math.sin(modPh) * 0.5;
@@ -2345,7 +2744,17 @@ function ensureAudio() {
         const active = !muted && (playing || scrubbing) && Number.isFinite(y) && y > -4.5 && y < 4.5;
         vEnv[v] += ((active ? 1 : 0) - vEnv[v]) * envRate;
         if (active) {
-          vFreq[v] = F0 * Math.pow(2, y);
+          const newF = F0 * Math.pow(2, y);
+          if (!vPrevActive[v] || abs(newF - vPrevFreq[v]) > newF * 0.025) {
+            vNoteAge[v] = 0;
+          } else {
+            vNoteAge[v] += dt;
+          }
+          vFreq[v] = newF;
+          vPrevFreq[v] = newF;
+          vPrevActive[v] = 1;
+        } else {
+          vPrevActive[v] = 0;
         }
         if (vEnv[v] > 1e-4) {
           const f = vFreq[v];
@@ -2381,6 +2790,21 @@ function ensureAudio() {
       lpL += (sL - lpL) * lpAlpha;
       lpR += (sR - lpR) * lpAlpha;
       let mixL = lpL, mixR = lpR;
+      const echoCfg = demo.echo || null;
+      if (echoCfg && echoCfg.wet > 0) {
+        const dSamp = clamp(Math.round(echoCfg.sec * sr), 1, ECHO_MAX - 1);
+        const rdIdx = (echoIdx - dSamp + ECHO_MAX) % ECHO_MAX;
+        const rdL = echoBufL[rdIdx];
+        const rdR = echoBufR[rdIdx];
+        echoLpL += (rdL - echoLpL) * 0.34;
+        echoLpR += (rdR - echoLpR) * 0.34;
+        // Stereo ping-pong cross-feedback for ambient piano-drop ripples
+        echoBufL[echoIdx] = lpL + echoLpR * echoCfg.fb;
+        echoBufR[echoIdx] = lpR + echoLpL * echoCfg.fb;
+        echoIdx = (echoIdx + 1) % ECHO_MAX;
+        mixL += echoLpL * echoCfg.wet;
+        mixR += echoLpR * echoCfg.wet;
+      }
       const rvbWet = demo.reverb || 0;
       if (rvbWet > 0) {
         const monoIn = 0.5 * (lpL + lpR);
@@ -2484,6 +2908,7 @@ function dspMarkerSvg(mode, col) {
   if (mode === "hpf") return `<svg viewBox="-5 -5 10 10"><polyline points="-4,3.2 -0.6,-2.4 4,-2.4" ${s}/></svg>`;
   if (mode === "bpf") return `<svg viewBox="-5 -5 10 10"><polyline points="-4,3 0,-3.8 4,3" ${s}/></svg>`;
   if (mode === "lfo") return `<svg viewBox="-5 -5 10 10"><path d="M-4,0 Q-2,-4 0,0 T4,0" ${s}/></svg>`;
+  if (mode === "pno") return `<svg viewBox="-5 -5 10 10"><rect x="-3.8" y="-3.2" width="7.6" height="6.4" ${s}/><line x1="-1.2" y1="-3.2" x2="-1.2" y2="0.6" ${s}/><line x1="1.3" y1="-3.2" x2="1.3" y2="0.6" ${s}/></svg>`;
   if (mode === "rvb") return `<svg viewBox="-5 -5 10 10"><circle cx="0" cy="0" r="3.9" ${s}/><circle cx="0" cy="0" r="1.7" ${s}/></svg>`;
   if (mode === "noise" || mode === "nse") return `<svg viewBox="-5 -5 10 10"><line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5" ${s}/><line x1="3.5" y1="-3.5" x2="-3.5" y2="3.5" ${s}/><line x1="0" y1="-4.1" x2="0" y2="4.1" ${s}/></svg>`;
   return `<svg viewBox="-5 -5 10 10"><circle cx="0" cy="0" r="3.6" ${s}/></svg>`;

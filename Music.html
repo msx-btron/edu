@@ -267,9 +267,9 @@
       <h2>HAL 9000 // INPUT MATRIX</h2>
       <div class="krow"><span class="k">CLICK / SPACE</span><span class="d">Start audio · Play / Pause</span></div>
       <div class="krow"><span class="k">DRAG ON GRAPH</span><span class="d">Scrub X cursor live</span></div>
-      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Demo (1–24)</span></div>
+      <div class="krow"><span class="k">← / →  or  EDGES</span><span class="d">Previous / Next Demo (1–26)</span></div>
       <div class="krow"><span class="k">↑ / ↓  or  1–8</span><span class="d">Previous / Next / Jump Part</span></div>
-      <div class="krow"><span class="k">B</span><span class="d">Jump / Cycle B-Sound Virtual DSP (17–24)</span></div>
+      <div class="krow"><span class="k">B</span><span class="d">Jump / Cycle B-Sound Virtual DSP (17–26)</span></div>
       <div class="krow"><span class="k">WHEEL</span><span class="d">Switch Demo (Shift: Switch Part)</span></div>
       <div class="krow"><span class="k">M</span><span class="d">Mute / Unmute Synth</span></div>
       <div class="krow"><span class="k">A</span><span class="d">Toggle Auto-Advance Parts</span></div>
@@ -277,7 +277,7 @@
       <div class="krow"><span class="k">? / H / ESC</span><span class="d">Toggle / Close Overlay</span></div>
     </div>
     <div class="card">
-      <h2>PRO DSP MARKERS // 12 SYNTHESIS &amp; FILTER PRIMITIVES (ALL 24 DEMOS)</h2>
+      <h2>PRO DSP MARKERS // 14 SYNTHESIS &amp; FILTER PRIMITIVES (ALL 26 DEMOS)</h2>
       <div class="mrow">
         <span class="mk">○ SINE</span>
         <span class="mf">w(φ) = sin(φ)   [sub f &lt; 95 Hz: 0.90·sin(φ)+0.10·sin(2φ) · Math-Synth f &lt; 115 Hz: tanh(1.35·sin φ)]<span class="ms">Oscillator · shimDing · shimPulseSquash · shimFloat · shimDance · shimKick · shimGrandPiano · shimTimpani</span></span>
@@ -325,6 +325,10 @@
       <div class="mrow">
         <span class="mk">≈ LFO</span>
         <span class="mf">φ_mod(t) = φ(t) + d · sin(2π f_LFO t)   [Orchestra Eq. 17 Chorus / Vibrato]<span class="ms">Pitch / Ribbon LFO · shimViolin (5.8 Hz delayed vibrato) · shimSwarmatron ribbon drift</span></span>
+      </div>
+      <div class="mrow">
+        <span class="mk">🎹 PNO</span>
+        <span class="mf">w(φ,t) = Σ_{k=1..4} a_k(e^{−7.5t})·sin(kφ) · (0.22 + 0.78·e^{−2.4t})   [+ Stereo Ping-Pong Echo]<span class="ms">Acoustic Piano-Drop / Hammer Pluck · Track 5 (Electro Glide in Blue) &amp; Track 6 (Carla Bley — 440)</span></span>
       </div>
       <div class="mrow">
         <span class="mk">◎ RVB</span>
