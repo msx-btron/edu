@@ -2197,59 +2197,59 @@ const DEMOS = [
       {
         m: 1, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.78, 0.56],
         echoes: [
-          { sec: 0.478, spread: 0.016, fb: 0.60, wet: 0.48, damp: 0.40 },
+          { sec: 0.666, spread: 0.016, fb: 0.60, wet: 0.48, damp: 0.40 },
           { sec: 0.478, spread: 0.022, fb: 0.54, wet: 0.36, damp: 0.28 },
           null,
         ],
-        f: "Part 1/6 · Opening Piano Drops (0:08–0:20 PCM · Per-Voice 478 ms Echo · Dry Bass)\nDry Struck Drops (C4·A4·G4·A4·F4·E4 → F4·A4·F4·E4) + 478 ms Stereo Piano Echo · Clean Dry D3/D2 Bass",
+        f: "Part 1/6 · Opening Piano Drops (0:08–0:20 PCM · V1 800 ms / V2 478 ms Echo · Dry Bass)\nDry Struck Drops (C4·A4·G4·A4·F4·E4 → F4·A4·F4·E4) + Dual Piano Echo · Clean Dry D3/D2 Bass",
       },
       {
         m: 2, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.80, 0.60],
         echoes: [
-          { sec: 0.478, spread: 0.016, fb: 0.62, wet: 0.50, damp: 0.40 },
+          { sec: 0.666, spread: 0.016, fb: 0.62, wet: 0.50, damp: 0.40 },
           { sec: 0.478, spread: 0.022, fb: 0.55, wet: 0.38, damp: 0.28 },
           null,
         ],
-        f: "Part 2/6 · Iconic Solo Piano-Drop Riff (0:20.7–0:33.1 PCM · Exact 6.18 s Cycle × 2)\nPiano Drops Only in 478 ms Stereo Echo (3.5 s Pure Decay) · Dry C3/D3/D2 Bass",
+        f: "Part 2/6 · Iconic Solo Piano-Drop Riff (0:20.7–0:33.1 PCM · Exact 6.18 s Cycle × 2)\nPiano Drops in V1 800 ms / V2 478 ms Stereo Echo · Dry C3/D3/D2 Bass",
       },
       {
         m: 3, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.78, 0.58],
         echoes: [
-          { sec: 0.478, spread: 0.016, fb: 0.58, wet: 0.46, damp: 0.40 },
+          { sec: 0.666, spread: 0.016, fb: 0.58, wet: 0.46, damp: 0.40 },
           { sec: 0.478, spread: 0.022, fb: 0.52, wet: 0.34, damp: 0.28 },
           null,
         ],
-        f: "Part 3/6 · Solo Piano Bloom (0:33.1–0:45.4 PCM · Per-Voice 478 ms Echo · Dry Bass)\nG4·A4·E5·C4·A4·F4·E4 → D5·F5·F4·E4·C4 → D5·E5·C4·D5·F4·E5·E4·C4·D5·A4·E5·E4·C4",
+        f: "Part 3/6 · Solo Piano Bloom (0:33.1–0:45.4 PCM · V1 800 ms / V2 478 ms Echo · Dry Bass)\nG4·A4·E5·C4·A4·F4·E4 → D5·F5·F4·E4·C4 → D5·E5·C4·D5·F4·E5·E4·C4·D5·A4·E5·E4·C4",
       },
       {
         m: 4, modes: ["pno", "pno", "lpf", "sine"], gains: [1.0, 0.76, 0.74, 0.64],
         echoes: [
-          { sec: 0.478, spread: 0.016, fb: 0.56, wet: 0.44, damp: 0.42 },
+          { sec: 0.666, spread: 0.016, fb: 0.56, wet: 0.44, damp: 0.42 },
           { sec: 0.478, spread: 0.022, fb: 0.48, wet: 0.30, damp: 0.28 },
           null,
           null,
         ],
-        f: "Part 4/6 · Full Groove & Piano-Drop Call-and-Response (1:02–1:14.4 PCM · Dry Bass & Kick)\n478 ms Echo on Piano Voices Only · Razor-Tight Dry D3/C3 Bass & Sub Kick",
+        f: "Part 4/6 · Full Groove & Piano-Drop Call-and-Response (1:02–1:14.4 PCM · Dry Bass & Kick)\nV1 800 ms / V2 478 ms Piano Echoes · Razor-Tight Dry D3/C3 Bass & Sub Kick",
       },
       {
         m: 5, modes: ["pno", "pno", "lpf", "sine"], gains: [0.94, 0.74, 0.76, 0.66],
         echoes: [
-          { sec: 0.478, spread: 0.016, fb: 0.54, wet: 0.42, damp: 0.38 },
+          { sec: 0.666, spread: 0.016, fb: 0.54, wet: 0.42, damp: 0.38 },
           { sec: 0.239, spread: 0.014, fb: 0.44, wet: 0.28, damp: 0.28, pingpong: true },
           null,
           null,
         ],
-        f: "Part 5/6 · Main Climax High Synth-Piano Theme (2:50–3:02.4 PCM · Dual 478/239 ms Echo)\nV1 Lead 478 ms Stereo Echo + V2 Mid 239 ms Ping-Pong Echo · Dry Rolling D3/C3 Bass & Kick",
+        f: "Part 5/6 · Main Climax High Synth-Piano Theme (2:50–3:02.4 PCM · Dual 800/239 ms Echo)\nV1 Lead 800 ms Stereo Echo + V2 Mid 239 ms Ping-Pong Echo · Dry Rolling D3/C3 Bass & Kick",
       },
       {
         m: 6, modes: ["pno", "pno", "pno", "lpf"], gains: [1.0, 0.88, 0.78, 0.80],
         echoes: [
-          { sec: 0.478, spread: 0.016, fb: 0.68, wet: 0.52, damp: 0.38 },
+          { sec: 0.666, spread: 0.016, fb: 0.68, wet: 0.52, damp: 0.38 },
           { sec: 0.478, spread: 0.024, fb: 0.66, wet: 0.46, damp: 0.32 },
           { sec: 0.239, spread: 0.014, fb: 0.52, wet: 0.32, damp: 0.26, pingpong: true },
           null,
         ],
-        f: "Part 6/6 · A440 Signature Finale — Fading Drops into Strong Recognizable A = 440 Hz Accord\n478/239 ms Layered Piano Echoes on A5·A4(440 Hz)·E4 over Clean Dry A2→A1 Bass Foundation",
+        f: "Part 6/6 · A440 Signature Finale — Fading Drops into Strong Recognizable A = 440 Hz Accord\n800/478/239 ms Layered Piano Echoes on A5·A4(440 Hz)·E4 over Clean Dry A2→A1 Bass Foundation",
       },
     ],
     eval(x, pi) {
@@ -2675,7 +2675,7 @@ const RVB_LENS = [1559, 1699, 1847, 1993];
 const rvbBufs = RVB_LENS.map((n) => new Float32Array(n));
 const rvbIdx = new Int32Array(4);
 const rvbLp = new Float32Array(4);
-const ECHO_MAX = 48000;
+const ECHO_MAX = 96000;
 const echoBufL = new Float32Array(ECHO_MAX);
 const echoBufR = new Float32Array(ECHO_MAX);
 let echoIdx = 0, echoLpL = 0, echoLpR = 0;
@@ -3015,6 +3015,7 @@ const elIndex = document.getElementById("index");
 
 let dspChipsKey = "";
 let dspChipEls = [];
+let dspEchoChipEls = [];
 
 function dspMarkerSvg(mode, col) {
   const s = `stroke="${col}" stroke-width="1.45" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
@@ -3454,6 +3455,32 @@ function draw() {
     activeHz.push(F0 * Math.pow(2, y));
   }
 
+  // Separate live ECHO heads on playhead (hollow rings in each voice's color when echo taps k=1..4 are sounding)
+  const echoLiveByVoice = new Uint8Array(nv);
+  for (let v = 0; v < nv; v++) {
+    const vEco = (partEchoesDraw ? partEchoesDraw[v] : null) || globalEchoDraw;
+    if (!vEco || !(vEco.wet > 0)) continue;
+    const stepIdx = Math.max(1, Math.round((demo.speed * vEco.sec / (X_MAX - X_MIN)) * (SAMPLES - 1)));
+    const arr = ys[v];
+    const col = V_COLS[v % V_COLS.length];
+    for (let k = 1; k <= 4; k++) {
+      const srcIdx = headIdx - k * stepIdx;
+      if (srcIdx < 0) break;
+      const ey = arr[srcIdx];
+      if (Number.isFinite(ey) && ey >= Y_MIN - 0.5 && ey <= Y_MAX + 0.5) {
+        echoLiveByVoice[v] = 1;
+        const epy = toY(ey);
+        ctx.globalAlpha = clamp(vEco.wet * Math.pow(vEco.fb, k - 1) * 1.35, 0.20, 0.85);
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(hx, epy, 5.8 - k * 0.5, 0, PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(hx, epy, 2.2, 0, PI * 2); ctx.stroke();
+        break; // draw strongest active echo tap per voice cleanly
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+
   // Integrated Bottom Panel DSP Channel Legend & Broadcast Metering (no overlap over C7 octave)
   if (elDspVoices) {
     const chipsKey = `${demo.id}:${partIdx}:${nv}`;
@@ -3465,6 +3492,7 @@ function draw() {
       }
       elDspVoices.innerHTML = "";
       dspChipEls = [];
+      dspEchoChipEls = [];
       for (let v = 0; v < nv; v++) {
         const tag = modeForVoice(v, curVals[v]);
         const lbl = tag === "noise" ? "NSE" : tag.toUpperCase();
@@ -3474,29 +3502,33 @@ function draw() {
         chip.innerHTML = `${dspMarkerSvg(tag, col)}<span>${lbl}</span>`;
         elDspVoices.appendChild(chip);
         dspChipEls.push(chip);
-      }
-      // HUD Echo Pill: shows per-voice custom echo times or global echo settings
-      const echoTags = [];
-      if (partEchoesDraw) {
-        for (let v = 0; v < nv; v++) {
-          const ve = partEchoesDraw[v];
-          if (ve && ve.wet > 0) echoTags.push(`V${v + 1}:${Math.round(ve.sec * 1000)}MS`);
+
+        const ve = partEchoesDraw ? partEchoesDraw[v] : null;
+        if (ve && ve.wet > 0) {
+          const eChip = document.createElement("span");
+          eChip.className = "f-vchip";
+          eChip.innerHTML = `${dspMarkerSvg("rvb", col)}<span>ECHO ${Math.round(ve.sec * 1000)}ms</span>`;
+          elDspVoices.appendChild(eChip);
+          dspEchoChipEls.push({ v, el: eChip });
         }
-      } else if (globalEchoDraw && globalEchoDraw.wet > 0) {
-        echoTags.push(`${Math.round(globalEchoDraw.sec * 1000)}MS · FB ${Math.round(globalEchoDraw.fb * 100)}%`);
       }
-      if (echoTags.length) {
-        const echoChip = document.createElement("span");
-        echoChip.className = "f-vchip live";
-        echoChip.style.borderColor = "rgba(127,212,204,0.45)";
-        echoChip.style.color = "var(--cyan)";
-        echoChip.innerHTML = `${dspMarkerSvg("rvb", "#7fd4cc")}<span>ECHO ${echoTags.join(" · ")}</span>`;
-        elDspVoices.appendChild(echoChip);
+      if (!partEchoesDraw && globalEchoDraw && globalEchoDraw.wet > 0) {
+        const eChip = document.createElement("span");
+        eChip.className = "f-vchip";
+        eChip.innerHTML = `${dspMarkerSvg("rvb", "#7fd4cc")}<span>ECHO ${Math.round(globalEchoDraw.sec * 1000)}ms</span>`;
+        elDspVoices.appendChild(eChip);
+        dspEchoChipEls.push({ v: -1, el: eChip });
       }
     }
     for (let v = 0; v < dspChipEls.length; v++) {
       const isLive = Number.isFinite(curVals[v]) && curVals[v] >= Y_MIN - 0.5 && curVals[v] <= Y_MAX + 0.5;
       dspChipEls[v].classList.toggle("live", isLive);
+    }
+    let anyEchoLive = false;
+    for (let v = 0; v < nv; v++) if (echoLiveByVoice[v]) { anyEchoLive = true; break; }
+    for (let i = 0; i < dspEchoChipEls.length; i++) {
+      const item = dspEchoChipEls[i];
+      item.el.classList.toggle("live", item.v < 0 ? anyEchoLive : !!echoLiveByVoice[item.v]);
     }
   }
 
