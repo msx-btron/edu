@@ -2190,163 +2190,172 @@ const DEMOS = [
     },
   },
 
-  // 25 — Composition 5: Apollo 440 "Electro Glide in Blue" (1997) — PCM-Aligned to YouTube Recording (QRI548QaGVc, 78/156 BPM)
+  // 25 — Composition 5: Apollo 440 "Electro Glide in Blue" (1997) — Sheet Harmonics (./electro-glide-in-blue/) + PCM Echo Timing
   {
-    id: "25", name: "TRACK 5: ELECTRO GLIDE IN BLUE", src: "APOLLO 440 · 78/156 BPM · PCM", speed: 16 / 12.3077, bsound: true, reverb: 0.34, echo: { sec: 0.3846, fb: 0.48, wet: 0.42 },
+    id: "25", name: "TRACK 5: ELECTRO GLIDE IN BLUE", src: "APOLLO 440 · Dm9/Dadd9/C · 430ms ECHO", speed: 16 / 12.36, bsound: true, reverb: 0.42, echo: { sec: 0.430, fb: 0.62, wet: 0.44 },
     parts: [
       {
-        m: 1, modes: ["pno", "pno", "tri", "sine"],
-        f: "Part 1/6 · Apollo 440『Electro Glide in Blue』(0:00–0:20 PCM) — Atmospheric Drone & Opening Drops\nD2/D3 Sub Drone + Quiet F4·A3·C4 & G3·E4 Piano Drops into 385 ms Stereo Ping-Pong Echo",
+        m: 1, modes: ["pno", "pno", "sine"], gains: [1.0, 0.85, 0.48],
+        f: "Part 1/6 · Opening Piano Drops & Echo (Sheets 1–2: C → Dm9 → Dadd9)\nPure Consonant Drops (C3·G4·C5·E5 → D3·F4·A4·D5·E5 → F#4 Lift) into 430 ms Stereo Echo",
       },
       {
-        m: 2, modes: ["pno", "pno", "pno", "sine"],
-        f: "Part 2/6 · Iconic Piano-Drop Riff (0:20–0:40 PCM · Exact 6.15 s Cycle @ 78 BPM)\nG4/D5 → A4 → C4 → D4/D3 · F4/A4 → E5 → D4 → E4/C4/G3 Echo Tail (385 ms Taps)",
+        m: 2, modes: ["pno", "pno", "pno", "sine"], gains: [1.0, 0.85, 0.65, 0.45],
+        f: "Part 2/6 · Iconic Solo Piano-Drop Riff (0:20 PCM · Exact 6.18 s Cycle, 190 ms Drops)\nG4 → A4 → C5 → D5/D3 · A4/E5 → F4/A4 → E4/C4/G3 over Warm D2/D3 Sub & Lush Stereo Echo",
       },
       {
-        m: 3, modes: ["pno", "pno", "lpf", "sine", "nse", "tri"],
-        f: "Part 3/6 · Piano-Drop Answer & Breakbeat Entrance (1:02–1:15 PCM · 156 BPM Double-Time)\nG4/D5 Riff + A4/E5 → D5 → F4/A4 → E4 Answer + D3/D2 Bass + Rolling Breakbeat + Pad",
+        m: 3, modes: ["pno", "pno", "sine"], gains: [1.0, 0.82, 0.45],
+        f: "Part 3/6 · Blooming Solo Piano & Sheet Dadd9 (F#) Shimmer (0:33 PCM + Sheets 2–4)\nPure Piano Arpeggios & Dm9 ↔ Dadd9(F#) ↔ Cmaj9 Harmonies (Zero Pad Hum, Pure Echo)",
       },
       {
-        m: 4, modes: ["pno", "pno", "lpf", "sine", "nse", "tri"],
-        f: "Part 4/6 · Full Rolling Groove & Dorian D ↔ C Bassline (1:30–2:10 PCM)\nSignature Piano Drops + Syncopated D3/C3/A2 Bass + Tight 156 BPM Breakbeat + Lush String Pad",
+        m: 4, modes: ["pno", "pno", "lpf", "sine"], gains: [1.0, 0.80, 0.72, 0.62],
+        f: "Part 4/6 · Piano-Drop Hook + Rolling Dorian Bass & Sub Kick (Dm9 → Cmaj9 → Dadd9 → Dm9)\nHarmonically Locked Piano Drops + Warm LPF Bass (D2→C2→D2→A1) + Soft Sub Kick",
       },
       {
-        m: 5, modes: ["pno", "pno", "lpf", "sine", "nse", "tri"],
-        f: "Part 5/6 · Main Climax Synth-Piano Theme (2:50–3:03 PCM · 170s–182s)\nHigh Theme (A4·D5·C6·B5·G5·D5 / E5·C5·F5·C5·B4·D5) + Piano Drops + Full Breakbeat",
+        m: 5, modes: ["pno", "pno", "lpf", "sine"], gains: [1.0, 0.80, 0.72, 0.62],
+        f: "Part 5/6 · Main Climax Theme in Dm9 / Dadd9 / Cmaj9 (Sheet 10.53.55: C → A → C → D)\nSoaring Consonant Melody (A4·D5·E5·F5·E5·D5 / C5·E5·G5·E5·D5) + Echo Drops + Rolling Bass",
       },
       {
-        m: 6, modes: ["pno", "pno", "lpf", "tri"],
-        f: "Part 6/6 · Deep Sub-Bass Drop (4:50 PCM: D2 → C2 → A1 → D2 + F#4) & Echo Outro\nIconic Sub-Bass Riff + High C5/A4 Bell + Final G4/D5 → A4 → D4 Piano Drops into Echo",
+        m: 6, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.80, 0.72],
+        f: "Part 6/6 · Deep Sub-Bass Drop (D2 → C2 → A1 → D2) & Final Dadd9 Echo Outro (Sheet 10.54.22)\nWarm Sub-Bass + Shimmering F#4/A4/E5 Drops Dissolving into Sustained D3–A4–D5 Echo Tail",
       },
     ],
     eval(x, pi) {
-      // Exact YouTube PCM tempo: 78.0 BPM half-time / 156.0 BPM breakbeat
-      // 1 beat @ 78 BPM = 0.76923 s · 1 bar = 3.07692 s · 2-bar riff = 6.15385 s · 4 bars = 12.3077 s
-      // Stereo echo = 0.3846 s (exact 8th-note tap spacing observed at 23.00, 23.38, 23.75, 24.13, 24.50 s!)
-      const DUR = 12.3077;
+      // Exact YouTube PCM cycle = 6.18 s (2 bars @ 78 BPM), 4-bar phrase = 12.36 s
+      // Locked strictly to the consonant sheet harmonies from ./electro-glide-in-blue/:
+      //   Cmaj9:  C2(65.41), C3(130.81), G3(196.00), C4(261.63), E4(329.63), G4(392.00), C5(523.25), E5(659.25)
+      //   Dm9:    D2(73.42), D3(146.83), A3(220.00), D4(293.66), E4(329.63), F4(349.23), A4(440.00), D5(587.33), E5(659.25)
+      //   Dadd9:  D2(73.42), D3(146.83), A3(220.00), D4(293.66), E4(329.63), F#4(369.99), A4(440.00), D5(587.33), E5(659.25)
+      //   Am7:    A1(55.00), A2(110.00), E3(164.81), A3(220.00), C4(261.63), E4(329.63), G4(392.00), C5(523.25)
+      const DUR = 12.36;
       const t = ((x + 8) / 16) * DUR;
-      const barDur = DUR / 4; // 3.07692 s
+      const barDur = DUR / 4; // 3.09 s
       const bar = clamp(fl(t / barDur), 0, 3);
       const bt = t - bar * barDur;
-      const t2 = mod(t, barDur * 2); // 2-bar (6.15385 s) riff cycle
+      const t2 = mod(t, DUR / 2); // exact 6.18 s piano-drop cycle
       const st16 = clamp(fl(bt / (barDur / 16)), 0, 15);
       const sf16 = (bt - st16 * (barDur / 16)) / (barDur / 16);
 
-      // 1) Part 1 (0:00–0:20 PCM): Sparse atmospheric drops (F4·A3·C4 then G3·E4) over D2/D3 drone
-      const introTop = [
-        [0.75, 293.66, 0.38], [1.54, 349.23, 0.45], [2.31, 349.23, 0.40], [3.08, 261.63, 0.45],
-        [4.62, 349.23, 0.42], [6.15, 329.63, 0.48], [7.69, 329.63, 0.45], [9.23, 392.00, 0.48],
-        [10.77, 329.63, 0.48],
+      // PART 1 (Sheets 1–2 + 0:03–0:19 PCM): Cmaj9 -> Dm9 -> Dadd9(F#) -> Dm9
+      const p1Top = [
+        // Bar 1 (Cmaj9): E5 -> C5 -> G4
+        [0.00, 659.25, 0.34], [0.42, 523.25, 0.34], [0.84, 392.00, 0.42],
+        // Bar 2 (Dm9):   A4 -> F4 -> E4 -> D4
+        [3.09, 440.00, 0.30], [3.50, 349.23, 0.30], [3.92, 329.63, 0.34], [4.40, 293.66, 0.44],
+        // Bar 3 (Dadd9): A4 -> F#4 -> E4 -> D5
+        [6.18, 440.00, 0.30], [6.60, 369.99, 0.32], [7.02, 329.63, 0.34], [7.50, 587.33, 0.44],
+        // Bar 4 (Dm9):   E5 -> D5 -> A4 -> F4
+        [9.27, 659.25, 0.30], [9.68, 587.33, 0.30], [10.10, 440.00, 0.34], [10.58, 349.23, 0.48],
       ];
-      const introMid = [
-        [0.00, 146.83, 0.85], [1.54, 220.00, 0.65], [3.08, 146.83, 0.85], [4.62, 261.63, 0.65],
-        [6.15, 196.00, 0.85], [7.69, 220.00, 0.65], [9.23, 196.00, 0.85], [10.77, 146.83, 0.90],
+      const p1Mid = [
+        [0.00, 329.63, 0.48], [0.84, 261.63, 0.52],
+        [3.09, 293.66, 0.48], [3.92, 220.00, 0.52],
+        [6.18, 293.66, 0.48], [7.02, 220.00, 0.52],
+        [9.27, 349.23, 0.48], [10.10, 293.66, 0.55],
       ];
 
-      // 2) Exact Signature Piano-Drop Riff (20.75s–26.90s & 26.90s–33.05s PCM — 6.1538 s cycle!)
-      // Top voice: G4/D5 (+0.00) -> A4 (+0.25) -> D5 (+0.50) -> A4 (+0.88) -> A4 (+1.50) -> E5 (+1.75) -> E4 (+2.25)
+      // PART 2 (0:20.7 PCM — Exact 6.18 s Piano-Drop Cycle, 100% Consonant Voicings!):
+      // Strike 1 (+0.00): G4 + D5 (G5/D) -> (+0.20): A4 + E4 -> (+0.40): C5 + G4 -> (+0.58): D5 + D4/D3
+      // [1.14 s echo ring] -> (+1.72): E5 + A4 -> (+1.94): F4 + A4 -> (+2.26): E4 + C4 + G3 [3.9 s lush echo decay]
       const riffTop = [
-        [0.00, 587.33, 0.24], [0.25, 440.00, 0.24], [0.50, 587.33, 0.26], [0.88, 440.00, 0.24],
-        [1.50, 440.00, 0.26], [1.75, 659.25, 0.28], [2.25, 329.63, 0.36],
+        [0.00, 587.33, 0.19], [0.20, 440.00, 0.19], [0.40, 523.25, 0.19], [0.58, 587.33, 0.32],
+        [1.72, 659.25, 0.21], [1.94, 440.00, 0.22], [2.26, 329.63, 0.34],
       ];
-      // Mid voice: G4 (+0.00) -> A3 (+0.25) -> C4 (+0.38) -> D4 (+0.63) -> F4 (+1.50) -> D4 (+2.00) -> C4 (+2.38)
       const riffMid = [
-        [0.00, 392.00, 0.24], [0.25, 220.00, 0.20], [0.38, 261.63, 0.24], [0.63, 293.66, 0.34],
-        [1.50, 349.23, 0.32], [2.00, 293.66, 0.28], [2.38, 261.63, 0.38],
+        [0.00, 392.00, 0.19], [0.20, 329.63, 0.19], [0.40, 392.00, 0.19], [0.58, 293.66, 0.40],
+        [1.72, 440.00, 0.22], [1.94, 349.23, 0.24], [2.26, 261.63, 0.36],
       ];
-      // Low piano voice: D3 (+0.75) -> A3 (+1.50) -> G3 (+2.38)
       const riffLow = [
-        [0.75, 146.83, 0.65], [1.50, 220.00, 0.45], [2.38, 196.00, 0.45],
+        [0.58, 146.83, 0.65], [1.72, 220.00, 0.42], [2.26, 196.00, 0.46],
       ];
 
-      // 3) Part 3 (62s–74.5s PCM): 4-bar call-and-response piano drops
-      // Bars 1–2: Signature G4/D5 riff; Bars 3–4: Answering A4/E5 -> D5 -> F4/A4 -> E4 -> G4/D5
+      // PART 3 (Sheets 2–4 + 0:33 PCM): Blooming Solo Piano with Dm9 -> Dadd9(F#) -> Cmaj9 -> Dm9
       const p3Top = [
-        // Bar 1–2 (0.00..6.15): Exact G4/D5 riff
-        [0.00, 587.33, 0.24], [0.25, 440.00, 0.24], [0.50, 587.33, 0.26],
-        [1.50, 440.00, 0.26], [1.75, 659.25, 0.28], [2.25, 329.63, 0.36],
-        [3.08, 440.00, 0.34], [3.46, 587.33, 0.34], [4.62, 440.00, 0.32], [5.00, 329.63, 0.36],
-        // Bar 3–4 (6.15..12.31): Exact 67s–74s PCM answer (G4/G5 -> C5 -> F4/A4 -> E4 -> A4/E5 -> D5)
-        [6.15, 783.99, 0.28], [6.54, 523.25, 0.28], [7.69, 440.00, 0.28], [8.08, 329.63, 0.32],
-        [9.23, 659.25, 0.34], [9.62, 587.33, 0.36], [10.38, 440.00, 0.34], [11.15, 587.33, 0.42],
+        // Bar 1 (Dm9):   G4 -> A4 -> C5 -> D5 · E5 -> A4 -> F4 -> E4
+        [0.00, 392.00, 0.19], [0.20, 440.00, 0.19], [0.40, 523.25, 0.19], [0.58, 587.33, 0.32],
+        [1.72, 659.25, 0.22], [1.94, 440.00, 0.22], [2.26, 349.23, 0.34],
+        // Bar 2 (Dadd9): A4 -> D5 -> F#4 -> A4 -> E5 -> D5
+        [3.09, 440.00, 0.24], [3.48, 587.33, 0.26], [4.25, 369.99, 0.26], [4.64, 440.00, 0.26],
+        [5.02, 659.25, 0.28], [5.41, 587.33, 0.36],
+        // Bar 3 (Cmaj9): G4 -> C5 -> E5 -> D5 -> C5 -> G4
+        [6.18, 392.00, 0.20], [6.38, 523.25, 0.20], [6.58, 659.25, 0.28], [7.34, 587.33, 0.24],
+        [7.72, 523.25, 0.26], [8.11, 392.00, 0.34],
+        // Bar 4 (Dm9):   A4 -> D5 -> E5 -> F5 -> E5 -> D5
+        [9.27, 440.00, 0.22], [9.66, 587.33, 0.24], [10.04, 659.25, 0.24], [10.43, 698.46, 0.26],
+        [10.81, 659.25, 0.28], [11.20, 587.33, 0.42],
       ];
       const p3Mid = [
-        [0.00, 392.00, 0.24], [0.38, 261.63, 0.24], [0.63, 293.66, 0.34], [1.50, 349.23, 0.32], [2.38, 261.63, 0.36],
-        [3.08, 329.63, 0.34], [3.46, 440.00, 0.34], [4.62, 349.23, 0.32], [5.00, 220.00, 0.36],
-        [6.15, 392.00, 0.28], [6.54, 392.00, 0.28], [7.69, 349.23, 0.28], [8.08, 220.00, 0.32],
-        [9.23, 440.00, 0.34], [9.62, 440.00, 0.36], [10.38, 329.63, 0.34], [11.15, 440.00, 0.42],
+        [0.00, 293.66, 0.36], [0.58, 220.00, 0.42], [1.72, 349.23, 0.32], [2.26, 261.63, 0.38],
+        [3.09, 293.66, 0.38], [4.25, 293.66, 0.34], [5.02, 369.99, 0.38],
+        [6.18, 261.63, 0.38], [6.58, 392.00, 0.38], [7.72, 329.63, 0.38],
+        [9.27, 293.66, 0.38], [10.04, 349.23, 0.36], [10.81, 440.00, 0.42],
       ];
 
-      // 4) Part 5 (170s–182.5s PCM): Main Climax High Synth-Piano Theme
-      const p5Theme = [
-        // Bar 1–2 (170s–176s): A4 -> B5/C6 -> G5 -> D5 -> C5 -> A4 -> G4 -> A4
-        [0.00, 440.00, 0.34], [0.38, 987.77, 0.34], [0.77, 1046.50, 0.34], [1.15, 783.99, 0.38],
-        [1.92, 587.33, 0.38], [2.31, 440.00, 0.34], [3.08, 523.25, 0.38], [3.85, 440.00, 0.36],
-        [4.62, 440.00, 0.38], [5.38, 493.88, 0.34], [5.77, 587.33, 0.34],
-        // Bar 3–4 (176s–182s): C6 -> B5 -> D5 -> E5 -> C5 -> E5 -> F5 -> C5 -> B4 -> D5
-        [6.15, 1046.50, 0.34], [6.54, 987.77, 0.34], [7.31, 587.33, 0.38], [8.08, 659.25, 0.36],
-        [8.46, 783.99, 0.36], [9.23, 659.25, 0.34], [9.62, 523.25, 0.34], [10.00, 659.25, 0.34],
-        [10.77, 698.46, 0.36], [11.15, 523.25, 0.34], [11.54, 493.88, 0.34], [11.92, 587.33, 0.34],
+      // PART 4 (Dm9 -> Cmaj9 -> Dadd9 -> Dm9): Piano-Drop Hook + Warm Dorian Bass & Soft Sub Kick
+      const p4Top = [
+        [0.00, 587.33, 0.19], [0.20, 440.00, 0.19], [0.40, 523.25, 0.19], [0.58, 587.33, 0.32],
+        [1.72, 659.25, 0.22], [1.94, 440.00, 0.22], [2.26, 349.23, 0.34],
+        [3.09, 523.25, 0.24], [3.48, 659.25, 0.26], [4.25, 587.33, 0.26], [4.64, 523.25, 0.26], [5.02, 392.00, 0.34],
+        [6.18, 587.33, 0.19], [6.38, 440.00, 0.19], [6.58, 369.99, 0.24], [7.34, 440.00, 0.26], [7.72, 659.25, 0.34],
+        [9.27, 659.25, 0.26], [9.66, 587.33, 0.28], [10.43, 440.00, 0.28], [11.20, 587.33, 0.40],
       ];
 
-      // 5) Rolling 156 BPM Breakbeat (2 cycles per 78 BPM bar = 16th steps on 3.077 s bar)
+      // PART 5 (Sheet 10.53.55 Climax: Cmaj9 -> Am7 -> Cmaj9 -> Dadd9): Pure Consonant High Melody
+      const p5Top = [
+        // Bar 1 (Cmaj9): E5 -> G5 -> E5 -> D5 -> C5
+        [0.00, 659.25, 0.32], [0.77, 783.99, 0.32], [1.54, 659.25, 0.30], [1.93, 587.33, 0.30], [2.32, 523.25, 0.38],
+        // Bar 2 (Am7):   E5 -> C5 -> A4 -> G4 -> A4
+        [3.09, 659.25, 0.32], [3.86, 523.25, 0.32], [4.64, 440.00, 0.32], [5.02, 392.00, 0.30], [5.41, 440.00, 0.38],
+        // Bar 3 (Cmaj9): G5 -> E5 -> D5 -> C5 -> E5
+        [6.18, 783.99, 0.32], [6.95, 659.25, 0.32], [7.72, 587.33, 0.30], [8.11, 523.25, 0.30], [8.50, 659.25, 0.38],
+        // Bar 4 (Dadd9): F#5 -> E5 -> D5 -> A4 -> D5
+        [9.27, 739.99, 0.34], [10.04, 659.25, 0.32], [10.81, 587.33, 0.34], [11.20, 440.00, 0.30], [11.59, 587.33, 0.44],
+      ];
+      const p5Mid = [
+        [0.00, 392.00, 0.42], [1.54, 329.63, 0.42],
+        [3.09, 329.63, 0.42], [4.64, 261.63, 0.42],
+        [6.18, 392.00, 0.42], [7.72, 329.63, 0.42],
+        [9.27, 369.99, 0.42], [10.81, 293.66, 0.48],
+      ];
+
+      // Harmonic Bass per part (locked strictly to the sheet chords; no A3/G3 pad drone!)
+      const bassRoots = pi === 0 ? [65.41, 73.42, 73.42, 73.42]
+        : (pi === 2 ? [73.42, 73.42, 65.41, 73.42]
+        : (pi === 3 ? [73.42, 65.41, 73.42, 73.42]
+        : (pi === 4 ? [65.41, 55.00, 65.41, 73.42] : [73.42, 73.42, 73.42, 73.42])));
+
+      const bHz = bassRoots[bar];
+      const bassMask = [1, 0, 1, 0, 2, 0, 1, 0, 1, 0, 1, 0, 2, 0, 1, 2][st16];
+      const bass = (bassMask > 0 && sf16 < 0.74) ? hz(bassMask === 2 ? bHz * 1.5 : bHz) : NaN;
+      const subD = bt < barDur * 0.95 ? hz(bHz) : NaN;
+
       const kickSteps = [0, 3, 8, 11];
       let kick = NaN;
       for (let i = 0; i < kickSteps.length; i++) {
         const dt = bt - kickSteps[i] * (barDur / 16);
-        if (dt >= 0 && dt < 0.14) { kick = shimKickY(dt, 55, 0.14); break; }
-      }
-      const snareSteps = [2, 6, 10, 14, 15];
-      let snare = NaN;
-      for (let i = 0; i < snareSteps.length; i++) {
-        const dt = bt - snareSteps[i] * (barDur / 16);
-        const sd = snareSteps[i] === 15 ? 0.036 : 0.062;
-        if (dt >= 0 && dt < sd) { snare = 2.05 - 1.55 * (dt / sd); break; }
+        if (dt >= 0 && dt < 0.13) { kick = shimKickY(dt, 55, 0.13); break; }
       }
 
-      // 6) Dorian Bassline (from PCM: D3/D2 -> C3 -> D3 -> A2)
-      const bassBarHz = [73.42, 65.41, 73.42, 55.00][bar];
-      const bassFifthHz = bassBarHz * 1.5;
-      const bassMask = [1, 0, 1, 0, 2, 0, 1, 0, 1, 0, 1, 0, 2, 0, 1, 2][st16];
-      const bass = (bassMask > 0 && sf16 < 0.76) ? hz(bassMask === 2 ? bassFifthHz : bassBarHz) : NaN;
-      const padHz = [220.00, 196.00, 220.00, 261.63][bar];
-      const pad = bt < barDur * 0.96 ? hz(padHz) : NaN;
-
-      if (pi === 0) {
-        const subD = bt < barDur * 0.94 ? hz(73.42) : NaN;
-        return [evalEvents(t, introTop), evalEvents(t, introMid), pad, subD];
-      }
-      if (pi === 1) {
-        const subD = bt < barDur * 0.95 ? hz(73.42) : NaN;
-        return [evalEvents(t2, riffTop), evalEvents(t2, riffMid), evalEvents(t2, riffLow), subD];
-      }
-      if (pi === 2) {
-        return [evalEvents(t, p3Top), evalEvents(t, p3Mid), bass, kick, snare, pad];
-      }
-      if (pi === 3) {
-        return [evalEvents(t2, riffTop), evalEvents(t2, riffMid), bass, kick, snare, pad];
-      }
-      if (pi === 4) {
-        return [evalEvents(t, p5Theme), evalEvents(t2, riffMid), bass, kick, snare, pad];
-      }
-      // Part 6/6 (290s–302.5s PCM Deep Sub-Bass Drop + Echo Outro):
-      // Sub-bass riff per bar: D2 (beat 0) -> C2 (beat 1) -> A1 (beat 2) -> D2 (beat 3)
+      if (pi === 0) return [evalEvents(t, p1Top), evalEvents(t, p1Mid), subD];
+      if (pi === 1) return [evalEvents(t2, riffTop), evalEvents(t2, riffMid), evalEvents(t2, riffLow), subD];
+      if (pi === 2) return [evalEvents(t, p3Top), evalEvents(t, p3Mid), subD];
+      if (pi === 3) return [evalEvents(t, p4Top), evalEvents(t2, riffMid), bass, kick];
+      if (pi === 4) return [evalEvents(t, p5Top), evalEvents(t, p5Mid), bass, kick];
+      // Part 6/6 (Sheet 10.54.22 + 4:50 PCM Deep Sub-Bass Drop -> Final Dadd9 Echo Outro)
       const subEvents = [
-        [0.00, 73.42, 0.62], [0.77, 65.41, 0.58], [1.54, 55.00, 0.62], [2.31, 73.42, 0.62],
+        [0.00, 73.42, 0.62], [0.77, 65.41, 0.58], [1.54, 55.00, 0.62], [2.32, 73.42, 0.62],
       ];
-      const subDrop = evalEvents(bt, subEvents);
-      // High C5/A4 bell + F#4 shimmer (from 292.69s, 299.23s–302s PCM!) + final piano drop
       const outroTop = [
-        [0.00, 587.33, 0.30], [0.25, 440.00, 0.30], [2.31, 369.99, 0.45],
-        [3.08, 523.25, 0.42], [3.85, 440.00, 0.42], [5.38, 369.99, 0.45],
-        [6.15, 587.33, 0.30], [6.40, 440.00, 0.30], [6.65, 587.33, 0.35], [7.65, 440.00, 0.40], [7.90, 659.25, 0.45],
-        [9.23, 523.25, 0.48], [10.00, 440.00, 0.52], [10.77, 293.66, 0.78],
+        [0.00, 587.33, 0.19], [0.20, 440.00, 0.19], [0.40, 523.25, 0.19], [0.58, 587.33, 0.34], [2.32, 369.99, 0.42],
+        [3.09, 523.25, 0.38], [3.86, 440.00, 0.38], [5.41, 369.99, 0.42],
+        [6.18, 587.33, 0.19], [6.38, 440.00, 0.19], [6.58, 523.25, 0.20], [6.76, 587.33, 0.36], [7.90, 659.25, 0.38],
+        [9.27, 440.00, 0.44], [10.04, 369.99, 0.48], [10.81, 293.66, 0.78],
       ];
       const outroMid = [
-        [0.00, 392.00, 0.30], [2.31, 220.00, 0.50], [3.08, 329.63, 0.48], [5.38, 220.00, 0.50],
-        [6.15, 392.00, 0.30], [7.65, 349.23, 0.45], [9.23, 261.63, 0.52], [10.77, 146.83, 0.85],
+        [0.00, 392.00, 0.20], [0.58, 293.66, 0.45], [2.32, 220.00, 0.48],
+        [3.09, 329.63, 0.45], [5.41, 220.00, 0.48],
+        [6.18, 392.00, 0.20], [7.90, 440.00, 0.38], [9.27, 293.66, 0.48], [10.81, 146.83, 0.85],
       ];
-      return [evalEvents(t, outroTop), evalEvents(t, outroMid), subDrop, pad];
+      return [evalEvents(t, outroTop), evalEvents(t, outroMid), evalEvents(bt, subEvents)];
     },
   },
 
@@ -2682,15 +2691,16 @@ function synthBSoundWave(mode, ph, modPh, f, v) {
     return 0.62 * (Math.sin(vph) - 0.5 * Math.sin(2 * vph) + 0.333 * Math.sin(3 * vph) - 0.25 * Math.sin(4 * vph));
   }
   if (mode === "pno") {
-    // Acoustic Piano-Drop / Hammer Pluck (pure integer harmonics 1f–4f with felt-hammer brightness decay)
+    // Velvety Acoustic Grand Piano Drop (warm fundamental + felt-hammer overtone roll-off)
     const age = vNoteAge[v];
-    const bright = Math.exp(-age * 7.5);
-    const body = 0.22 + 0.78 * Math.exp(-age * 2.4);
-    const w = 0.72 * s1
-      + (0.26 + 0.22 * bright) * Math.sin(2 * ph)
-      + (0.09 + 0.16 * bright) * Math.sin(3 * ph)
-      + 0.08 * bright * Math.sin(4 * ph);
-    return w * body * 0.88;
+    const bright = Math.exp(-age * 8.5);
+    const body = 0.16 + 0.84 * Math.exp(-age * 2.5);
+    const hiRoll = f > 480 ? 0.55 : 1.0; // gentle upper-register felt warmth
+    const w = 0.78 * s1
+      + (0.20 + 0.18 * bright) * hiRoll * Math.sin(2 * ph)
+      + (0.06 + 0.12 * bright) * hiRoll * Math.sin(3 * ph)
+      + 0.05 * bright * hiRoll * Math.sin(4 * ph);
+    return w * body * 0.90;
   }
   if (mode === "rvb") {
     // Hall reverb shimmer carrier (soft damped sine + airy comb overtone)
@@ -2729,6 +2739,7 @@ function ensureAudio() {
     const outR = ev.outputBuffer.getChannelData(1);
     let demo = DEMOS[demoIdx];
     let partModes = demo.parts[partIdx].modes || null;
+    let partGains = demo.parts[partIdx].gains || null;
     const dt = 1 / sr;
     let dx = (playing && !scrubbing) ? demo.speed * dt : 0;
     let blkPkL = 0, blkPkR = 0, blkSqL = 0, blkSqR = 0, limTrig = 0;
@@ -2778,7 +2789,8 @@ function ensureAudio() {
               wave = Math.tanh(2.15 * s1);
             }
           }
-          const sample = wave * vEnv[v] * norm;
+          const vGain = partGains && partGains[v] !== undefined ? partGains[v] : 1;
+          const sample = wave * vEnv[v] * vGain * norm;
           // Equal-power / subtle stereo spread across voices (Orchestra.html Eq. 8)
           const pan = nv > 1 ? ((v / (nv - 1)) - 0.5) * 0.45 : 0;
           sL += sample * (0.5 - pan);
@@ -2807,7 +2819,8 @@ function ensureAudio() {
       }
       const rvbWet = demo.reverb || 0;
       if (rvbWet > 0) {
-        const monoIn = 0.5 * (lpL + lpR);
+        // Feed dry + stereo echo taps into the 4-comb hall reverb for lush ambient piano-drop tail
+        const monoIn = 0.5 * (mixL + mixR);
         let wL = 0, wR = 0;
         for (let c = 0; c < 4; c++) {
           const buf = rvbBufs[c];
@@ -2849,6 +2862,7 @@ function ensureAudio() {
               clearReverb();
             }
             partModes = demo.parts[partIdx].modes || null;
+            partGains = demo.parts[partIdx].gains || null;
             needChromeUpdate = true;
           }
         }
@@ -3094,9 +3108,27 @@ function draw() {
   const toX = (x) => box.x + ((x - X_MIN) / (X_MAX - X_MIN)) * box.w;
   const toY = (y) => box.y + box.h - ((y - Y_MIN) / (Y_MAX - Y_MIN)) * box.h;
 
-  // Subtle HAL grid (octaves horizontally, beats vertically)
+  // Subtle HAL square musical scale grid (1-unit x beats + diatonic musical scale degrees per octave)
   ctx.lineWidth = 1;
-  ctx.strokeStyle = "rgba(127, 212, 204, 0.065)";
+  ctx.strokeStyle = "rgba(127, 212, 204, 0.032)";
+  ctx.beginPath();
+  for (let gx = -7; gx <= 7; gx += 2) {
+    const px = toX(gx);
+    ctx.moveTo(px, box.y); ctx.lineTo(px, box.y + box.h);
+  }
+  const SCALE_SEMI = [2, 4, 5, 7, 9, 11]; // D, E, F, G, A, B diatonic scale lines inside each octave
+  for (let oct = -3; oct <= 2; oct++) {
+    for (let k = 0; k < SCALE_SEMI.length; k++) {
+      const py = toY(oct + SCALE_SEMI[k] / 12);
+      if (py >= box.y && py <= box.y + box.h) {
+        ctx.moveTo(box.x, py); ctx.lineTo(box.x + box.w, py);
+      }
+    }
+  }
+  ctx.stroke();
+
+  // Primary octave & 2-beat square grid
+  ctx.strokeStyle = "rgba(127, 212, 204, 0.085)";
   ctx.beginPath();
   for (let gx = -8; gx <= 8; gx += 2) {
     const px = toX(gx);
@@ -3139,11 +3171,16 @@ function draw() {
   ctx.fillStyle = "rgba(127, 212, 204, 0.36)";
   ctx.font = '9.5px "IBM Plex Mono", monospace';
   const refNotes = [
-    [2, "C6 · 1047"], [1, "C5 · 523"], [0, "C4 · 262"], [-1, "C3 · 131"], [-2, "C2 · 65"],
+    [2, "C6 · 1047"], [1 + 7/12, "G5"], [1 + 4/12, "E5"], [1, "C5 · 523"],
+    [7/12, "G4"], [4/12, "E4"], [0, "C4 · 262"],
+    [-1 + 9/12, "A3"], [-1 + 7/12, "G3"], [-1, "C3 · 131"],
+    [-2 + 9/12, "A2"], [-2, "C2 · 65"],
   ];
   for (let i = 0; i < refNotes.length; i++) {
     const py = toY(refNotes[i][0]);
-    ctx.fillText(refNotes[i][1], box.x + box.w - 4, py - 3);
+    const isC = refNotes[i][1].includes("·");
+    ctx.fillStyle = isC ? "rgba(127, 212, 204, 0.42)" : "rgba(127, 212, 204, 0.22)";
+    ctx.fillText(refNotes[i][1], box.x + box.w - 4, py - 2);
   }
   const pyA4 = toY(log2(440 / F0));
   ctx.strokeStyle = "rgba(232, 164, 84, 0.14)";
