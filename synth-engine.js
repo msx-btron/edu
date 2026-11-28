@@ -2190,17 +2190,17 @@ const DEMOS = [
     },
   },
 
-  // 25 — Composition 5: Apollo 440 "Electro Glide in Blue" (1997) — 1:1 PCM Transcription (434 ms Echo, 6.16 s Cycle) + Finale Arrangement
+  // 25 — Composition 5: Apollo 440 "Electro Glide in Blue" (1997) — 1:1 PCM Transcription (478 ms Stereo Echo) + A440 Finale
   {
-    id: "25", name: "TRACK 5: ELECTRO GLIDE IN BLUE", src: "APOLLO 440 · 434ms ECHO · 6.16s CYCLE", speed: 16 / 12.32, bsound: true, reverb: 0.44, echo: { sec: 0.434, fb: 0.64, wet: 0.46 },
+    id: "25", name: "TRACK 5: ELECTRO GLIDE IN BLUE", src: "APOLLO 440 · 478ms STEREO ECHO · A440 FINALE", speed: 16 / 12.36, bsound: true, reverb: 0.42, echo: { sec: 0.478, spread: 0.016, fb: 0.58, wet: 0.44 },
     parts: [
       {
         m: 1, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.78, 0.50],
-        f: "Part 1/6 · Opening Piano Drops (0:08–0:20 PCM · Exact 434 ms Stereo Echo)\nDry Struck Drops (C4·A4·G4·A4·F4·E4 → F4·A4·F4·E4) over D3/D2 Bass — Pure Echo Tail",
+        f: "Part 1/6 · Opening Piano Drops (0:08–0:20 PCM · Exact 478 ms Stereo Echo)\nDry Struck Drops (C4·A4·G4·A4·F4·E4 → F4·A4·F4·E4) over D3/D2 Bass — Pure 478 ms Echo Tail",
       },
       {
         m: 2, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.80, 0.54],
-        f: "Part 2/6 · Iconic Solo Piano-Drop Riff (0:20.7–0:33.1 PCM · Exact 6.16 s Cycle × 2)\nDry Strikes Only (D5/G4·A4·G5/D5·D5/D4·A4 · F4·A4·C4·G4·E4) → 3.5 s Pure 434 ms Echo Decay",
+        f: "Part 2/6 · Iconic Solo Piano-Drop Riff (0:20.7–0:33.1 PCM · Exact 6.18 s Cycle × 2)\nDry Strikes Only (D5/G4·A4·G5/D5·D5/D4·A4 · F4·A4·C4·G4·E4) → 3.5 s Pure 478 ms Stereo Echo",
       },
       {
         m: 3, modes: ["pno", "pno", "lpf"], gains: [1.0, 0.78, 0.52],
@@ -2215,16 +2215,15 @@ const DEMOS = [
         f: "Part 5/6 · Main Climax High Synth-Piano Theme (2:50–3:02.4 PCM · Exact 1:1 Transcription)\nC6·B5·C6·A5·G5·D5·E5·G5·C5·E5·A5·D5 → C6·B5·C6·G5·E5·C5·D5·C6 + Rolling D3/C3/D2 Bass & Kick",
       },
       {
-        m: 6, modes: ["pno", "pno", "pno", "lpf"], gains: [1.0, 0.80, 0.65, 0.72],
-        f: "Part 6/6 · Grand Finale Arrangement — Reprise, Celestial Dadd9 Lift & Echo Dissolution\nSignature Riff + F#4·A4·D5·E5·F#5·A5 Lift over C2→D2→A1→D2 Sub → Final Dadd9 Chord into 434 ms Echo",
+        m: 6, modes: ["pno", "pno", "pno", "lpf"], gains: [1.0, 0.88, 0.78, 0.76],
+        f: "Part 6/6 · A440 Signature Finale — Fading Drops into Strong Recognizable A = 440 Hz Accord\nClosing Riff Echo (D2 → C2 → A1) Fading into Resonant A440 Accord (A2 · E4 · A4 = 440 Hz · A5)",
       },
     ],
     eval(x, pi) {
-      // Exact PCM cross-correlated cycle: 2 bars = 6.160 s, 4 bars = 12.320 s (77.92 / 155.84 BPM)
-      // Exact autocorrelation echo delay: 434 ms (r = 0.668) — baked-in echo duplicates removed from dry events!
-      const DUR = 12.32;
+      // Natural 12.36 s phrase (6.18 s per 2-bar cycle) + exact 48 kHz stereo-measured 478 ms echo (16 ms Haas spread)
+      const DUR = 12.36;
       const t = ((x + 8) / 16) * DUR;
-      const barDur = DUR / 4; // 3.08 s
+      const barDur = DUR / 4; // 3.09 s
       const bt = mod(t, barDur);
       const evM = (evs) => {
         for (let i = 0; i < evs.length; i++) {
@@ -2365,34 +2364,29 @@ const DEMOS = [
         return [evM(top), evM(mid), evM(bass), kick];
       }
 
-      // PART 6/6 — Grand Finale Arrangement:
-      // Bars 1–2 (0.00..6.16): Majestic reprise of signature G4/D5 riff -> celestial Dadd9 (F#4·A4·D5·E5·F#5·A5) lift
-      // Bars 3–4 (6.16..12.32): Luminous descending drops -> final sustained Dadd9 chord dissolving into 434 ms stereo echo!
+      // PART 6/6 — Fading Drops into Strong Recognizable A440 Accord (A2 · E4 · A4 = 440 Hz · A5 = 880 Hz)
+      // Bars 1–2 (0.00..5.20s): Gentle fading echo of the main motif descending D -> C -> A
+      // Bars 3–4 (5.60..12.36s): Strong, unmistakable, sustained A440 accord fading smoothly into 478 ms stereo echo!
       const finTop = [
-        // Bar 1: Signature piano-drop reprise
-        [0.00,74,0.18],[0.20,69,0.18],[0.42,79,0.20],[0.62,74,0.28],[1.54,69,0.24],[1.84,76,0.28],[2.32,74,0.38],
-        // Bar 2: Celestial Dadd9 (F#!) ascending shimmer
-        [3.08,66,0.24],[3.46,69,0.24],[3.85,74,0.26],[4.24,76,0.28],[4.62,78,0.32],[5.08,81,0.58],
-        // Bar 3: Spacious luminous descent into final resolution
-        [6.16,76,0.36],[6.78,74,0.36],[7.39,69,0.38],[8.00,66,0.42],
-        // Final Dadd9 bell chord at 8.62s — then 3.5 seconds of pure fading 434 ms stereo echo & cathedral reverb!
-        [8.62,74,0.78],
+        // Fading motif descent
+        [0.00,74,0.22],[0.32,69,0.24],[1.54,65,0.28],[1.96,64,0.34],[3.09,69,0.38],[4.12,67,0.42],
+        // Strong recognizable A440 accord (A5 = 880 Hz over A4 = 440 Hz) — struck & softly echoed!
+        [5.60,81,1.65],[7.72,81,1.85],
       ];
       const finMid = [
-        [0.00,67,0.18],[0.42,74,0.20],[0.62,62,0.36],[1.54,65,0.28],[1.84,69,0.28],[2.32,64,0.40],
-        [3.08,62,0.32],[3.85,66,0.32],[4.62,69,0.38],[5.08,74,0.62],
-        [6.16,72,0.38],[6.78,69,0.38],[7.39,64,0.40],[8.00,62,0.44],
-        [8.62,69,0.82],
+        [0.00,67,0.22],[1.54,57,0.32],[3.09,64,0.40],[4.12,60,0.44],
+        // Exact A4 = 440.00 Hz (MIDI 69) strong center voice!
+        [5.60,69,1.85],[7.72,69,2.10],
       ];
       const finLow = [
-        [0.62,57,0.52],[1.54,57,0.42],[2.32,60,0.48],
-        [3.08,57,0.58],[4.62,62,0.58],[5.08,66,0.68],
-        [6.16,60,0.50],[7.39,57,0.55],[8.62,66,0.85], // F#4 warm third in final chord!
+        [0.32,62,0.36],[3.09,60,0.48],
+        // Exact E4 (MIDI 64) + C#5/E4 open fifth resonant support for A440!
+        [5.60,64,1.85],[7.72,64,2.05],
       ];
       const finBass = [
-        [0.00,36,0.48],[0.62,38,0.85],[1.54,33,0.68],[2.32,38,0.72],
-        [3.08,38,1.35],[4.62,33,0.52],[5.08,38,0.95],
-        [6.16,36,0.95],[7.39,33,0.95],[8.62,38,1.45], // Deep D2 finale pedal!
+        [0.00,50,0.90],[1.54,48,0.95],[3.09,45,1.40],
+        // Deep A2 (110 Hz, MIDI 45) -> A1 (55 Hz, MIDI 33) grounding the A440 finale accord!
+        [5.60,45,2.00],[7.72,33,2.60],
       ];
       return [evM(finTop), evM(finMid), evM(finLow), evM(finBass)];
     },
@@ -2843,15 +2837,15 @@ function ensureAudio() {
       let mixL = lpL, mixR = lpR;
       const echoCfg = demo.echo || null;
       if (echoCfg && echoCfg.wet > 0) {
-        const dSamp = clamp(Math.round(echoCfg.sec * sr), 1, ECHO_MAX - 1);
-        const rdIdx = (echoIdx - dSamp + ECHO_MAX) % ECHO_MAX;
-        const rdL = echoBufL[rdIdx];
-        const rdR = echoBufR[rdIdx];
-        echoLpL += (rdL - echoLpL) * 0.34;
-        echoLpR += (rdR - echoLpR) * 0.34;
-        // Stereo ping-pong cross-feedback for ambient piano-drop ripples
-        echoBufL[echoIdx] = lpL + echoLpR * echoCfg.fb;
-        echoBufR[echoIdx] = lpR + echoLpL * echoCfg.fb;
+        const dSampL = clamp(Math.round(echoCfg.sec * sr), 1, ECHO_MAX - 1);
+        const dSampR = clamp(Math.round((echoCfg.sec + (echoCfg.spread || 0)) * sr), 1, ECHO_MAX - 1);
+        const rdL = echoBufL[(echoIdx - dSampL + ECHO_MAX) % ECHO_MAX];
+        const rdR = echoBufR[(echoIdx - dSampR + ECHO_MAX) % ECHO_MAX];
+        echoLpL += (rdL - echoLpL) * 0.36;
+        echoLpR += (rdR - echoLpR) * 0.36;
+        // True parallel stereo delay (with optional Haas spread) matching studio tape echo
+        echoBufL[echoIdx] = lpL + echoLpL * echoCfg.fb;
+        echoBufR[echoIdx] = lpR + echoLpR * echoCfg.fb;
         echoIdx = (echoIdx + 1) % ECHO_MAX;
         mixL += echoLpL * echoCfg.wet;
         mixR += echoLpR * echoCfg.wet;
